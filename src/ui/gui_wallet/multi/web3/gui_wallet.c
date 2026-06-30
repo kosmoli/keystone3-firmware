@@ -131,6 +131,17 @@ UREncodeResult *GuiGetStandardBtcData(void)
     return urEncode;
 }
 
+#ifdef CYPHERPUNK_VERSION
+UREncodeResult *GuiGetCakeData(void)
+{
+    char *xPub = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_0);
+    char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+    UREncodeResult *urEncode = get_connect_cake_wallet_ur(xPub, pvk);
+    CHECK_CHAIN_PRINT(urEncode);
+    return urEncode;
+}
+#endif
+
 typedef UREncodeResult *MetamaskUrGetter(PtrBytes master_fingerprint, uint32_t master_fingerprint_length, enum ETHAccountType account_type, PtrT_CSliceFFI_ExtendedPublicKey public_keys, PtrString wallet_name);
 
 static UREncodeResult *get_unlimited_connect_metamask_ur(PtrBytes master_fingerprint, uint32_t master_fingerprint_length, enum ETHAccountType account_type, PtrT_CSliceFFI_ExtendedPublicKey public_keys)

@@ -207,6 +207,19 @@ static CoinState_t g_defaultFewchaState[FEWCHA_COINS_BUTT] = {
     {SUI, false},
 };
 
+#ifdef CYPHERPUNK_VERSION
+static const lv_img_dsc_t *g_cakeCoinArray[1] = {
+    &coinXmr,
+};
+
+static const lv_img_dsc_t *g_zodlCoinArray[1] = {
+    &coinZec,
+};
+
+static void AddCakeCoins(void);
+static void AddZecCoins(void);
+#endif
+
 WalletListItem_t g_walletListArray[] = {
     {WALLET_LIST_KEYSTONE, &walletKeystone, "Keystone Nexus", g_keystoneWalletCoinArray, 8, false, WALLET_FILTER_BTC | WALLET_FILTER_ETH | WALLET_FILTER_OTHER},
     {WALLET_LIST_OKX, &walletOkx, "OKX Wallet", g_okxWalletCoinArray, 7, true, WALLET_FILTER_BTC | WALLET_FILTER_ETH | WALLET_FILTER_OTHER},
@@ -247,6 +260,11 @@ WalletListItem_t g_walletListArray[] = {
     {WALLET_LIST_ZAPPER, &walletZapper, "Zapper", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
     {WALLET_LIST_YEARN_FINANCE, &walletYearn, "Yearn", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
     {WALLET_LIST_SUSHISWAP, &walletSushi, "SushiSwap", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
+#ifdef CYPHERPUNK_VERSION
+    {WALLET_LIST_FEATHER, &walletFeather, "Feather", g_cakeCoinArray, 1, true, WALLET_FILTER_OTHER},
+    {WALLET_LIST_ZODL, &walletZodl, "Zodl", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
+    {WALLET_LIST_VIZOR, &walletVizor, "Vizor", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
+#endif
 };
 
 typedef struct {
@@ -350,6 +368,15 @@ static void GuiInitWalletListArray()
         }
 
         switch (index) {
+#ifdef CYPHERPUNK_VERSION
+        case WALLET_LIST_FEATHER:
+            enable = GetMnemonicType() != MNEMONIC_TYPE_SLIP39;
+            break;
+        case WALLET_LIST_ZODL:
+        case WALLET_LIST_VIZOR:
+            enable = IsZcashSupportedForCurrentMnemonic();
+            break;
+#endif
         case WALLET_LIST_WANDER:
         case WALLET_LIST_BEACON:
             enable = !isTempAccount;
@@ -1125,6 +1152,49 @@ UREncodeResult *GuiGetTonData(void)
     return get_tonkeeper_wallet_ur(xpub, GetWalletName(), mfp, sizeof(mfp), path);
 }
 
+#ifdef CYPHERPUNK_VERSION
+static void AddZecCoins(void)
+{
+    if (lv_obj_get_child_cnt(g_coinCont) > 0) {
+        lv_obj_clean(g_coinCont);
+    }
+    for (int i = 0; i < 1; i++) {
+        lv_obj_t *img = GuiCreateImg(g_coinCont, g_zodlCoinArray[i]);
+        lv_img_set_zoom(img, 110);
+        lv_img_set_pivot(img, 0, 0);
+        lv_obj_align(img, LV_ALIGN_TOP_LEFT, 32 * i, 0);
+    }
+}
+
+static void AddCakeCoins(void)
+{
+    if (lv_obj_get_child_cnt(g_coinCont) > 0) {
+        lv_obj_clean(g_coinCont);
+    }
+
+    lv_obj_t *img = GuiCreateImg(g_coinCont, g_cakeCoinArray[0]);
+    lv_img_set_zoom(img, 110);
+    lv_img_set_pivot(img, 0, 0);
+    lv_obj_align(img, LV_ALIGN_TOP_LEFT, 0, 0);
+}
+
+UREncodeResult *GuiGetZecData(void)
+{
+    CSliceFFI_ZcashKey *keys = SRAM_MALLOC(sizeof(CSliceFFI_ZcashKey));
+    ZcashKey data[1];
+    keys->data = data;
+    keys->size = 1;
+    char ufvk[384] = {'\0'};
+    uint8_t sfp[32];
+    GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
+    GetZcashSFP(GetCurrentAccountIndex(), sfp);
+    data[0].key_text = ufvk;
+    data[0].key_name = GetWalletName();
+    data[0].index = 0;
+    return get_connect_zcash_wallet_ur(sfp, 32, keys);
+}
+#endif
+
 void GuiPrepareArConnectWalletView(void)
 {
     GuiDeleteKeyboardWidget(g_keyboardWidget);
@@ -1272,6 +1342,17 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)
             AddCoinsFromArray(g_keystoneWalletCoinArray, NUMBER_OF_ARRAYS(g_keystoneWalletCoinArray), false, 0);
         }
         break;
+#ifdef CYPHERPUNK_VERSION
+    case WALLET_LIST_ZODL:
+    case WALLET_LIST_VIZOR:
+        func = GuiGetZecData;
+        AddZecCoins();
+        break;
+    case WALLET_LIST_FEATHER:
+        func = GuiGetCakeData;
+        AddCakeCoins();
+        break;
+#endif
     default:
         return;
     }

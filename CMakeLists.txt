@@ -2,11 +2,19 @@ set(CMAKE_SYSTEM_NAME Generic)
 cmake_minimum_required(VERSION 3.10)
 
 option(COMPILE_KEYSTONE "compile on MAIN target" ON)
+option(KOSMO "Build KOSMO_VERSION: merge multi-coins + cypherpunk" OFF)
 
 set(BUILD_ENVIRONMENT "DEBUG")
 set(BUILD_VARIANT "MULTI_COINS")
 
-if(CYPHERPUNK)
+if(KOSMO)
+    message(STATUS "Building for KOSMO_VERSION")
+    add_compile_definitions(CYPHERPUNK_VERSION WEB3_VERSION)
+    set(WIDGET_PATH "multi")
+    set(WIDGET_SUBPATH "multi/web3")
+    set(CYPHERPUNK_WIDGET_SUBPATH "multi/cypherpunk")
+    set(BUILD_VARIANT "KOSMO")
+elseif(CYPHERPUNK)
     message(STATUS "Building for CYPHERPUNK")
     add_compile_definitions(CYPHERPUNK_VERSION)
     set(WIDGET_PATH "multi")
@@ -93,6 +101,13 @@ set(GUI_CUSTOM_INCLUDE_PATH
     src/ui/gui_wallet/${WIDGET_SUBPATH}
     src/ui/gui_wallet/${WIDGET_PATH}
 )
+if(KOSMO)
+    list(APPEND GUI_CUSTOM_INCLUDE_PATH
+        src/ui/gui_widgets/${CYPHERPUNK_WIDGET_SUBPATH}
+        src/ui/gui_chain/${CYPHERPUNK_WIDGET_SUBPATH}
+        src/ui/gui_wallet/${CYPHERPUNK_WIDGET_SUBPATH}
+    )
+endif()
 
 set(GUI_INCLUDE_PATH
     src/ui
@@ -205,6 +220,16 @@ file(GLOB GUI_CUSTOM_VIEW_WIDGETS
     src/ui/gui_analyze/${WIDGET_SUBPATH}/*.c
     src/ui/gui_analyze/${WIDGET_PATH}/*.c
 )
+if(KOSMO)
+    file(GLOB CYPHERPUNK_WIDGET_SRC
+        src/ui/gui_widgets/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+        src/ui/gui_views/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+        src/ui/gui_chain/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+        src/ui/gui_wallet/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+        src/ui/gui_analyze/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+    )
+    list(APPEND GUI_CUSTOM_VIEW_WIDGETS ${CYPHERPUNK_WIDGET_SRC})
+endif()
 
 file(GLOB_RECURSE GUI
     ${GUI_CUSTOM_VIEW_WIDGETS}

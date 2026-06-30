@@ -135,6 +135,8 @@ debug-cypherpunk = ["test_cmd", "use-allocator", "cypherpunk"]
 simulator-multi-coins = ["simulator", "multi-coins"]
 simulator-btc-only = ["simulator", "btc-only"]
 simulator-cypherpunk = ["simulator", "cypherpunk"]
+# KOSMO_VERSION: merge multi-coins + cypherpunk
+kosmo = ["multi-coins", "cypherpunk"]
 # make IDE happy
 default = ["simulator-multi-coins"]
 

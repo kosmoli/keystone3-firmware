@@ -221,13 +221,29 @@ file(GLOB GUI_CUSTOM_VIEW_WIDGETS
     src/ui/gui_analyze/${WIDGET_PATH}/*.c
 )
 if(KOSMO)
-    file(GLOB CYPHERPUNK_WIDGET_SRC
-        src/ui/gui_widgets/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
-        src/ui/gui_views/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
-        src/ui/gui_chain/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
-        src/ui/gui_wallet/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
-        src/ui/gui_analyze/${CYPHERPUNK_WIDGET_SUBPATH}/*.c
+    # Only add cypherpunk .c files that have NO web3 counterpart
+    # to avoid duplicate symbol errors at link time.
+    # Also exclude cypherpunk "replacement" files that define same
+    # symbols as web3 general files under different names.
+    set(CYPHERPUNK_EXCLUDE
+        gui_cypherpunk_home_widgets.c    # → web3 gui_general_home_widgets.c
+        gui_cypherpunk_analyze.c          # → web3 gui_general_analyze.c
     )
+    set(CYPHERPUNK_WIDGET_SRC)
+    foreach(CYPHER_DIR gui_widgets gui_views gui_chain gui_wallet gui_analyze)
+        file(GLOB CP_FILES src/ui/${CYPHER_DIR}/${CYPHERPUNK_WIDGET_SUBPATH}/*.c)
+        foreach(CP_FILE ${CP_FILES})
+            get_filename_component(CP_BASENAME ${CP_FILE} NAME)
+            # Skip if web3 has a same-named file, or if on exclude list
+            list(FIND CYPHERPUNK_EXCLUDE ${CP_BASENAME} _excl_idx)
+            if(_excl_idx GREATER -1)
+                continue()
+            endif()
+            if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/${CYPHER_DIR}/${WIDGET_SUBPATH}/${CP_BASENAME}")
+                list(APPEND CYPHERPUNK_WIDGET_SRC ${CP_FILE})
+            endif()
+        endforeach()
+    endforeach()
     list(APPEND GUI_CUSTOM_VIEW_WIDGETS ${CYPHERPUNK_WIDGET_SRC})
 endif()
 

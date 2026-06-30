@@ -137,6 +137,9 @@ simulator-btc-only = ["simulator", "btc-only"]
 simulator-cypherpunk = ["simulator", "cypherpunk"]
 # KOSMO_VERSION: merge multi-coins + cypherpunk
 kosmo = ["multi-coins", "cypherpunk"]
+debug-kosmo = ["test_cmd", "use-allocator", "kosmo"]
+production-kosmo = ["use-allocator", "kosmo"]
+simulator-kosmo = ["simulator", "kosmo"]
 # make IDE happy
 default = ["simulator-multi-coins"]
 

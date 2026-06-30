@@ -3,6 +3,7 @@
 #ifndef _GUI_GENERAL_ANALYZE_WIDGETS_H
 #define _GUI_GENERAL_ANALYZE_WIDGETS_H
 
+#ifndef CYPHERPUNK_VERSION
 #define GUI_ANALYZE_OBJ_SURPLUS \
     {\
         REMAPVIEW_ETH,\
@@ -195,6 +196,7 @@
         NULL, \
         FreeZcashMemory, \
     }
+#endif
 #endif
 #endif
 #endif

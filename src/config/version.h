@@ -10,15 +10,13 @@
 #define SOFTWARE_VERSION_BUILD              0
 #define SOFTWARE_VERSION_BETA               1
 #define SOFTWARE_VERSION                    (SOFTWARE_VERSION_MAJOR * 10000 + SOFTWARE_VERSION_MINOR * 100 + SOFTWARE_VERSION_BUILD)
-#ifdef WEB3_VERSION
-#define SOFTWARE_VERSION_SUFFIX             ""
-#endif
-
-#ifdef CYPHERPUNK_VERSION
+#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
+#define SOFTWARE_VERSION_SUFFIX             " - KOSMO"
+#elif defined(CYPHERPUNK_VERSION)
 #define SOFTWARE_VERSION_SUFFIX             " - Cypherpunk"
-#endif
-
-#ifdef BTC_ONLY
+#elif defined(WEB3_VERSION)
+#define SOFTWARE_VERSION_SUFFIX             ""
+#elif defined(BTC_ONLY)
 #define SOFTWARE_VERSION_SUFFIX             " - BTC"
 #endif
 

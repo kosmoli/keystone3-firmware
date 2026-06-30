@@ -20,7 +20,8 @@
 #include "gui_ton.h"
 #include "gui_avax.h"
 #include "gui_iota.h"
-#else
+#endif
+#ifdef CYPHERPUNK_VERSION
 #include "gui_monero.h"
 #endif
 #endif
@@ -139,7 +140,9 @@ typedef enum {
 #endif
 
 #ifdef CYPHERPUNK_VERSION
+#ifndef WEB3_VERSION
     REMAPVIEW_ZCASH,
+#endif
     REMAPVIEW_XMR_OUTPUT,
     REMAPVIEW_XMR_UNSIGNED,
 #endif

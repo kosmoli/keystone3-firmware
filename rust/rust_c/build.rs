@@ -22,6 +22,12 @@ fn main() {
         "simulator-cypherpunk",
         #[cfg(feature = "production-cypherpunk")]
         "production-cypherpunk",
+        #[cfg(feature = "debug-kosmo")]
+        "debug-kosmo",
+        #[cfg(feature = "production-kosmo")]
+        "production-kosmo",
+        #[cfg(feature = "simulator-kosmo")]
+        "simulator-kosmo",
     ];
 
     //feature toggle

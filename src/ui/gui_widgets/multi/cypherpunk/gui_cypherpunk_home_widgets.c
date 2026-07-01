@@ -211,8 +211,23 @@ static void CoinDealHandler(HOME_WALLET_CARD_ENUM coin)
     }
     switch (coin) {
     case HOME_WALLET_CARD_BTC:
+#ifdef WEB3_VERSION
+    case HOME_WALLET_CARD_LTC:
+    case HOME_WALLET_CARD_DASH:
+    case HOME_WALLET_CARD_BCH:
+    case HOME_WALLET_CARD_DOGE:
+#endif
         GuiFrameOpenViewWithParam(&g_utxoReceiveView, &coin, sizeof(coin));
         break;
+#ifdef WEB3_VERSION
+    case HOME_WALLET_CARD_ETH:
+    case HOME_WALLET_CARD_SOL:
+    case HOME_WALLET_CARD_HNT:
+    case HOME_WALLET_CARD_AVAX:
+        GuiFrameOpenViewWithParam(&g_multiPathCoinReceiveView, &coin, sizeof(coin));
+        break;
+    case HOME_WALLET_CARD_ADA:
+#endif
     case HOME_WALLET_CARD_MONERO:
         GuiFrameOpenViewWithParam(&g_multiAccountsReceiveView, &coin, sizeof(coin));
         break;

@@ -1390,6 +1390,7 @@ static bool CheckNeedDelay(ViewType viewType)
 static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
 {
 #ifdef BUILD_PRODUCTION
+#ifndef COMPILE_SIMULATOR
     osDelay(1000);
     static uint8_t walletAmount;
     SetPageLockScreen(false);
@@ -1401,6 +1402,9 @@ static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
     } else {
         GuiApiEmitSignal(SIG_BOOT_UPDATE_FAIL, NULL, 0);
     }
+#else
+    GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
+#endif
 #else
     GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
 #endif

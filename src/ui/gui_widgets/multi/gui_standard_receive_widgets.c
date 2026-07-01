@@ -918,9 +918,9 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
 #ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_ZEC) {
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
-        GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
-
-        result = generate_zcash_default_address(ufvk);
+        if (GetZcashUFVK(GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
+            result = generate_zcash_default_address(ufvk);
+        }
     }
 #endif
 
@@ -929,44 +929,62 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
     switch (g_chainCard) {
     case HOME_WALLET_CARD_TRX:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_TRX);
-        snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/195'/0'/0/%u", index);
-        result = tron_get_address(hdPath, xPub);
+        if (xPub != NULL) {
+            snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/195'/0'/0/%u", index);
+            result = tron_get_address(hdPath, xPub);
+        }
         break;
     case HOME_WALLET_CARD_SUI:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_SUI_0 + index);
-        result = sui_generate_address(xPub);
+        if (xPub != NULL) {
+            result = sui_generate_address(xPub);
+        }
         break;
     case HOME_WALLET_CARD_IOTA:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_IOTA_0 + index);
-        result = iota_get_address_from_pubkey(xPub);
+        if (xPub != NULL) {
+            result = iota_get_address_from_pubkey(xPub);
+        }
         break;
     case HOME_WALLET_CARD_APT:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_APT_0 + index);
-        snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/637'/%u'/0'/0'", index);
-        result = aptos_generate_address(xPub);
+        if (xPub != NULL) {
+            snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/637'/%u'/0'/0'", index);
+            result = aptos_generate_address(xPub);
+        }
         break;
     case HOME_WALLET_CARD_XRP:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_XRP);
-        snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/144'/0'/0/%u", index);
-        result = xrp_get_address(hdPath, xPub, "m/44'/144'/0'/");
+        if (xPub != NULL) {
+            snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/144'/0'/0/%u", index);
+            result = xrp_get_address(hdPath, xPub, "m/44'/144'/0'/");
+        }
         break;
     case HOME_WALLET_CARD_ARWEAVE:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ARWEAVE);
-        result = arweave_get_address(xPub);
+        if (xPub != NULL) {
+            result = arweave_get_address(xPub);
+        }
         break;
     case HOME_WALLET_CARD_ZEC:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ZEC_TRANSPARENT_LEGACY);
-        snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/133'/0'/0/%u", index);
-        result = utxo_get_address(hdPath, xPub);
+        if (xPub != NULL) {
+            snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/133'/0'/0/%u", index);
+            result = utxo_get_address(hdPath, xPub);
+        }
         break;
     case HOME_WALLET_CARD_XLM:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_STELLAR_0 + index);
-        snprintf_s(hdPath, BUFFER_SIZE_64, "m/44'/148'/%u'", index);
-        result = stellar_get_address(xPub);
+        if (xPub != NULL) {
+            snprintf_s(hdPath, BUFFER_SIZE_64, "m/44'/148'/%u'", index);
+            result = stellar_get_address(xPub);
+        }
         break;
     case HOME_WALLET_CARD_TON: {
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_TON_BIP39);
-        result = ton_get_address(xPub);
+        if (xPub != NULL) {
+            result = ton_get_address(xPub);
+        }
         break;
     }
     default:
@@ -978,7 +996,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         }
     }
 #endif
-    if (result->error_code == 0) {
+    if (result != NULL && result->error_code == 0) {
         item->index = index;
         strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
         strcpy_s(item->path, 32, hdPath);

@@ -751,6 +751,12 @@ void SetCoinWallet(NavBarWidget_t *navBarWidget, GuiChainCoinType index,
                    const char *name)
 {
     SetNavBarMidBtn(navBarWidget, NVS_BAR_MID_COIN, NULL, NULL);
+#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
+    // KOSMO: HOME_WALLET_CARD_MONERO collides with CHAIN_ZCASH in g_coinWalletBtn[]
+    if (index == HOME_WALLET_CARD_MONERO) {
+        index = CHAIN_XMR;
+    }
+#endif
     CoinWalletInfo_t *coin = (CoinWalletInfo_t *)g_coinWalletBtn;
     for (size_t i = 0; i < CHAIN_BUTT; i++) {
         if (g_coinWalletBtn[i].index == index) {

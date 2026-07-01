@@ -84,9 +84,10 @@ void GetBootVersionNumber(char *version)
     snprintf(version, SOFTWARE_VERSION_MAX_LEN, "%d.%d.%d", major, minor, build);
 }
 
-#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
+#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION) && !defined(COMPILE_SIMULATOR)
 // KOSMO_VERSION (ForgeBox): bootloader manages its own updates via OTA signing.
 // The Keystone OEM boot-update flow is incompatible with the ForgeBox bootloader.
+// On simulator, simulator_model.c already provides its own NeedUpdateBoot stub.
 bool NeedUpdateBoot(void)
 {
     return false;

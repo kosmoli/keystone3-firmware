@@ -914,7 +914,7 @@ int32_t AccountPublicSavePublicInfo(uint8_t accountIndex, const char *password, 
 #ifdef WEB3_VERSION
             if (g_chainTable[i].cryptoKey == BIP32_ED25519 && isSlip39) {
                 xPubResult = cardano_get_pubkey_by_slip23(seed, seedLen, g_chainTable[i].path);
-            } else {
+            } else if (g_chainTable[i].cryptoKey != ZCASH_UFVK_ENCRYPTED) {
                 xPubResult = ProcessKeyType(seed, seedLen, g_chainTable[i].cryptoKey, g_chainTable[i].path, icarusMasterKey, ledgerBitbox02Key);
             }
 #endif
@@ -1110,7 +1110,7 @@ int32_t TempAccountPublicInfo(uint8_t accountIndex, const char *password, bool s
             if (g_chainTable[i].cryptoKey == BIP32_ED25519 && isSlip39) {
                 // ada slip23
                 xPubResult = cardano_get_pubkey_by_slip23(seed, seedLen, g_chainTable[i].path);
-            } else {
+            } else if (g_chainTable[i].cryptoKey != ZCASH_UFVK_ENCRYPTED) {
                 xPubResult = ProcessKeyType(seed, seedLen, g_chainTable[i].cryptoKey, g_chainTable[i].path, icarusMasterKey, ledgerBitbox02Key);
             }
 #endif

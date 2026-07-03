@@ -123,7 +123,6 @@ GetCustomContainerFunc GetOtherChainCustomFunc(char *funcName)
         return GuiShowXmrTransactionDetails;
     } else if (!strcmp(funcName, "GuiShowXmrTransactionOverview")) {
         return GuiShowXmrTransactionOverview;
-#endif
     }
 
     return NULL;
@@ -247,7 +246,6 @@ static GetLabelDataFunc GuiMoneroTextFuncGet(char *type)
     }
     return NULL;
 }
-#endif
 
 GetLabelDataFunc GuiOtherChainTextFuncGet(char *type, GuiRemapViewType remapIndex)
 {
@@ -286,7 +284,6 @@ GetLabelDataFunc GuiOtherChainTextFuncGet(char *type, GuiRemapViewType remapInde
     case REMAPVIEW_XMR_OUTPUT:
     case REMAPVIEW_XMR_UNSIGNED:
         return GuiMoneroTextFuncGet(type);
-#endif
     default:
         return NULL;
     }

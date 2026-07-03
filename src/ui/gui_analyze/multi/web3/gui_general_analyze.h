@@ -1,4 +1,3 @@
-#ifndef COMPILE_SIMULATOR
 #ifndef _GUI_GENERAL_ANALYZE_WIDGETS_H
 #define _GUI_GENERAL_ANALYZE_WIDGETS_H
 
@@ -208,5 +207,4 @@
         NULL, \
         FreeMoneroMemory, \
     }
-#endif
 #endif

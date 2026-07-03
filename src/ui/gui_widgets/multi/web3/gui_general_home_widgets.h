@@ -457,4 +457,3 @@
         .icon = &coinTgd,                      \
     }
 #endif
-#endif

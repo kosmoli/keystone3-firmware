@@ -110,5 +110,3 @@ int32_t GetZcashSFP(uint8_t accountIndex, uint8_t* outSFP);
 int32_t SetupZcashSFP(uint8_t accountIndex, const char* password);
 int32_t SetupZcashCache(uint8_t accountIndex, const char* password);
 #endif
-#endif
-#endif

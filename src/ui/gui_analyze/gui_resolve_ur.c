@@ -10,8 +10,6 @@
 #include "gui_views.h"
 #include "gui_chain.h"
 
-#include "gui_import_multisig_wallet_info_widgets.h"
-#include "gui_create_multisig_wallet_widgets.h"
 
 #include "gui_key_derivation_request_widgets.h"
 #include "gui_derive_context_hash_request_widgets.h"

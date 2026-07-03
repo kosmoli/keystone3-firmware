@@ -2,38 +2,14 @@ set(CMAKE_SYSTEM_NAME Generic)
 cmake_minimum_required(VERSION 3.10)
 
 option(COMPILE_KEYSTONE "compile on MAIN target" ON)
-option(KOSMO "Build KOSMO_VERSION: merge multi-coins + cypherpunk" OFF)
 
 set(BUILD_ENVIRONMENT "DEBUG")
-set(BUILD_VARIANT "MULTI_COINS")
+set(BUILD_VARIANT "KOSMO")
 
-if(KOSMO)
-    message(STATUS "Building for KOSMO_VERSION")
-    add_compile_definitions(CYPHERPUNK_VERSION WEB3_VERSION)
-    set(WIDGET_PATH "multi")
-    set(WIDGET_SUBPATH "multi/web3")
-    set(CYPHERPUNK_WIDGET_SUBPATH "multi/cypherpunk")
-    set(BUILD_VARIANT "KOSMO")
-elseif(CYPHERPUNK)
-    message(STATUS "Building for CYPHERPUNK")
-    add_compile_definitions(CYPHERPUNK_VERSION)
-    set(WIDGET_PATH "multi")
-    set(WIDGET_SUBPATH "multi/cypherpunk")
-    set(BUILD_VARIANT "CYPHERPUNK")
-elseif(BTC_ONLY)
-    message(STATUS "Building for BTC_ONLY")
-    set(WIDGET_PATH "btc_only")
-    set(WIDGET_SUBPATH "btc_only/multi_sig")
-    set(BUILD_VARIANT "BTC_ONLY")
-    add_compile_definitions(BTC_ONLY)
-    add_compile_definitions(EXCLUDE_RUSTC)
-else()
-    message(STATUS "Building for WEB3_VERSION")
-    add_compile_definitions(WEB3_VERSION)
-    set(WIDGET_PATH "multi")
-    set(WIDGET_SUBPATH "multi/web3")
-    set(BUILD_VARIANT "MULTI_COINS")
-endif()
+message(STATUS "Building for KOSMO_VERSION")
+add_compile_definitions(KOSMO_VERSION)
+set(WIDGET_PATH "multi")
+set(WIDGET_SUBPATH "multi/web3")
 if(BUILD_TYPE STREQUAL "Simulator")
     set(COMPILE_KEYSTONE OFF CACHE BOOL "compile on MAIN target" FORCE)
     set(COMPILE_SIMULATOR ON CACHE BOOL "compile on Simulator target" FORCE)
@@ -101,13 +77,6 @@ set(GUI_CUSTOM_INCLUDE_PATH
     src/ui/gui_wallet/${WIDGET_SUBPATH}
     src/ui/gui_wallet/${WIDGET_PATH}
 )
-if(KOSMO)
-    list(APPEND GUI_CUSTOM_INCLUDE_PATH
-        src/ui/gui_widgets/${CYPHERPUNK_WIDGET_SUBPATH}
-        src/ui/gui_chain/${CYPHERPUNK_WIDGET_SUBPATH}
-        src/ui/gui_wallet/${CYPHERPUNK_WIDGET_SUBPATH}
-    )
-endif()
 
 set(GUI_INCLUDE_PATH
     src/ui
@@ -194,9 +163,7 @@ set(INCLUDE_DIR
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-if(NOT BTC_ONLY)
-    list(APPEND INCLUDE_DIR src/webusb_protocol/general src/webusb_protocol/general/eapdu_services)
-endif()
+list(APPEND INCLUDE_DIR src/webusb_protocol/general src/webusb_protocol/general/eapdu_services)
 
 if(NOT BUILD_PRODUCTION)
     list(APPEND INCLUDE_DIR test)
@@ -220,32 +187,6 @@ file(GLOB GUI_CUSTOM_VIEW_WIDGETS
     src/ui/gui_analyze/${WIDGET_SUBPATH}/*.c
     src/ui/gui_analyze/${WIDGET_PATH}/*.c
 )
-if(KOSMO)
-    # Only add cypherpunk .c files that have NO web3 counterpart
-    # to avoid duplicate symbol errors at link time.
-    # Also exclude cypherpunk "replacement" files that define same
-    # symbols as web3 general files under different names.
-    set(CYPHERPUNK_EXCLUDE
-        gui_cypherpunk_home_widgets.c    # → web3 gui_general_home_widgets.c
-        gui_cypherpunk_analyze.c          # → web3 gui_general_analyze.c
-    )
-    set(CYPHERPUNK_WIDGET_SRC)
-    foreach(CYPHER_DIR gui_widgets gui_views gui_chain gui_wallet gui_analyze)
-        file(GLOB CP_FILES src/ui/${CYPHER_DIR}/${CYPHERPUNK_WIDGET_SUBPATH}/*.c)
-        foreach(CP_FILE ${CP_FILES})
-            get_filename_component(CP_BASENAME ${CP_FILE} NAME)
-            # Skip if web3 has a same-named file, or if on exclude list
-            list(FIND CYPHERPUNK_EXCLUDE ${CP_BASENAME} _excl_idx)
-            if(_excl_idx GREATER -1)
-                continue()
-            endif()
-            if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/${CYPHER_DIR}/${WIDGET_SUBPATH}/${CP_BASENAME}")
-                list(APPEND CYPHERPUNK_WIDGET_SRC ${CP_FILE})
-            endif()
-        endforeach()
-    endforeach()
-    list(APPEND GUI_CUSTOM_VIEW_WIDGETS ${CYPHERPUNK_WIDGET_SRC})
-endif()
 
 file(GLOB_RECURSE GUI
     ${GUI_CUSTOM_VIEW_WIDGETS}
@@ -385,18 +326,9 @@ else()
     project(simulator)
     include(ui_simulator/simulator.cmake)
 
-    if(BTC_ONLY)
-        set(excluded_directories
-            src/ui/gui_chain/others
-            src/ui/gui_widgets/general
-            src/ui/gui_views/general
-            src/webusb_protocol/general)
-        SET(INCLUDES src/managers/btc_only/multi_sig_wallet_manager.c src/managers/sdcard_manager.c)
-    else()
-        set(excluded_directories
-            src/ui/gui_views/btc_only
-            src/ui/gui_widgets/btc_only)
-    endif()
+    set(excluded_directories
+        src/ui/gui_views/btc_only
+        src/ui/gui_widgets/btc_only)
 
     foreach(directory ${excluded_directories})
         file(GLOB_RECURSE excluded_files "${directory}/*")

@@ -427,10 +427,8 @@ int32_t SetPassphrase(uint8_t accountIndex, const char *passphrase, const char *
             ClearAccountPassphrase(accountIndex);
             ret = AccountPublicInfoSwitch(accountIndex, password, false);
         }
-#ifdef WEB3_VERSION
         SetupZcashSFP(accountIndex, password);
 #endif
-#ifdef CYPHERPUNK_VERSION
         SetupZcashCache(accountIndex, password);
 #endif
         SetPassphraseMark(passphrase[0] != '\0');

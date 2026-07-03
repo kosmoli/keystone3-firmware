@@ -76,7 +76,6 @@ static uint8_t *ServiceFileTransContent(FrameHead_t *head, const uint8_t *tlvDat
 static uint8_t *GetFileContent(const FrameHead_t *head, uint32_t offset, uint32_t *outLen);
 static uint8_t *ServiceFileTransComplete(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen);
 static uint8_t *ServiceFileTransGetPubkey(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen);
-#ifdef WEB3_VERSION
 static uint8_t *ServiceNftFileTransInfo(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen);
 static uint8_t *ServiceNftFileTransContent(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen);
 static uint8_t *ServiceNftFileTransComplete(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen);
@@ -237,7 +236,6 @@ static uint8_t *ServiceFileTransInfo(FrameHead_t *head, const uint8_t *tlvData, 
             sendTlvArray[0].value = 5;
             break;
         }
-#ifdef WEB3_VERSION
         GuiApiEmitSignalWithValue(g_isNftFile ? SIG_INIT_NFT_BIN : SIG_INIT_FIRMWARE_PROCESS, 1);
 #else
         GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_PROCESS, 1);
@@ -326,7 +324,6 @@ static uint8_t *ServiceFileTransContent(FrameHead_t *head, const uint8_t *tlvDat
         return NULL;
     }
 
-#ifdef WEB3_VERSION
     if (!g_isNftFile)
 #endif
     {
@@ -353,7 +350,6 @@ static uint8_t *GetFileContent(const FrameHead_t *head, uint32_t offset, uint32_
 
     sendHead.packetIndex = head->packetIndex;
     // sendHead.serviceId = SERVICE_ID_FILE_TRANS;
-#ifdef WEB3_VERSION
     sendHead.serviceId = g_isNftFile ? SERVICE_ID_NFT_FILE_TRANS : SERVICE_ID_FILE_TRANS;
 #else
     sendHead.serviceId = SERVICE_ID_FILE_TRANS;
@@ -425,7 +421,6 @@ static void FileTransTimeOutTimerFunc(void *argument)
 {
     g_isReceivingFile = false;
     GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_PROCESS, 0);
-#ifdef WEB3_VERSION
     if (g_isNftFile) {
         GuiApiEmitSignalWithValue(SIG_INIT_NFT_BIN, 0);
         GuiApiEmitSignalWithValue(SIG_INIT_NFT_BIN_TRANS_FAIL, 0);
@@ -490,7 +485,6 @@ static uint8_t *ServiceFileTransGetPubkey(FrameHead_t *head, const uint8_t *tlvD
     return BuildFrame(&sendHead, tlvArray, 1);
 }
 
-#ifdef WEB3_VERSION
 static uint8_t *ServiceNftFileTransInfo(FrameHead_t *head, const uint8_t *tlvData, uint32_t *outLen)
 {
     g_isNftFile = true;

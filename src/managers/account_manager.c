@@ -34,7 +34,6 @@ static uint8_t g_lastAccountIndex = ACCOUNT_INDEX_LOGOUT;
 static AccountInfo_t g_currentAccountInfo = {0};
 static PublicInfo_t g_publicInfo = {0};
 
-#ifndef BTC_ONLY
 static ZcashUFVKCache_t g_zcashUFVKcache = {0};
 static void ClearZcashUFVK();
 #endif
@@ -165,11 +164,9 @@ int32_t CreateNewAccount(uint8_t accountIndex, const uint8_t *entropy, uint8_t e
     CHECK_ERRCODE_RETURN_INT(ret);
     ret = AccountPublicInfoSwitch(g_currentAccountIndex, password, true);
     CHECK_ERRCODE_RETURN_INT(ret);
-#ifdef CYPHERPUNK_VERSION
     ret = SetupZcashCache(accountIndex, password);
     CHECK_ERRCODE_RETURN_INT(ret);
 #endif
-#ifdef WEB3_VERSION
     ret = SetupZcashSFP(accountIndex, password);
     CHECK_ERRCODE_RETURN_INT(ret);
 #endif
@@ -195,11 +192,9 @@ int32_t CreateNewSlip39Account(uint8_t accountIndex, const uint8_t *ems, const u
     CHECK_ERRCODE_RETURN_INT(ret);
     ret = AccountPublicInfoSwitch(g_currentAccountIndex, password, true);
     CHECK_ERRCODE_RETURN_INT(ret);
-#ifdef CYPHERPUNK_VERSION
     ret = SetupZcashCache(accountIndex, password);
     CHECK_ERRCODE_RETURN_INT(ret);
 #endif
-#ifdef WEB3_VERSION
     ret = SetupZcashSFP(accountIndex, password);
     CHECK_ERRCODE_RETURN_INT(ret);
 #endif
@@ -267,7 +262,6 @@ int32_t VerifyPasswordAndLogin(uint8_t *accountIndex, const char *password)
         ret = ReadCurrentAccountInfo();
         g_publicInfo.loginPasswordErrorCount = 0;
         g_publicInfo.currentPasswordErrorCount = 0;
-#ifndef BTC_ONLY
         ClearZcashUFVK();
 #endif
         if (PassphraseExist(g_currentAccountIndex)) {
@@ -279,11 +273,9 @@ int32_t VerifyPasswordAndLogin(uint8_t *accountIndex, const char *password)
             ret = AccountPublicInfoSwitch(g_currentAccountIndex, password, false);
         }
         CHECK_ERRCODE_RETURN_INT(ret);
-#ifdef CYPHERPUNK_VERSION
         ret = SetupZcashCache(*accountIndex, password);
         CHECK_ERRCODE_RETURN_INT(ret);
 #endif
-#ifdef WEB3_VERSION
         ret = SetupZcashSFP(*accountIndex, password);
         CHECK_ERRCODE_RETURN_INT(ret);
 #endif
@@ -632,12 +624,10 @@ void AccountsDataCheck(void)
     CLEAR_ARRAY(data);
 }
 
-#ifndef BTC_ONLY
 bool IsZcashSupportedForCurrentMnemonic(void)
 {
     MnemonicType type = GetMnemonicType();
     if (type == MNEMONIC_TYPE_BIP39) return true;
-#ifdef CYPHERPUNK_VERSION
     if (type == MNEMONIC_TYPE_SLIP39) return GetCurrentAccountEntropyLen() >= 32;
 #endif
     return false;
@@ -722,7 +712,6 @@ int32_t SetupZcashSFP(uint8_t accountIndex, const char* password)
     return ret;
 }
 
-#ifdef CYPHERPUNK_VERSION
 int32_t SetupZcashCache(uint8_t accountIndex, const char* password)
 {
     ASSERT(accountIndex <= 2);

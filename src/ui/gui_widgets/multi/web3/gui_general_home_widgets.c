@@ -95,7 +95,6 @@ static void GuiInitWalletState(void)
         g_walletState[HOME_WALLET_CARD_DOT].enable = false;
         g_walletState[HOME_WALLET_CARD_TON].enable = true;
         g_walletState[HOME_WALLET_CARD_ZEC].enable = IsZcashSupportedForCurrentMnemonic();
-#ifdef CYPHERPUNK_VERSION
         g_walletState[HOME_WALLET_CARD_MONERO].enable = false;
 #endif
         g_coinFilterNum = 2;
@@ -372,7 +371,6 @@ static void CoinDealHandler(HOME_WALLET_CARD_ENUM coin)
         break;
     }
     default:
-#ifdef CYPHERPUNK_VERSION
     case HOME_WALLET_CARD_MONERO:
         GuiFrameOpenViewWithParam(&g_multiAccountsReceiveView, &coin, sizeof(coin));
         break;

@@ -11,7 +11,6 @@
 #include "gui_chain.h"
 #include "user_memory.h"
 #include "gui_qr_hintbox.h"
-#ifdef WEB3_VERSION
 #include "gui_multi_path_coin_receive_widgets.h"
 #include "gui_connect_ada_widgets.h"
 #include "gui_keyboard_hintbox.h"
@@ -207,7 +206,6 @@ static CoinState_t g_defaultFewchaState[FEWCHA_COINS_BUTT] = {
     {SUI, false},
 };
 
-#ifdef CYPHERPUNK_VERSION
 static const lv_img_dsc_t *g_cakeCoinArray[1] = {
     &coinXmr,
 };
@@ -260,7 +258,6 @@ WalletListItem_t g_walletListArray[] = {
     {WALLET_LIST_ZAPPER, &walletZapper, "Zapper", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
     {WALLET_LIST_YEARN_FINANCE, &walletYearn, "Yearn", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
     {WALLET_LIST_SUSHISWAP, &walletSushi, "SushiSwap", g_ethWalletCoinArray, 4, true, WALLET_FILTER_ETH},
-#ifdef CYPHERPUNK_VERSION
     {WALLET_LIST_FEATHER, &walletFeather, "Feather", g_cakeCoinArray, 1, true, WALLET_FILTER_OTHER},
     {WALLET_LIST_ZODL, &walletZodl, "Zodl", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
     {WALLET_LIST_VIZOR, &walletVizor, "Vizor", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
@@ -368,7 +365,6 @@ static void GuiInitWalletListArray()
         }
 
         switch (index) {
-#ifdef CYPHERPUNK_VERSION
         case WALLET_LIST_FEATHER:
             enable = GetMnemonicType() != MNEMONIC_TYPE_SLIP39;
             break;
@@ -1152,7 +1148,6 @@ UREncodeResult *GuiGetTonData(void)
     return get_tonkeeper_wallet_ur(xpub, GetWalletName(), mfp, sizeof(mfp), path);
 }
 
-#ifdef CYPHERPUNK_VERSION
 static void AddZecCoins(void)
 {
     if (lv_obj_get_child_cnt(g_coinCont) > 0) {
@@ -1342,7 +1337,6 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)
             AddCoinsFromArray(g_keystoneWalletCoinArray, NUMBER_OF_ARRAYS(g_keystoneWalletCoinArray), false, 0);
         }
         break;
-#ifdef CYPHERPUNK_VERSION
     case WALLET_LIST_ZODL:
     case WALLET_LIST_VIZOR:
         func = GuiGetZecData;

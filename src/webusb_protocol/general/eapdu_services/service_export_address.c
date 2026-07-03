@@ -20,7 +20,6 @@ enum {
     OFFSET_TYPE = 4
 };
 
-#ifdef WEB3_VERSION
 struct EthParams {
     uint8_t n;
     ETHAccountType type;
@@ -37,7 +36,6 @@ typedef struct {
 #endif
 
 
-#ifdef WEB3_VERSION
 /* FUNC DECLARATION*/
 static void ExportEthAddress(uint16_t requestID, uint8_t n, ETHAccountType type);
 
@@ -152,7 +150,6 @@ void ExportAddressReject()
 static void ExportEthAddress(uint16_t requestID, uint8_t n, ETHAccountType type)
 {
 #ifndef COMPILE_SIMULATOR
-#ifdef WEB3_VERSION
     UREncodeResult *urResult = GetUnlimitedMetamaskDataForAccountType(type);
 
     if (urResult->error_code != 0) {

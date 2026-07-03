@@ -44,7 +44,6 @@ static volatile bool g_snapShotDone = false;
 static volatile uint32_t g_dynamicTick, g_fastModeCount;
 bool g_reboot = false;
 
-#ifdef WEB3_VERSION
 static bool g_lockNft = false;
 void DrawNftImage(void);
 void RefreshDisplay(uint16_t *snapShotAddr);
@@ -131,7 +130,6 @@ static void UiDisplayTask(void *argument)
 #endif
             }
             break;
-#ifndef BTC_ONLY
             case UI_MSG_USB_TRANSPORT_VIEW: {
                 GuiFrameOpenViewWithParam(&g_USBTransportView, rcvMsg.buffer, rcvMsg.length);
             }
@@ -152,7 +150,6 @@ static void UiDisplayTask(void *argument)
             }
             break;
 #endif
-#ifdef WEB3_VERSION
             case UI_MSG_CLOSE_NFT_LOCK: {
                 uint8_t *snapShotAddr = GetActSnapShot();
                 while (LcdBusy()) {
@@ -273,7 +270,6 @@ static void __SetLvglHandlerAndSnapShot(uint32_t value)
         while (LcdBusy()) {
             osDelay(1);
         }
-#ifdef WEB3_VERSION
         if (g_lockNft && !IsWakeupByFinger()) {
             DrawNftImage();
         } else
@@ -346,7 +342,6 @@ void ActivateUiTaskLoop(void)
     }
 }
 
-#ifdef WEB3_VERSION
 #define LCD_DISPLAY_WIDTH  480
 #define LCD_DISPLAY_HEIGHT 800
 #define ROWS_PER_STEP      40

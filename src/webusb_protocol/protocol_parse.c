@@ -1,5 +1,4 @@
 #include "internal_protocol_parser.h"
-#ifndef BTC_ONLY
 #include "eapdu_protocol_parser.h"
 #endif
 #include "stdio.h"
@@ -26,7 +25,6 @@ void ProtocolReceivedData(const uint8_t *data, uint32_t len, ProtocolSendCallbac
 
     tick = osKernelGetTickCount();
     currentParser = NewInternalProtocolParser();
-#ifndef BTC_ONLY
     if (data[0] == EAPDU_PROTOCOL_HEADER && !GetIsReceivingFile()) {
         currentParser = NewEApduProtocolParser();
     }

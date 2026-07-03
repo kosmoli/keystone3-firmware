@@ -117,7 +117,6 @@ GetCustomContainerFunc GetOtherChainCustomFunc(char *funcName)
         return GuiCustomPathNotice;
     } else if (!strcmp(funcName, "GuiZcashOverview")) {
         return GuiZcashOverview;
-#ifdef CYPHERPUNK_VERSION
     } else if (!strcmp(funcName, "GuiShowXmrOutputsDetails")) {
         return GuiShowXmrOutputsDetails;
     } else if (!strcmp(funcName, "GuiShowXmrTransactionDetails")) {
@@ -239,7 +238,6 @@ GetTableDataFunc GuiOtherChainTableFuncGet(char *type, GuiRemapViewType remapInd
     }
 }
 
-#ifdef CYPHERPUNK_VERSION
 static GetLabelDataFunc GuiMoneroTextFuncGet(char *type)
 {
     if (!strcmp(type, "GetXmrTxoCount")) {
@@ -285,7 +283,6 @@ GetLabelDataFunc GuiOtherChainTextFuncGet(char *type, GuiRemapViewType remapInde
     case REMAPVIEW_STELLAR:
     case REMAPVIEW_STELLAR_HASH:
         return GuiStellarTextFuncGet(type);
-#ifdef CYPHERPUNK_VERSION
     case REMAPVIEW_XMR_OUTPUT:
     case REMAPVIEW_XMR_UNSIGNED:
         return GuiMoneroTextFuncGet(type);

@@ -1,4 +1,3 @@
-#ifndef BTC_ONLY
 #include "gui_avax.h"
 #include "rust.h"
 #include "account_manager.h"

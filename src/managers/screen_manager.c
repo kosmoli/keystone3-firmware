@@ -58,9 +58,6 @@ void SetLockScreen(bool enable)
     if (enable) {
         LcdBacklightOn();
         GuiApiEmitSignal(SIG_STATUS_BAR_REFRESH, NULL, 0);
-#ifdef BTC_ONLY
-        GuiApiEmitSignal(SIG_STATUS_BAR_TEST_NET, NULL, 0);
-#endif
     }
 }
 
@@ -128,9 +125,6 @@ static void LockScreen(void)
         GuiLockScreenUpdatePurpose(LOCK_SCREEN_PURPOSE_UNLOCK);
         GuiEmitSignal(SIG_LOCK_VIEW_SCREEN_ON_VERIFY, &single, sizeof(single));
     }
-#ifdef BTC_ONLY
-    GuiApiEmitSignal(SIG_STATUS_BAR_TEST_NET, NULL, 0);
-#endif
 
     if (g_lockDeivceTimeAlive) {
         printf("lock device page is alive\n");

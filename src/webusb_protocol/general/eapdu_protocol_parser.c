@@ -140,7 +140,6 @@ static void EApduRequestHandler(EAPDURequestPayload_t *request)
     case CMD_CHECK_LOCK_STATUS:
         CheckDeviceLockStatusService(request);
         break;
-#ifdef WEB3_VERSION
     case CMD_EXPORT_ADDRESS:
         ExportAddressService(request);
         break;

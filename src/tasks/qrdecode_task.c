@@ -21,7 +21,6 @@
 #include "assert.h"
 #include "qrdecode_task.h"
 #include "gui_resolve_ur.h"
-#ifdef WEB3_VERSION
 #include "gui_key_derivation_request_widgets.h"
 #endif
 

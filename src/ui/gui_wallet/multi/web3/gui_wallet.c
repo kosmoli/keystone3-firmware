@@ -131,7 +131,6 @@ UREncodeResult *GuiGetStandardBtcData(void)
     return urEncode;
 }
 
-#ifdef CYPHERPUNK_VERSION
 UREncodeResult *GuiGetCakeData(void)
 {
     char *xPub = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_0);

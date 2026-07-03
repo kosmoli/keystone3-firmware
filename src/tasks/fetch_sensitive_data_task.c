@@ -25,7 +25,6 @@ void CreateFetchSensitiveDataTask(void)
 {
     const osThreadAttr_t SensitiveDataTask_attributes = {
         .name = "SensitiveDataTask",
-#ifdef CYPHERPUNK_VERSION
         .stack_size = 1024 * 44,
 #else
         .stack_size = 1024 * 40,

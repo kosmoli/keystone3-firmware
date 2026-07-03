@@ -17,7 +17,6 @@
 #include "power_manager.h"
 #include "account_manager.h"
 #include "version.h"
-#include "legacy_web_update_pad.h"
 #include "lv_i18n_api.h"
 #include "fetch_sensitive_data_task.h"
 #include "ctaes.h"
@@ -155,8 +154,6 @@ void DeviceSettingsInit(void)
     }
 
     InitBootParam();
-
-    LegacyWebUpdatePadTouch();
 }
 
 void InitBootParam(void)
@@ -469,12 +466,10 @@ void WipeDevice(void)
     {
         void GuiResetAllUtxoAddressIndex(void);
         GuiResetAllUtxoAddressIndex();
-#ifdef WEB3_VERSION
         void GuiResetAllEthAddressIndex(void);
         void GuiResetAllStandardAddressIndex(void);
         GuiResetAllEthAddressIndex();
         GuiResetAllStandardAddressIndex();
-#endif
     }
 
     uint32_t wipeFlag = DEVICE_WIPE_FLAG_MAGIC_NUM;

@@ -10,15 +10,7 @@
 #define SOFTWARE_VERSION_BUILD              0
 #define SOFTWARE_VERSION_BETA               1
 #define SOFTWARE_VERSION                    (SOFTWARE_VERSION_MAJOR * 10000 + SOFTWARE_VERSION_MINOR * 100 + SOFTWARE_VERSION_BUILD)
-#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
 #define SOFTWARE_VERSION_SUFFIX             " - KOSMO"
-#elif defined(CYPHERPUNK_VERSION)
-#define SOFTWARE_VERSION_SUFFIX             " - Cypherpunk"
-#elif defined(WEB3_VERSION)
-#define SOFTWARE_VERSION_SUFFIX             ""
-#elif defined(BTC_ONLY)
-#define SOFTWARE_VERSION_SUFFIX             " - BTC"
-#endif
 
 #if SOFTWARE_VERSION_MAJOR > 99 || SOFTWARE_VERSION_MINOR > 99 || SOFTWARE_VERSION_BUILD > 99
 #error "Invalid software version"

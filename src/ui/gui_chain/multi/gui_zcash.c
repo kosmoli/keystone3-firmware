@@ -38,14 +38,10 @@ void *GuiGetZcashGUIData(void)
 
     PtrT_TransactionParseResult_DisplayPczt parseResult = NULL;
     do {
-#ifdef WEB3_VERSION
         parseResult = parse_zcash_tx_multi_coins(data, sfp);
-#endif
-#ifdef CYPHERPUNK_VERSION
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
         GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
         parseResult = parse_zcash_tx_cypherpunk(data, ufvk, sfp);
-#endif
         CHECK_CHAIN_BREAK(parseResult);
         g_zcashData = parseResult->data;
         g_parseResult = (void *)parseResult;
@@ -311,15 +307,11 @@ PtrT_TransactionCheckResult GuiGetZcashCheckResult(void)
     MnemonicType mnemonicType = GetMnemonicType();
     printf("mnemonicType: %d\n", mnemonicType);
 
-#ifdef WEB3_VERSION
     char *xpub = GetCurrentAccountPublicKey(XPUB_TYPE_ZEC_TRANSPARENT_LEGACY);
     return check_zcash_tx_multi_coins(data, xpub, sfp, zcash_account_index, mnemonicType == MNEMONIC_TYPE_SLIP39);
-#endif
-#ifdef CYPHERPUNK_VERSION
     char ufvk[ZCASH_UFVK_MAX_LEN + 1] = {0};
     GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
     return check_zcash_tx_cypherpunk(data, ufvk, sfp, zcash_account_index, !IsZcashSupportedForCurrentMnemonic());
-#endif
 }
 
 UREncodeResult *GuiGetZcashSignQrCodeData(void)

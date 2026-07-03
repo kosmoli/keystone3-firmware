@@ -10,28 +10,21 @@
 #include "gui_views.h"
 #include "gui_chain.h"
 
-#ifdef BTC_ONLY
 #include "gui_import_multisig_wallet_info_widgets.h"
 #include "gui_create_multisig_wallet_widgets.h"
-#endif
 
-#ifdef WEB3_VERSION
 #include "gui_key_derivation_request_widgets.h"
 #include "gui_derive_context_hash_request_widgets.h"
 #include "gui_eth_batch_tx_widgets.h"
-#endif
 
 // The order of the enumeration must be guaranteed
 static SetChainData_t g_chainViewArray[] = {
     {REMAPVIEW_BTC, (SetChainDataFunc)GuiSetPsbtUrData},
     {REMAPVIEW_BTC_MESSAGE, (SetChainDataFunc)GuiSetPsbtUrData},
-#ifdef CYPHERPUNK_VERSION
     {REMAPVIEW_ZCASH, (SetChainDataFunc)GuiSetZcashUrData},
     {REMAPVIEW_XMR_OUTPUT, (SetChainDataFunc)GuiSetMoneroUrData},
     {REMAPVIEW_XMR_UNSIGNED, (SetChainDataFunc)GuiSetMoneroUrData},
-#endif
 
-#ifdef WEB3_VERSION
     {REMAPVIEW_ETH, (SetChainDataFunc)GuiSetEthUrData},
     {REMAPVIEW_ETH_PERSONAL_MESSAGE, (SetChainDataFunc)GuiSetEthUrData},
     {REMAPVIEW_ETH_TYPEDDATA, (SetChainDataFunc)GuiSetEthUrData},
@@ -60,7 +53,6 @@ static SetChainData_t g_chainViewArray[] = {
     {REMAPVIEW_IOTA, (SetChainDataFunc)GuiSetIotaUrData},
     {REMAPVIEW_IOTA_SIGN_MESSAGE_HASH, (SetChainDataFunc)GuiSetIotaUrData},
     {REMAPVIEW_ZCASH, (SetChainDataFunc)GuiSetZcashUrData},
-#endif
 };
 
 void HandleDefaultViewType(URParseResult *urResult, URParseMultiResult *urMultiResult, UrViewType_t urViewType, bool is_multi)
@@ -81,7 +73,6 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
     case WebAuthResult:
         GuiSetWebAuthResultData(urResult, urMultiResult, is_multi);
         break;
-#ifdef WEB3_VERSION
     case KeyDerivationRequest:
         GuiSetKeyDerivationRequestData(urResult, urMultiResult, is_multi);
         break;
@@ -91,44 +82,25 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
     case EthBatchTx:
         GuiSetEthBatchTxData(urResult, urMultiResult, is_multi);
         break;
-#endif
-#ifdef BTC_ONLY
-    case MultisigWalletImport:
-        GuiSetMultisigImportWalletDataByQRCode(urResult, urMultiResult, is_multi);
-        break;
-    case MultisigCryptoImportXpub:
-    case MultisigBytesImportXpub:
-        GuiSetMultisigImportXpubByQRCode(urResult);
-        break;
-#endif
     default:
         HandleDefaultViewType(urResult, urMultiResult, urViewType, is_multi);
         break;
     }
 
     if (urViewType.viewType == WebAuthResult
-#ifdef WEB3_VERSION
             || urViewType.viewType == KeyDerivationRequest
             || urViewType.viewType == DeriveContextHashRequest
             || urViewType.viewType == EthBatchTx
-#endif
-#ifdef BTC_ONLY
-            || urViewType.viewType == MultisigWalletImport
-            || urViewType.viewType == MultisigBytesImportXpub
-            || urViewType.viewType == MultisigCryptoImportXpub
-#endif
             || viewType != REMAPVIEW_BUTT) {
         StopQrDecode();
         UserDelay(500);
         GuiApiEmitSignal(SIG_QRCODE_VIEW_SCAN_PASS, &urViewType, sizeof(urViewType));
     } else {
         printf("unhandled viewType=%d\r\n", urViewType.viewType);
-#ifndef BTC_ONLY
         if (urViewType.viewType == KeyDerivationRequest) {
             StopQrDecode();
             UserDelay(500);
             GuiApiEmitSignal(SIG_QRCODE_VIEW_SCAN_FAIL, &urViewType, sizeof(urViewType));
         }
-#endif
     }
 }

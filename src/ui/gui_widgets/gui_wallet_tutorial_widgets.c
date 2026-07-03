@@ -36,7 +36,6 @@ static PageWidget_t *g_pageWidget = NULL;
 
 static void WalletTutorialsInit()
 {
-#ifndef BTC_ONLY
     // WALLET_LIST_BLUE
     g_tutorials[WALLET_LIST_BLUE].len = 1;
     g_tutorials[WALLET_LIST_BLUE].desc = _("connect_wallet_desc");
@@ -415,91 +414,6 @@ static void WalletTutorialsInit()
     g_tutorials[WALLET_LIST_CORE].items[0].qrTitle = _("connect_core_title");
     g_tutorials[WALLET_LIST_CORE].items[0].qrUrl = _("connect_core_link");
 
-#else
-    g_tutorials[WALLET_LIST_BLUE].len = 1;
-    g_tutorials[WALLET_LIST_BLUE].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_BLUE].items[0].walletName = _("connect_bw_title");
-    g_tutorials[WALLET_LIST_BLUE].items[0].url = _("connect_bw_link");
-    g_tutorials[WALLET_LIST_BLUE].items[0].qrTitle = _("connect_bw_title");
-    g_tutorials[WALLET_LIST_BLUE].items[0].qrUrl = _("connect_bw_link");
-
-    g_tutorials[WALLET_LIST_SPECTER].len = 1;
-    g_tutorials[WALLET_LIST_SPECTER].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_SPECTER].items[0].walletName = _("connect_specter_title");
-    g_tutorials[WALLET_LIST_SPECTER].items[0].url = _("connect_specter_link");
-    g_tutorials[WALLET_LIST_SPECTER].items[0].qrTitle = _("connect_specter_title");
-    g_tutorials[WALLET_LIST_SPECTER].items[0].qrUrl = _("connect_specter_link");
-
-    g_tutorials[WALLET_LIST_SPARROW].len = 1;
-    g_tutorials[WALLET_LIST_SPARROW].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_SPARROW].items[0].walletName = _("connect_sparrow_title");
-    g_tutorials[WALLET_LIST_SPARROW].items[0].url = _("connect_sparrow_link");
-    g_tutorials[WALLET_LIST_SPARROW].items[0].qrTitle = _("connect_sparrow_title");
-    g_tutorials[WALLET_LIST_SPARROW].items[0].qrUrl = _("connect_sparrow_link");
-
-    g_tutorials[WALLET_LIST_UNISAT].len = 1;
-    g_tutorials[WALLET_LIST_UNISAT].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_UNISAT].items[0].walletName = _("connect_unisat_title");
-    g_tutorials[WALLET_LIST_UNISAT].items[0].url = _("connect_unisat_link");
-    g_tutorials[WALLET_LIST_UNISAT].items[0].qrTitle = _("connect_unisat_qr_title");
-    g_tutorials[WALLET_LIST_UNISAT].items[0].qrUrl = _("connect_unisat_qr_link");
-
-    g_tutorials[WALLET_LIST_NUNCHUK].len = 1;
-    g_tutorials[WALLET_LIST_NUNCHUK].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_NUNCHUK].items[0].walletName = _("connect_nunchuk_title");
-    g_tutorials[WALLET_LIST_NUNCHUK].items[0].url = _("connect_nunchuk_link");
-    g_tutorials[WALLET_LIST_NUNCHUK].items[0].qrTitle = _("connect_nunchuk_title");
-    g_tutorials[WALLET_LIST_NUNCHUK].items[0].qrUrl = _("connect_nunchuk_link");
-
-    g_tutorials[WALLET_LIST_ZEUS].len = 1;
-    g_tutorials[WALLET_LIST_ZEUS].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_ZEUS].items[0].walletName = _("connect_zeus_title");
-    g_tutorials[WALLET_LIST_ZEUS].items[0].url = _("connect_zeus_link");
-    g_tutorials[WALLET_LIST_ZEUS].items[0].qrTitle = _("connect_zeus_title");
-    g_tutorials[WALLET_LIST_ZEUS].items[0].qrUrl = _("connect_zeus_link");
-
-    g_tutorials[WALLET_LIST_BABYLON].len = 1;
-    g_tutorials[WALLET_LIST_BABYLON].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_BABYLON].items[0].walletName = "Babylon";
-    g_tutorials[WALLET_LIST_BABYLON].items[0].url = "https://keyst.one/t/3rd/babylon";
-    g_tutorials[WALLET_LIST_BABYLON].items[0].qrTitle = "Babylon";
-    g_tutorials[WALLET_LIST_BABYLON].items[0].qrUrl = "https://keyst.one/t/3rd/babylon";
-
-    g_tutorials[WALLET_LIST_BULL].len = 1;
-    g_tutorials[WALLET_LIST_BULL].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_BULL].items[0].walletName = BULL_WALLET_TITLE;
-    g_tutorials[WALLET_LIST_BULL].items[0].url = BULL_WALLET_LINK;
-    g_tutorials[WALLET_LIST_BULL].items[0].qrTitle = BULL_WALLET_TITLE;
-    g_tutorials[WALLET_LIST_BULL].items[0].qrUrl = BULL_WALLET_LINK;
-
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].len = 1;
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].desc = _("connect_wallet_desc");
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].items[0].walletName = "Bitcoin Safe";
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].items[0].url = "https://keyst.one/t/3rd/bitcoinsafe";
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].items[0].qrTitle = "Bitcoin Safe";
-    g_tutorials[WALLET_LIST_BITCOIN_SAFE].items[0].qrUrl = "https://keyst.one/t/3rd/bitcoinsafe";
-#endif
-#if BTC_ONLY
-    // multisig
-    if (GetCurrentWalletIndex() != SINGLE_WALLET) {
-        g_tutorials[WALLET_LIST_BLUE].items[0].url = _("connect_bw_multisig_link");
-        g_tutorials[WALLET_LIST_BLUE].items[0].qrUrl = _("connect_bw_multisig_link");
-
-        g_tutorials[WALLET_LIST_SPARROW].items[0].url = _("connect_sparrow_multisig_link");
-        g_tutorials[WALLET_LIST_SPARROW].items[0].qrUrl = _("connect_sparrow_multisig_link");
-
-        g_tutorials[WALLET_LIST_NUNCHUK].items[0].url = _("connect_nunchuk_multisig_link");
-        g_tutorials[WALLET_LIST_NUNCHUK].items[0].qrUrl = _("connect_nunchuk_multisig_link");
-    } else {
-        g_tutorials[WALLET_LIST_BLUE].items[0].url = _("connect_bw_link");
-        g_tutorials[WALLET_LIST_BLUE].items[0].qrUrl = _("connect_bw_link");
-
-        g_tutorials[WALLET_LIST_SPARROW].items[0].url = _("connect_sparrow_link");
-        g_tutorials[WALLET_LIST_SPARROW].items[0].qrUrl = _("connect_sparrow_link");
-
-        g_tutorials[WALLET_LIST_NUNCHUK].items[0].url = _("connect_nunchuk_link");
-        g_tutorials[WALLET_LIST_NUNCHUK].items[0].qrUrl = _("connect_nunchuk_link");
-    }
 #endif
 }
 

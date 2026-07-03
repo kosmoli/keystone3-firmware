@@ -32,7 +32,6 @@ static lv_obj_t *g_egCont = NULL;
 static char **g_derivationPathDescs = NULL;
 static lv_event_cb_t g_changed_cb = NULL;
 
-#ifdef WEB3_VERSION
 static const PathItem_t g_ethPaths[] = {
     {"BIP44 Standard",          "",     "m/44'/60'/0'"  },
     {"Ledger Live",             "",     "m/44'/60'"     },
@@ -42,7 +41,6 @@ static void GetEthPathItemSubTittle(char* subTitle, int index, uint32_t maxLen);
 static void GetSolPathItemSubTitle(char* subTitle, int index, uint32_t maxLen);
 static void GetADAPathItemSubTitle(char* subTitle, int index, uint32_t maxLen);
 static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t type);
-#endif
 
 static void GetChangePathLabelHint(char* hint);
 static uint32_t GetDerivedPathTypeCount();
@@ -65,11 +63,9 @@ void GuiCreateSwitchPathTypeWidget(lv_obj_t *parent, HOME_WALLET_CARD_ENUM chain
     g_changed_cb = changed_cb;
     g_currentChain = chain;
     g_currentAccountIndex = GetCurrentAccountIndex();
-#ifdef WEB3_VERSION
     if (chain == HOME_WALLET_CARD_ADA) {
         SetPathIndex(GetReceivePageAdaXPubType());
     }
-#endif
     g_selectType = GetPathIndex();
     InitDerivationPathDesc(chain);
 
@@ -165,12 +161,10 @@ static void ConfirmAddrTypeHandler(lv_event_t *e)
     if (code == LV_EVENT_CLICKED && IsAddrTypeSelectChanged()) {
         SetPathIndex(g_selectType);
         SetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin, g_selectType);
-#ifdef WEB3_VERSION
         if (g_changed_cb != NULL) {
             SetReceivePageAdaXPubType(g_selectType);
             g_changed_cb(e);
         }
-#endif
         ReturnHandler(e);
     }
 }
@@ -193,7 +187,6 @@ static void SetPathIndex(uint32_t index)
 static void InitDerivationPathDesc(uint8_t chain)
 {
     switch (chain) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ETH:
         g_derivationPathDescs = GetDerivationPathDescs(ETH_DERIVATION_PATH_DESC);
         break;
@@ -204,7 +197,6 @@ static void InitDerivationPathDesc(uint8_t chain)
     case HOME_WALLET_CARD_ADA:
         g_derivationPathDescs = GetDerivationPathDescs(ADA_DERIVATION_PATH_DESC);
         break;
-#endif
     default:
         break;
     }
@@ -295,11 +287,9 @@ static void RefreshDefaultAddress(void)
 static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
 {
     switch (g_currentChain) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA:
         ModelGetADAAddress(index, item, 0);
         break;
-#endif
     default:
         break;
     }
@@ -318,14 +308,12 @@ static void UpdateConfirmAddrTypeBtn(void)
 
 static bool IsOnlyOneAddress(uint8_t addrType)
 {
-#ifdef WEB3_VERSION
     if (g_currentChain == HOME_WALLET_CARD_SOL && addrType == 1) {
         return true;
     }
     if (g_currentChain == HOME_WALLET_CARD_HNT && addrType == 1) {
         return true;
     }
-#endif
     return false;
 }
 
@@ -352,17 +340,14 @@ static void UpdateAddrTypeCheckbox(uint8_t i, bool isChecked)
         lv_obj_add_flag(g_changePathWidgets[i].checkedImg, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(g_changePathWidgets[i].uncheckedImg, LV_OBJ_FLAG_HIDDEN);
     }
-#ifdef WEB3_VERSION
     if (g_currentChain == HOME_WALLET_CARD_ADA && isChecked) {
         RefreshDefaultAddress();
     }
-#endif
 }
 
 static uint32_t GetDerivedPathTypeCount()
 {
     switch (g_currentChain) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ETH:
         return 3;
     case HOME_WALLET_CARD_SOL:
@@ -370,7 +355,6 @@ static uint32_t GetDerivedPathTypeCount()
         return 3;
     case HOME_WALLET_CARD_ADA:
         return 2;
-#endif
     default:
         return 3;
     }
@@ -379,7 +363,6 @@ static uint32_t GetDerivedPathTypeCount()
 static const char* GetChangePathItemTitle(uint32_t i)
 {
     switch (g_currentChain) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ETH:
         return (char *)g_ethPaths[i].title;
     case HOME_WALLET_CARD_SOL:
@@ -397,7 +380,6 @@ static const char* GetChangePathItemTitle(uint32_t i)
         } else if (i == 1) {
             return _("receive_ada_more_t_ledger");
         }
-#endif
     default:
         break;
     }
@@ -407,7 +389,6 @@ static const char* GetChangePathItemTitle(uint32_t i)
 static void GetChangePathLabelHint(char* hint)
 {
     switch (g_currentChain) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ETH:
         snprintf_s(hint, BUFFER_SIZE_128, "%s", _("derivation_path_select_eth"));
         return;
@@ -418,13 +399,11 @@ static void GetChangePathLabelHint(char* hint)
     case HOME_WALLET_CARD_ADA:
         snprintf_s(hint, BUFFER_SIZE_128, "%s", _("derivation_path_select_ada"));
         return;
-#endif
     default:
         break;
     }
 }
 
-#ifdef WEB3_VERSION
 static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t type)
 {
     char *xPub = NULL, hdPath[BUFFER_SIZE_128] = {0};
@@ -486,4 +465,3 @@ static void GetEthPathItemSubTittle(char* subTitle, int index, uint32_t maxLen)
         break;
     }
 }
-#endif

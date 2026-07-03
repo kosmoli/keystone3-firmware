@@ -131,9 +131,7 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
     case SIG_INIT_POWER_OPTION:
         rcvValue = *(uint32_t *)param;
         if (rcvValue != 0) {
-#ifdef WEB3_VERSION
             NftLockQuit();
-#endif
             OpenMsgBox(&g_guiMsgBoxPowerOption);
         } else {
             CloseMsgBox(&g_guiMsgBoxPowerOption);
@@ -189,12 +187,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
     case SIG_STATUS_BAR_REFRESH:
         GuiStatusBarSetUsb();
         break;
-#ifdef BTC_ONLY
-    case SIG_STATUS_BAR_TEST_NET:
-        GuiStatusBarSetTestNet();
-        break;
-#endif
-#ifdef WEB3_VERSION
     case SIG_INIT_NFT_BIN:
         rcvValue = *(uint32_t *)param;
         if (rcvValue != 0) {
@@ -206,7 +198,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
     case SIG_INIT_NFT_BIN_TRANS_FAIL:
         GuiNftTransferFailed();
         break;
-#endif
     default:
         return ERR_GUI_UNHANDLED;
     }

@@ -19,7 +19,6 @@ typedef struct {
 
 bool CheckViewTypeIsAllow(uint8_t viewType)
 {
-#ifdef WEB3_VERSION
     switch (ViewTypeReMap(viewType)) {
     case REMAPVIEW_ETH:
     case REMAPVIEW_ETH_PERSONAL_MESSAGE:
@@ -42,10 +41,7 @@ bool CheckViewTypeIsAllow(uint8_t viewType)
     default:
         return false;
     }
-#endif
-#ifdef CYPHERPUNK_VERSION
     return ViewTypeReMap(viewType) == REMAPVIEW_BTC || ViewTypeReMap(viewType) == REMAPVIEW_BTC_MESSAGE;
-#endif
     return false;
 }
 
@@ -56,7 +52,6 @@ static const ViewHandlerEntry g_viewHandlerMap[] = {
     {BtcTx, GuiGetBtcSignQrCodeData, GuiGetBtcSignUrDataUnlimited, GuiGetPsbtCheckResult, CHAIN_BTC, REMAPVIEW_BTC},
     {BtcMsg, GuiGetBtcSignQrCodeData, GuiGetBtcSignUrDataUnlimited, GuiGetPsbtCheckResult, CHAIN_BTC, REMAPVIEW_BTC_MESSAGE},
 
-#ifdef WEB3_VERSION
     {LtcTx, GuiGetBtcSignQrCodeData, GuiGetBtcSignUrDataUnlimited, GuiGetPsbtCheckResult, CHAIN_LTC, REMAPVIEW_BTC},
     {DogeTx, GuiGetBtcSignQrCodeData, GuiGetBtcSignUrDataUnlimited, GuiGetPsbtCheckResult, CHAIN_DOGE, REMAPVIEW_BTC},
     {DashTx, GuiGetBtcSignQrCodeData, GuiGetBtcSignUrDataUnlimited, GuiGetPsbtCheckResult, CHAIN_DASH, REMAPVIEW_BTC},
@@ -105,13 +100,10 @@ static const ViewHandlerEntry g_viewHandlerMap[] = {
     {TonTx, GuiGetTonSignQrCodeData, NULL, GuiGetTonCheckResult, CHAIN_TON, REMAPVIEW_TON},
     {TonSignProof, GuiGetTonProofSignQrCodeData, NULL, GuiGetTonCheckResult, CHAIN_TON, REMAPVIEW_TON_SIGNPROOF},
     {ZcashTx, GuiGetZcashSignQrCodeData, NULL, GuiGetZcashCheckResult, CHAIN_ZCASH, REMAPVIEW_ZCASH},
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     {ZcashTx, GuiGetZcashSignQrCodeData, NULL, GuiGetZcashCheckResult, CHAIN_ZCASH, REMAPVIEW_ZCASH},
     {XmrOutput, GuiGetMoneroKeyimagesQrCodeData, NULL, GuiGetMoneroOutputCheckResult, CHAIN_XMR, REMAPVIEW_XMR_OUTPUT},
     {XmrTxUnsigned, GuiGetMoneroSignedTransactionQrCodeData, NULL, GuiGetMoneroUnsignedTxCheckResult, CHAIN_XMR, REMAPVIEW_XMR_UNSIGNED},
-#endif
 };
 
 static const ViewHandlerEntry *GetViewHandlerEntry(ViewType viewType);
@@ -127,11 +119,9 @@ PtrT_TransactionCheckResult CheckUrResult(uint8_t viewType)
 
 GuiChainCoinType ViewTypeToChainTypeSwitch(uint8_t viewType)
 {
-#ifdef WEB3_VERSION
     if (viewType == CosmosTx || viewType == CosmosEvmTx) {
         return GuiGetCosmosTxChain();
     }
-#endif
 
     const ViewHandlerEntry *entry = GetViewHandlerEntry(viewType);
     if (entry != NULL) {
@@ -140,7 +130,6 @@ GuiChainCoinType ViewTypeToChainTypeSwitch(uint8_t viewType)
     return CHAIN_BUTT;
 }
 
-#ifdef WEB3_VERSION
 bool IsMessageType(uint8_t type)
 {
     return type == EthPersonalMessage || type == EthTypedData || type == TronPersonalMessage || IsCosmosMsg(type) || type == SolanaMessage || IsAptosMsg(type) || type == BtcMsg || type == ArweaveMessage || type == CardanoSignData || type == CardanoSignCip8Data;
@@ -155,7 +144,6 @@ bool isTonSignProof(uint8_t type)
 {
     return type == TonSignProof;
 }
-#endif
 
 static GenerateUR UrGenerator(ViewType viewType, bool isMulti)
 {

@@ -32,11 +32,8 @@
 #define SLIP39_MNEMONIC_WORDS_MAX               (33)
 #define SLIP39_MNEMONIC_20_WORDS                (20)
 #define SLIP39_MNEMONIC_33_WORDS                (33)
-#ifdef CYPHERPUNK_VERSION
 #define SLIP39_DEFAULT_MNEMONIC_WORDS           SLIP39_MNEMONIC_33_WORDS
-#else
 #define SLIP39_DEFAULT_MNEMONIC_WORDS           SLIP39_MNEMONIC_20_WORDS
-#endif
 #define SLIP39_MAX_SLICE_COUNT                  (16)
 
 #define SLIP39_INVALID_MNEMONIC_INDEX           (~0)

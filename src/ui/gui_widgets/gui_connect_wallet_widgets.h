@@ -4,12 +4,9 @@
 #include "gui_views.h"
 #include "librust_c.h"
 #include "gui_attention_hintbox.h"
-#ifdef WEB3_VERSION
 #include "gui_ar.h"
-#endif
 
 typedef enum {
-#ifndef BTC_ONLY
     WALLET_LIST_KEYSTONE,
     WALLET_LIST_METAMASK,
     WALLET_LIST_OKX,
@@ -60,17 +57,6 @@ typedef enum {
     WALLET_LIST_FEATHER,
     WALLET_LIST_VIZOR,
     WALLET_LIST_BTC_WALLET,
-#else
-    WALLET_LIST_BLUE,
-    WALLET_LIST_SPECTER,
-    WALLET_LIST_SPARROW,
-    WALLET_LIST_NUNCHUK,
-    WALLET_LIST_ZEUS,
-    WALLET_LIST_BABYLON,
-    WALLET_LIST_BULL,
-    WALLET_LIST_BITCOIN_SAFE,
-    WALLET_LIST_UNISAT,
-#endif
     WALLET_LIST_BUTT,
 } WALLET_LIST_INDEX_ENUM;
 
@@ -93,11 +79,7 @@ typedef struct {
     const lv_img_dsc_t **coinIcons;
     uint8_t coinCount;
     bool enable;
-#ifdef BTC_ONLY
-    bool alpha;
-#else
     uint8_t filter;
-#endif
 } WalletListItem_t;
 
 void GuiConnectWalletInit(void);
@@ -109,7 +91,6 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index);
 void GuiConnectWalletHandleURGenerate(char *data, uint16_t len);
 void GuiConnectWalletHandleURUpdate(char *data, uint16_t len);
 uint8_t GuiConnectWalletGetWalletIndex(void);
-#ifdef WEB3_VERSION
 typedef enum {
     BTC,
     ETH,
@@ -149,6 +130,5 @@ void GuiSetupArConnectWallet(void);
 void GuiConnectWalletPasswordErrorCount(void *param);
 void GuiConnectShowRsaSetupasswordHintbox(void);
 UREncodeResult *GuiGetNaboxData(void);
-#endif
 #endif /* _GUI_CONNECT_WALLET_WIDGETS_H */
 

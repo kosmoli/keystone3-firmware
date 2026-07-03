@@ -143,9 +143,7 @@ static void SetCurrentSelectIndex(uint32_t index);
 
 static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t type);
 
-#ifdef WEB3_VERSION
 static void OpenChangePathTypeHandler(lv_event_t *e);
-#endif
 
 static MultiAccountsReceiveWidgets_t g_multiAccountsReceiveWidgets;
 static MultiAccountsReceiveTile g_multiAccountsReceiveTileNow;
@@ -301,7 +299,6 @@ static void GuiCreateMoreWidgets(lv_obj_t *parent)
     label = GuiCreateTextLabel(btn, _("switch_account"));
     lv_obj_align(label, LV_ALIGN_LEFT_MID, 60, 4);
 
-#ifdef WEB3_VERSION
     if (g_chainCard == HOME_WALLET_CARD_ADA && GetMnemonicType() != MNEMONIC_TYPE_SLIP39) {
         btn = lv_btn_create(cont);
         lv_obj_set_size(btn, 456, 84);
@@ -316,7 +313,6 @@ static void GuiCreateMoreWidgets(lv_obj_t *parent)
         label = GuiCreateTextLabel(btn, _("derivation_path_change"));
         lv_obj_align(label, LV_ALIGN_LEFT_MID, 60, 4);
     }
-#endif
 }
 
 static void GuiMultiAccountsReceiveGotoTile(MultiAccountsReceiveTile tile)
@@ -337,17 +333,13 @@ lv_obj_t *CreateMultiAccountsReceiveQRCode(lv_obj_t *parent, uint16_t w, uint16_
 
 static uint16_t GetAddrYExtend(void)
 {
-#ifdef WEB3_VERSION
     if (g_chainCard == HOME_WALLET_CARD_SUI) {
         return 30;
     }
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         return 60;
     }
-#endif
     return 0;
 }
 
@@ -373,7 +365,6 @@ static void GuiCreateQrCodeWidget(lv_obj_t *parent)
     yOffset += 16;
     g_multiAccountsReceiveWidgets.addressLabel = GuiCreateNoticeLabel(g_multiAccountsReceiveWidgets.qrCodeCont, "");
     uint16_t addressLabelWidth = 280;
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         addressLabelWidth = 336;
     }
@@ -386,7 +377,6 @@ static void GuiCreateQrCodeWidget(lv_obj_t *parent)
         lv_obj_add_event_cb(g_multiAccountsReceiveWidgets.questionImg, ShowAddressDetailHandler, LV_EVENT_CLICKED, NULL);
         lv_obj_add_flag(g_multiAccountsReceiveWidgets.questionImg, LV_OBJ_FLAG_CLICKABLE);
     }
-#endif
 
     lv_obj_set_width(g_multiAccountsReceiveWidgets.addressLabel, addressLabelWidth);
     lv_obj_align(g_multiAccountsReceiveWidgets.addressLabel, LV_ALIGN_TOP_LEFT, 36, yOffset);
@@ -602,7 +592,6 @@ static void RefreshQrCode(void)
     }
     char string[128] = {0};
     char *addressPrefix = _("Address");
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         addressPrefix = _("Sub_Address");
         snprintf_s(string, sizeof(string), "%s", addressDataItem.address);
@@ -611,11 +600,8 @@ static void RefreshQrCode(void)
             addressPrefix = _("Primary_Address");
         }
     }
-#endif
 
-#ifdef WEB3_VERSION
     CutAndFormatString(string, sizeof(string), addressDataItem.address, 20);
-#endif
     lv_label_set_text(g_multiAccountsReceiveWidgets.addressLabel, string);
     lv_label_set_text_fmt(g_multiAccountsReceiveWidgets.addressCountLabel, "%s-%u", addressPrefix, (addressDataItem.index));
 }
@@ -629,7 +615,6 @@ static void RefreshSwitchAddress(void)
     for (uint32_t i = 0; i < 5; i++) {
         ModelGetAddress(index, &addressDataItem, 0);
         char *addressPrefix = _("Address");
-#ifdef CYPHERPUNK_VERSION
         if (g_chainCard == HOME_WALLET_CARD_MONERO) {
             addressPrefix = _("Sub_Address");
             uint32_t accountIndex = g_selectedAccount[GetCurrentAccountIndex()];
@@ -638,7 +623,6 @@ static void RefreshSwitchAddress(void)
                 addressPrefix = _("Primary_Address");
             }
         }
-#endif
         lv_label_set_text_fmt(g_multiAccountsReceiveWidgets.switchAddressWidgets[i].addressCountLabel, "%s-%u", addressPrefix, (addressDataItem.index));
         char string[128] = {0};
         CutAndFormatString(string, sizeof(string), addressDataItem.address, 24);
@@ -680,17 +664,13 @@ static int GetMaxAddressIndex(void)
 static int GetMaxAccountIndex(void)
 {
     switch (g_chainCard) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA:
         return ACCOUNT_INDEX_MAX;
         break;
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     case HOME_WALLET_CARD_MONERO:
         return GENERAL_ACCOUNT_INDEX_MAX;
         break;
-#endif
     default:
         break;
     }
@@ -920,11 +900,9 @@ static void TutorialHandler(lv_event_t *e)
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
 
     TUTORIAL_LIST_INDEX_ENUM index = TUTORIAL_ADA_RECEIVE;
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         index = TUTORIAL_XMR_RECEIVE;
     }
-#endif
     GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
 }
 
@@ -996,14 +974,10 @@ static void RightSwitchAccountBtnHandler(lv_event_t *e)
 static bool IsAddressSwitchable()
 {
     switch (g_chainCard) {
-#ifdef CYPHERPUNK_VERSION
     case HOME_WALLET_CARD_MONERO:
         return true;
-#endif
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA:
         return true;
-#endif
     default:
         return false;
     }
@@ -1012,10 +986,8 @@ static bool IsAddressSwitchable()
 static bool IsPathTypeSwitchable()
 {
     switch (g_chainCard) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA:
         return (GetMnemonicType() == MNEMONIC_TYPE_SLIP39) ? false : true;
-#endif
     default:
         return false;
     }
@@ -1024,14 +996,10 @@ static bool IsPathTypeSwitchable()
 static bool HasMoreBtn()
 {
     switch (g_chainCard) {
-#ifdef CYPHERPUNK_VERSION
     case HOME_WALLET_CARD_MONERO:
         return true;
-#endif
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA:
         return true;
-#endif
     default:
         return false;
     }
@@ -1098,7 +1066,6 @@ static void RefreshSwitchAccount(void)
 
     bool end = false;
     for (uint32_t i = 0; i < 5; i++) {
-#ifdef CYPHERPUNK_VERSION
         AddressDataItem_t addressDataItem;
         if (g_chainCard == HOME_WALLET_CARD_MONERO) {
             ModelGetAddress(index, &addressDataItem, 1);
@@ -1108,14 +1075,11 @@ static void RefreshSwitchAccount(void)
             CutAndFormatString(string, sizeof(string), addressDataItem.address, 24);
             lv_label_set_text(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, string);
         }
-#endif
 
-#ifdef WEB3_VERSION
         char temp[BUFFER_SIZE_64];
         snprintf_s(temp, BUFFER_SIZE_64, "m/1852'/1815'/%u'", index);
         lv_label_set_text(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, temp);
         lv_label_set_text_fmt(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressCountLabel, "%s-%u", _("account_head"), index);
-#endif
         if (end) {
             lv_obj_add_flag(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressCountLabel, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, LV_OBJ_FLAG_HIDDEN);
@@ -1171,11 +1135,9 @@ static void GuiCreateSwitchAccountWidget()
     g_multiAccountsReceiveWidgets.switchAccountCont = page;
     SetNavBarLeftBtn(page->navBarWidget, NVS_BAR_RETURN, CloseSwitchAccountHandler, NULL);
     SetMidBtnLabel(page->navBarWidget, NVS_BAR_MID_LABEL, _("switch_account"));
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         SetNavBarRightBtn(page->navBarWidget, NVS_BAR_QUESTION_MARK, ShowMoneroSwitchAccountHintBox, NULL);
     }
-#endif
     // Create the account list page.
     uint32_t index;
     lv_obj_t *cont = GuiCreateContainerWithParent(page->contentZone, 408, 514);
@@ -1233,7 +1195,6 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
     char *xPub = NULL, *pvk = NULL, hdPath[BUFFER_SIZE_128];
     SimpleResponse_c_char *result = NULL;
     switch (g_chainCard) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_ADA: {
         uint32_t currentAccount = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
         xPub = GetCurrentAccountPublicKey(GetReceivePageAdaXPubTypeByIndex(currentAccount));
@@ -1252,9 +1213,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
         }
         break;
     }
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     case HOME_WALLET_CARD_MONERO:
         switch (type) {
         case 1:
@@ -1274,7 +1233,6 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
             break;
         }
         break;
-#endif
     default:
         break;
     }
@@ -1297,7 +1255,6 @@ void GuiResetCurrentMultiAccountsCache(uint8_t index)
     g_selectedAccount[index] = 0;
 }
 
-#ifdef CYPHERPUNK_VERSION
 static void ShowMoneroSwitchAccountHintBox(lv_event_t *e)
 {
     GuiCreateTooltipHintBox(_("xmr_primary_address_title"), _("xmr_primary_address_desc"), _("xmr_primary_address_link"));
@@ -1308,12 +1265,9 @@ static void ShowAddressDetailHandler(lv_event_t *e)
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
     GuiCreateAddressDetailWidgets(g_multiAccountsReceiveWidgets.tileQrCode);
 }
-#endif
 
-#ifdef WEB3_VERSION
 static void OpenChangePathTypeHandler(lv_event_t *e)
 {
     GuiMultiAccountsReceiveGotoTile(RECEIVE_TILE_SWITCH_PATH_TYPE);
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
 }
-#endif

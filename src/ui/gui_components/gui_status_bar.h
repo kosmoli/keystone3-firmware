@@ -59,11 +59,7 @@ void GuiNvsSetWallet(WALLET_LIST_INDEX_ENUM index, const char *name);
 void GuiNvsBarClear(void);
 void GuiStatusBarSetSdCard(bool connected, bool onlyImg);
 void GuiStatusBarSetUsb(void);
-#ifdef BTC_ONLY
-void GuiStatusBarSetTestNet(void);
-#else
 const char *GetWalletNameByIndex(WALLET_LIST_INDEX_ENUM index);
-#endif
 NavBarWidget_t *CreateNavBarWidget(lv_obj_t *navBar);
 void DestoryNavBarWidget(NavBarWidget_t *navBarWidget);
 void SetNavBarLeftBtn(NavBarWidget_t *navBarWidget, NVS_LEFT_BUTTON_ENUM button, lv_event_cb_t eventCb, void *param);

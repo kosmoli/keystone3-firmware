@@ -23,9 +23,7 @@ typedef enum {
     FIRMWARE_UPDATE_SELECT = 0,
     FIRMWARE_UPDATE_USB_INSTRUCTION,
     FIRMWARE_UPDATE_SD_INSTRUCTION,
-#ifndef BTC_ONLY
     FIRMWARE_UPDATE_MULTI_TO_BTC_WARNING,
-#endif
     FIRMWARE_UPDATE_USB_UPDATING,
 
     FIRMWARE_UPDATE_BUTT,
@@ -38,9 +36,7 @@ typedef struct {
     lv_obj_t *tileSelect;
     lv_obj_t *tileUsbInstruction;
     lv_obj_t *tileSdInstruction;
-#ifndef BTC_ONLY
     lv_obj_t *tileMultiToBtcWarning;
-#endif
     lv_obj_t *tileUpdating;
     lv_obj_t *qrCodeCont;
 } FirmwareUpdateWidgets_t;
@@ -54,11 +50,9 @@ static void GuiFirmwareUpdateViewSha256(uint8_t percent);
 static void CloseQrcodeHandler(lv_event_t *e);
 static int GetEntryEnum(void);
 static void GuiCreateSdCardnstructionTile(lv_obj_t *parent);
-#ifndef BTC_ONLY
 static void GuiCreateMultiToBtcWarningTile(lv_obj_t *parent);
 static void KnownWarningHandler(lv_event_t *e);
 static void KnownWarningCancelHandler(lv_event_t *e);
-#endif
 static void ConfirmSdCardUpdate(void);
 static void FirmwareSdcardUpdateHandler(lv_event_t *e);
 static void FirmwareSdcardCheckSha256Handler(lv_event_t *e);
@@ -75,10 +69,8 @@ static lv_obj_t *g_calCheckSumLabel = NULL;
 static KeyboardWidget_t *g_keyboardWidget = NULL;
 static PageWidget_t *g_pageWidget;
 
-#ifndef BTC_ONLY
 static lv_timer_t *g_knownWarningCountDownTimer = NULL;
 static lv_obj_t *g_knownWarningBtn;
-#endif
 
 static void UrlInit()
 {
@@ -147,10 +139,8 @@ void GuiFirmwareUpdateInit(void *param)
 
     g_firmwareUpdateWidgets.tileSdInstruction = lv_tileview_add_tile(tileView, FIRMWARE_UPDATE_SD_INSTRUCTION, 0, LV_DIR_HOR);
     GuiCreateSdCardnstructionTile(g_firmwareUpdateWidgets.tileSdInstruction);
-#ifndef BTC_ONLY
     g_firmwareUpdateWidgets.tileMultiToBtcWarning = lv_tileview_add_tile(tileView, FIRMWARE_UPDATE_MULTI_TO_BTC_WARNING, 0, LV_DIR_HOR);
     GuiCreateMultiToBtcWarningTile(g_firmwareUpdateWidgets.tileMultiToBtcWarning);
-#endif
 
     g_firmwareUpdateWidgets.currentTile = FIRMWARE_UPDATE_SELECT;
 }
@@ -190,12 +180,10 @@ void GuiFirmwareWindowDeinit(void)
 
 void GuiFirmwareUpdateDeInit(void)
 {
-#ifndef BTC_ONLY
     if (g_knownWarningCountDownTimer != NULL) {
         lv_timer_del(g_knownWarningCountDownTimer);
         g_knownWarningCountDownTimer = NULL;
     }
-#endif
     GuiDeleteKeyboardWidget(g_keyboardWidget);
     g_param = NULL;
     printf("GuiFirmwareUpdateDeInit\n");
@@ -212,7 +200,6 @@ void GuiFirmwareUpdateDeInit(void)
 
 void GuiFirmwareUpdateRefresh(void)
 {
-#ifndef BTC_ONLY
     if (g_firmwareUpdateWidgets.currentTile != FIRMWARE_UPDATE_MULTI_TO_BTC_WARNING) {
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, ReturnHandler, NULL);
     } else {
@@ -221,9 +208,6 @@ void GuiFirmwareUpdateRefresh(void)
             g_pageWidget->navBarWidget->leftBtn = NULL;
         }
     }
-#else
-    SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, ReturnHandler, NULL);
-#endif
     SetMidBtnLabel(g_pageWidget->navBarWidget, NVS_BAR_MID_LABEL, "");
     if (GetEntryEnum() == FIRMWARE_UPDATE_ENTRY_SETUP && g_firmwareUpdateWidgets.currentTile == FIRMWARE_UPDATE_SELECT) {
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_NEW_SKIP, OpenViewHandler, &g_purposeView);
@@ -261,11 +245,9 @@ void GuiFirmwareUpdatePrevTile(void)
     case FIRMWARE_UPDATE_USB_INSTRUCTION:
         g_firmwareUpdateWidgets.currentTile--;
         break;
-#ifndef BTC_ONLY
     case FIRMWARE_UPDATE_MULTI_TO_BTC_WARNING:
         g_firmwareUpdateWidgets.currentTile--;
         break;
-#endif
     default:
         return;
     }
@@ -433,7 +415,6 @@ static void FirmwareSdcardUpdateHandler(lv_event_t *e)
         //firmware_update_sd_failed_access_title
         g_noticeWindow = GuiCreateErrorCodeWindow(ERR_UPDATE_SDCARD_NOT_DETECTED, &g_noticeWindow, NULL);
     } else if (FatfsFileExist(SD_CARD_OTA_BIN_PATH)) {
-#ifndef BTC_ONLY
         // todo firmware from MultiCoin to BTC
         ConfirmSdCardUpdate();
 #if 0
@@ -453,9 +434,6 @@ static void FirmwareSdcardUpdateHandler(lv_event_t *e)
             }
             StartKnownWarningCountDownTimer();
         }
-#endif
-#else
-        ConfirmSdCardUpdate();
 #endif
     } else {
         g_noticeWindow = GuiCreateErrorCodeWindow(ERR_UPDATE_FIRMWARE_NOT_DETECTED, &g_noticeWindow, NULL);
@@ -565,7 +543,6 @@ static void GuiCreateSdCardnstructionTile(lv_obj_t *parent)
     GuiAlignToPrevObj(spacer, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
 }
 
-#ifndef BTC_ONLY
 static void GuiCreateMultiToBtcWarningTile(lv_obj_t *parent)
 {
     lv_obj_t *label, *img, *btn;
@@ -619,7 +596,6 @@ static void KnownWarningCancelHandler(lv_event_t *e)
     }
 }
 
-#endif
 
 static void GuiQrcodeHandler(lv_event_t *e)
 {

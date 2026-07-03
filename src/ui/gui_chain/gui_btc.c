@@ -14,9 +14,7 @@
 #include "gui_home_widgets.h"
 #include "gui_transaction_detail_widgets.h"
 #include "err_code.h"
-#ifdef BTC_ONLY
 #include "gui_multisig_transaction_signature_widgets.h"
-#endif
 
 #define CHECK_FREE_PARSE_RESULT(result)                       \
     if (result != NULL)                                       \
@@ -35,7 +33,6 @@
 #define MAX_WALLET_CONFIG_LEN           3000
 #define MAX_VERIFY_CODE_LEN             12
 
-#ifndef BTC_ONLY
 typedef struct UtxoViewToChain {
     ViewType viewType;
     ChainType chainType;
@@ -46,20 +43,14 @@ static UtxoViewToChain_t g_UtxoViewToChainMap[] = {
     {BtcNativeSegwitTx, XPUB_TYPE_BTC_NATIVE_SEGWIT, "m/84'/0'/0'"},
     {BtcSegwitTx, XPUB_TYPE_BTC, "m/49'/0'/0'"},
     {BtcLegacyTx, XPUB_TYPE_BTC_LEGACY, "m/44'/0'/0'"},
-#ifdef WEB3_VERSION
     {LtcTx, XPUB_TYPE_LTC, "m/49'/2'/0'"},
     {DashTx, XPUB_TYPE_DASH, "m/44'/5'/0'"},
     {BchTx, XPUB_TYPE_BCH, "m/44'/145'/0'"},
     {DogeTx, XPUB_TYPE_DOGE, "m/44'/3'/0'"},
-#endif
 };
 
-#ifdef WEB3_VERSION
 #define CHECK_UR_TYPE() (urType == Bytes || urType == KeystoneSignRequest)
-#else
 #define CHECK_UR_TYPE() (urType == Bytes)
-#endif
-#endif
 
 static bool g_isMulti = false;
 static URParseResult *g_urResult = NULL;
@@ -91,7 +82,6 @@ void GuiSetPsbtStrData(uint8_t *psbtBytes, uint32_t psbtBytesLen)
     g_psbtBytesLen = psbtBytesLen;
 }
 
-#ifndef BTC_ONLY
 static int32_t GuiGetUtxoPubKeyAndHdPath(ViewType viewType, char **xPub, char **hdPath)
 {
     int32_t ret = 0;
@@ -112,45 +102,11 @@ static int32_t GuiGetUtxoPubKeyAndHdPath(ViewType viewType, char **xPub, char **
     }
     return ret;
 }
-#endif
 
-#ifdef BTC_ONLY
-static UREncodeResult *GuiGetSignPsbtBytesCodeData(void)
-{
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
-    if (!GuiGetCurrentTransactionNeedSign()) {
-        if (GuiGetCurrentTransactionType() == TRANSACTION_TYPE_BTC_MULTISIG) {
-            MultisigSignResult *result = btc_export_multisig_psbt_bytes(g_psbtBytes, g_psbtBytesLen);
-            encodeResult = result->ur_result;
-            GuiMultisigTransactionSignatureSetSignStatus(result->sign_status, result->is_completed, result->psbt_hex, result->psbt_len);
-            free_MultisigSignResult(result);
-        }
-    } else {
-        uint8_t mfp[4] = {0};
-        GetMasterFingerPrint(mfp);
-        uint8_t seed[64];
-        int len = GetCurrentAccountSeedLen();
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        CHECK_ERRCODE_RETURN_NULL(ret);
-        MultisigSignResult *result = btc_sign_multisig_psbt_bytes(g_psbtBytes, g_psbtBytesLen, seed, len, mfp, sizeof(mfp));
-        encodeResult = result->ur_result;
-        GuiMultisigTransactionSignatureSetSignStatus(result->sign_status, result->is_completed, result->psbt_hex, result->psbt_len);
-        memset_s(seed, sizeof(seed), 0, sizeof(seed));
-        free_MultisigSignResult(result);
-    }
-    CHECK_CHAIN_PRINT(encodeResult);
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
-}
-#else
 static UREncodeResult *GuiGetSignPsbtBytesCodeData(void)
 {
     return NULL;
 }
-#endif
 
 UREncodeResult *GuiGetBtcSignQrCodeData(void)
 {
@@ -177,47 +133,22 @@ static UREncodeResult *BtcSignPsbt(void *data, uint8_t *seed, int len, uint8_t *
 
 static UREncodeResult *BtcSignPsbtMultisig(void *data, uint8_t *seed, int len, uint8_t *mfp, uint32_t mfpLen)
 {
-#ifdef BTC_ONLY
-    UREncodeResult *encodeResult = NULL;
-    MultisigSignResult *result = !GuiGetCurrentTransactionNeedSign()
-                                 ? btc_export_multisig_psbt(data)
-                                 : btc_sign_multisig_psbt(data, seed, len, mfp, mfpLen);
-    if (result) {
-        encodeResult = result->ur_result;
-        GuiMultisigTransactionSignatureSetSignStatus(result->sign_status, result->is_completed, result->psbt_hex, result->psbt_len);
-        free_MultisigSignResult(result);
-    }
-    return encodeResult;
-#else
     return NULL;
-#endif
 }
 
 static bool SupportSignPsbtFromSDCard(void)
 {
-#ifdef BTC_ONLY
-    return true;
-#else
     return false;
-#endif
 }
 
 static bool SupportSignLegacyKeystoneTransactions(QRCodeType urType)
 {
-#ifdef WEB3_VERSION
     return (urType == Bytes || urType == KeystoneSignRequest);
-#else
-    return false;
-#endif
 }
 
 static bool SupportSignPsbtExtend(QRCodeType urType)
 {
-#ifdef WEB3_VERSION
     return (urType == CryptoPSBTExtend);
-#else
-    return false;
-#endif
 }
 
 // The results here are released in the close qr timer species
@@ -257,12 +188,10 @@ static UREncodeResult *GetBtcSignDataDynamic(bool unLimit)
     } else if (SupportSignLegacyKeystoneTransactions(urType)) {
         char *hdPath = NULL;
         char *xPub = NULL;
-#ifdef WEB3_VERSION
         if (0 != GuiGetUtxoPubKeyAndHdPath(viewType, &xPub, &hdPath)) {
             return NULL;
         }
         encodeResult = utxo_sign_keystone(data, urType, mfp, sizeof(mfp), xPub, SOFTWARE_VERSION, seed, len);
-#endif
     } else if (urType == BtcSignRequest) {
         encodeResult = btc_sign_msg(data, seed, len, mfp, sizeof(mfp));
     } else if (urType == SeedSignerMessage) {
@@ -276,77 +205,14 @@ static UREncodeResult *GetBtcSignDataDynamic(bool unLimit)
     SetLockScreen(enable);
     return encodeResult;
 }
-#ifdef BTC_ONLY
-static void *GuiGetParsedPsbtStrData(void)
-{
-    PtrT_CSliceFFI_ExtendedPublicKey public_keys = SRAM_MALLOC(sizeof(CSliceFFI_ExtendedPublicKey));
-    ExtendedPublicKey keys[14];
-    PreparePublicKeys(public_keys, keys);
-    uint8_t mfp[4] = {0};
-    GetMasterFingerPrint(mfp);
-
-    char *wallet_config = NULL;
-    if (GetCurrentWalletIndex() != SINGLE_WALLET) {
-        MultiSigWalletItem_t *item = GetDefaultMultisigWallet();
-        if (item != NULL) {
-            wallet_config = SRAM_MALLOC(MAX_WALLET_CONFIG_LEN);
-            memset_s(wallet_config, MAX_WALLET_CONFIG_LEN, '\0', MAX_WALLET_CONFIG_LEN);
-            strncpy_s(wallet_config, MAX_WALLET_CONFIG_LEN, item->walletConfig, strnlen_s(item->walletConfig, MAX_WALLET_CONFIG_LEN));
-        }
-    }
-    g_parseResult = btc_parse_psbt_bytes(g_psbtBytes, g_psbtBytesLen, mfp, sizeof(mfp), public_keys, wallet_config);
-    CHECK_CHAIN_RETURN(g_parseResult);
-    GuiSetCurrentTransactionNeedSign(g_parseResult->data->overview->need_sign);
-    if (IsMultiSigTx(g_parseResult->data)) {
-        GuiSetCurrentTransactionType(TRANSACTION_TYPE_BTC_MULTISIG);
-    }
-    SRAM_FREE(public_keys);
-    SRAM_FREE(wallet_config);
-    return g_parseResult;
-}
-#else
 static void *GuiGetParsedPsbtStrData(void)
 {
     return NULL;
 }
 
-#endif
 
 static void PreparePublicKeys(PtrT_CSliceFFI_ExtendedPublicKey public_keys, ExtendedPublicKey *keys)
 {
-#ifdef BTC_ONLY
-    public_keys->data = keys;
-    public_keys->size = 14;
-    keys[0].path = "m/84'/0'/0'";
-    keys[0].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_NATIVE_SEGWIT);
-    keys[1].path = "m/49'/0'/0'";
-    keys[1].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC);
-    keys[2].path = "m/44'/0'/0'";
-    keys[2].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_LEGACY);
-    keys[3].path = "m/86'/0'/0'";
-    keys[3].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_TAPROOT);
-    keys[4].path = "m/84'/1'/0'";
-    keys[4].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_NATIVE_SEGWIT_TEST);
-    keys[5].path = "m/49'/1'/0'";
-    keys[5].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_TEST);
-    keys[6].path = "m/44'/1'/0'";
-    keys[6].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_LEGACY_TEST);
-    keys[7].path = "m/86'/1'/0'";
-    keys[7].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_TAPROOT_TEST);
-
-    keys[8].path = "m/45'";
-    keys[8].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2SH);
-    keys[9].path = "m/48'/0'/0'/1'";
-    keys[9].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2WSH_P2SH);
-    keys[10].path = "m/48'/0'/0'/2'";
-    keys[10].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2WSH);
-    keys[11].path = "m/45'";
-    keys[11].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2SH_TEST);
-    keys[12].path = "m/48'/1'/0'/1'";
-    keys[12].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2WSH_P2SH_TEST);
-    keys[13].path = "m/48'/1'/0'/2'";
-    keys[13].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_MULTI_SIG_P2WSH_TEST);
-#else
     public_keys->data = keys;
     public_keys->size = 4;
     keys[0].path = "m/84'/0'/0'";
@@ -357,7 +223,6 @@ static void PreparePublicKeys(PtrT_CSliceFFI_ExtendedPublicKey public_keys, Exte
     keys[2].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_LEGACY);
     keys[3].path = "m/86'/0'/0'";
     keys[3].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_TAPROOT);
-#ifdef WEB3_VERSION
     public_keys->size = 9;
     keys[4].path = "m/44'/60'/0'";
     keys[4].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_AVAX_BIP44_STANDARD);
@@ -372,29 +237,12 @@ static void PreparePublicKeys(PtrT_CSliceFFI_ExtendedPublicKey public_keys, Exte
     keys[8].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_DASH);
     keys[9].path = "m/44'/145'/0'";
     keys[9].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BCH);
-#endif
-#endif
 }
 
 static void *ParsePsbt(void *crypto, uint8_t *mfp, uint32_t mfpLen, PtrT_CSliceFFI_ExtendedPublicKey public_keys)
 {
     g_parseResult = NULL;
-#ifdef BTC_ONLY
-    char *wallet_config = NULL;
-    if (GetCurrentWalletIndex() != SINGLE_WALLET) {
-        MultiSigWalletItem_t *item = GetDefaultMultisigWallet();
-        if (item != NULL) {
-            wallet_config = SRAM_MALLOC(MAX_WALLET_CONFIG_LEN);
-            memset_s(wallet_config, MAX_WALLET_CONFIG_LEN, '\0', MAX_WALLET_CONFIG_LEN);
-            strncpy_s(wallet_config, MAX_WALLET_CONFIG_LEN, item->walletConfig, strnlen_s(item->walletConfig, MAX_WALLET_CONFIG_LEN));
-        }
-    }
-    g_parseResult = btc_parse_psbt(crypto, mfp, mfpLen, public_keys, wallet_config);
-    GuiSetCurrentTransactionNeedSign(g_parseResult->data->overview->need_sign);
-    SRAM_FREE(wallet_config);
-#else
     g_parseResult = btc_parse_psbt(crypto, mfp, mfpLen, public_keys, NULL);
-#endif
     return g_parseResult;
 }
 
@@ -431,14 +279,12 @@ void *GuiGetParsedQrData(void)
     } else if (SupportSignLegacyKeystoneTransactions(urType)) {
         char *hdPath = NULL;
         char *xPub = NULL;
-#ifdef WEB3_VERSION
         if (0 != GuiGetUtxoPubKeyAndHdPath(viewType, &xPub, &hdPath)) {
             return NULL;
         }
         g_parseResult = utxo_parse_keystone(crypto, urType, mfp, sizeof(mfp), xPub);
         SRAM_FREE(public_keys);
         CHECK_CHAIN_RETURN(g_parseResult);
-#endif
         return g_parseResult;
     } else if (SupportSignPsbtExtend(urType)) {
         g_parseResult = utxo_parse_extend_psbt(crypto, public_keys, mfp, sizeof(mfp));
@@ -459,86 +305,15 @@ void *GuiGetParsedQrData(void)
     return NULL;
 }
 
-#ifdef BTC_ONLY
-static PtrT_TransactionCheckResult GuiGetPsbtStrCheckResult(void)
-{
-    PtrT_TransactionCheckResult result = NULL;
-    PtrT_CSliceFFI_ExtendedPublicKey public_keys = SRAM_MALLOC(sizeof(CSliceFFI_ExtendedPublicKey));
-    ExtendedPublicKey keys[14];
-    PreparePublicKeys(public_keys, keys);
-    uint8_t mfp[4] = {0};
-    GetMasterFingerPrint(mfp);
-
-    char *verify_without_mfp = NULL;
-    char *verify_code = NULL;
-    char *wallet_config = NULL;
-    if (GetCurrentWalletIndex() != SINGLE_WALLET) {
-        MultiSigWalletItem_t *item = GetDefaultMultisigWallet();
-        if (item != NULL) {
-            verify_without_mfp = SRAM_MALLOC(MAX_VERIFY_CODE_LEN);
-            memset_s(verify_without_mfp, MAX_VERIFY_CODE_LEN, '\0', MAX_VERIFY_CODE_LEN);
-            strncpy_s(verify_without_mfp, MAX_VERIFY_CODE_LEN, item->verifyWithoutMfp, strnlen_s(item->verifyWithoutMfp, MAX_VERIFY_CODE_LEN));
-            verify_code = SRAM_MALLOC(MAX_VERIFY_CODE_LEN);
-            memset_s(verify_code, MAX_VERIFY_CODE_LEN, '\0', MAX_VERIFY_CODE_LEN);
-            strncpy_s(verify_code, MAX_VERIFY_CODE_LEN, item->verifyCode, strnlen_s(item->verifyCode, MAX_VERIFY_CODE_LEN));
-            wallet_config = SRAM_MALLOC(MAX_WALLET_CONFIG_LEN);
-            memset_s(wallet_config, MAX_WALLET_CONFIG_LEN, '\0', MAX_WALLET_CONFIG_LEN);
-            strncpy_s(wallet_config, MAX_WALLET_CONFIG_LEN, item->walletConfig, strnlen_s(item->walletConfig, MAX_WALLET_CONFIG_LEN));
-        }
-    }
-
-    result = btc_check_psbt_bytes(g_psbtBytes, g_psbtBytesLen, mfp, sizeof(mfp), public_keys, verify_without_mfp, wallet_config);
-    if (result->error_code != 0 && strnlen_s(verify_without_mfp, MAX_VERIFY_CODE_LEN) == 0) {
-        free_TransactionCheckResult(result);
-        result = btc_check_psbt_bytes(g_psbtBytes, g_psbtBytesLen, mfp, sizeof(mfp), public_keys, verify_code, wallet_config);
-    }
-
-    SRAM_FREE(public_keys);
-    SRAM_FREE(verify_code);
-    SRAM_FREE(verify_without_mfp);
-    SRAM_FREE(wallet_config);
-    return result;
-}
-#else
 static PtrT_TransactionCheckResult GuiGetPsbtStrCheckResult(void)
 {
     return NULL;
 }
-#endif
 
 static PtrT_TransactionCheckResult CheckPsbt(void *crypto, uint8_t *mfp, uint32_t mfpLen, PtrT_CSliceFFI_ExtendedPublicKey public_keys)
 {
     PtrT_TransactionCheckResult result = NULL;
-#ifdef BTC_ONLY
-    char *verify_without_mfp = NULL;
-    char *verify_code = NULL;
-    char *wallet_config = NULL;
-    if (GetCurrentWalletIndex() != SINGLE_WALLET) {
-        MultiSigWalletItem_t *item = GetDefaultMultisigWallet();
-        if (item != NULL) {
-            verify_without_mfp = SRAM_MALLOC(MAX_VERIFY_CODE_LEN);
-            memset_s(verify_without_mfp, MAX_VERIFY_CODE_LEN, '\0', MAX_VERIFY_CODE_LEN);
-            strncpy_s(verify_without_mfp, MAX_VERIFY_CODE_LEN, item->verifyWithoutMfp, strnlen_s(item->verifyWithoutMfp, MAX_VERIFY_CODE_LEN));
-            verify_code = SRAM_MALLOC(MAX_VERIFY_CODE_LEN);
-            memset_s(verify_code, MAX_VERIFY_CODE_LEN, '\0', MAX_VERIFY_CODE_LEN);
-            strncpy_s(verify_code, MAX_VERIFY_CODE_LEN, item->verifyCode, strnlen_s(item->verifyCode, MAX_VERIFY_CODE_LEN));
-            wallet_config = SRAM_MALLOC(MAX_WALLET_CONFIG_LEN);
-            memset_s(wallet_config, MAX_WALLET_CONFIG_LEN, '\0', MAX_WALLET_CONFIG_LEN);
-            strncpy_s(wallet_config, MAX_WALLET_CONFIG_LEN, item->walletConfig, strnlen_s(item->walletConfig, MAX_WALLET_CONFIG_LEN));
-        }
-    }
-
-    result = btc_check_psbt(crypto, mfp, sizeof(mfp), public_keys, verify_without_mfp, wallet_config);
-    if (result->error_code != 0 && strnlen_s(verify_without_mfp, MAX_VERIFY_CODE_LEN) == 0) {
-        free_TransactionCheckResult(result);
-        result = btc_check_psbt(crypto, mfp, sizeof(mfp), public_keys, verify_code, wallet_config);
-    }
-    SRAM_FREE(verify_without_mfp);
-    SRAM_FREE(verify_code);
-    SRAM_FREE(wallet_config);
-#else
     result = btc_check_psbt(crypto, mfp, mfpLen, public_keys, NULL, NULL);
-#endif
     return result;
 }
 
@@ -571,12 +346,10 @@ PtrT_TransactionCheckResult GuiGetPsbtCheckResult(void)
     } else if (SupportSignLegacyKeystoneTransactions(urType)) {
         char *hdPath = NULL;
         char *xPub = NULL;
-#ifdef WEB3_VERSION
         if (0 != GuiGetUtxoPubKeyAndHdPath(viewType, &xPub, &hdPath)) {
             return NULL;
         }
         result = utxo_check_keystone(crypto, urType, mfp, sizeof(mfp), xPub);
-#endif
     } else if (urType == BtcSignRequest) {
         result = btc_check_msg(crypto, mfp, sizeof(mfp));
     } else if (urType == SeedSignerMessage) {
@@ -1132,7 +905,6 @@ static lv_obj_t *CreateOverviewFromView(lv_obj_t *parent, DisplayTxOverview *ove
 static lv_obj_t *CreateOverviewToView(lv_obj_t *parent, DisplayTxOverview *overviewData, lv_obj_t *lastView)
 {
     bool showChange = true;
-#ifndef BTC_ONLY
     enum QRCodeType urType = URTypeUnKnown;
     if (g_isMulti) {
         urType = g_urMultiResult->ur_type;
@@ -1141,7 +913,6 @@ static lv_obj_t *CreateOverviewToView(lv_obj_t *parent, DisplayTxOverview *overv
     }
 
     showChange = !CHECK_UR_TYPE();
-#endif
     lv_obj_t *toContainer = GuiCreateContainerWithParent(parent, 408, 62);
     SetContainerDefaultStyle(toContainer);
     lv_obj_align_to(toContainer, lastView, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 16);
@@ -1276,7 +1047,6 @@ static lv_obj_t *CreateDetailAmountView(lv_obj_t *parent, DisplayTxDetail *detai
 static lv_obj_t *CreateDetailFromView(lv_obj_t *parent, DisplayTxDetail *detailData, lv_obj_t *lastView)
 {
     bool showChange = true;
-#ifndef BTC_ONLY
     enum QRCodeType urType = URTypeUnKnown;
     if (g_isMulti) {
         urType = g_urMultiResult->ur_type;
@@ -1285,7 +1055,6 @@ static lv_obj_t *CreateDetailFromView(lv_obj_t *parent, DisplayTxDetail *detailD
     }
 
     showChange = !CHECK_UR_TYPE();
-#endif
 
     lv_obj_t *formContainer = GuiCreateContainerWithParent(parent, 408, 0);
     SetContainerDefaultStyle(formContainer);

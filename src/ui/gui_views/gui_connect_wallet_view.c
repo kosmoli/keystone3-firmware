@@ -31,7 +31,6 @@ int32_t GuiConnectWalletViewEventProcess(void* self, uint16_t usEvent, void* par
     case SIG_BACKGROUND_UR_UPDATE:
         GuiConnectWalletHandleURUpdate((char*)param, usLen);
         break;
-#ifdef WEB3_VERSION
     case SIG_SETUP_RSA_PRIVATE_KEY_CONNECT_CONFIRM:
         GuiConnectShowRsaSetupasswordHintbox();
         break;
@@ -62,7 +61,6 @@ int32_t GuiConnectWalletViewEventProcess(void* self, uint16_t usEvent, void* par
     case SIG_SETUP_RSA_PRIVATE_KEY_GENERATE_ADDRESS:
         GuiUpdatePendingHintBoxSubtitle(_("GeneratingRsaAddress"));
         break;
-#endif
     default:
         return ERR_GUI_UNHANDLED;
     }

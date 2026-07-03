@@ -45,9 +45,6 @@ typedef enum {
     ADA_DERIVATION_PATH_DESC,
     AVAX_DERIVATION_PATH_DESC,
     LTC_DERIVATION_PATH_DESC,
-#ifdef BTC_ONLY
-    BTC_TEST_NET_DERIVATION_PATH_DESC,
-#endif
 } DERIVATION_PATH_DESC_INDEX;
 
 char **GetDerivationPathDescs(uint8_t index);

@@ -43,10 +43,8 @@ void OpenForgetPasswordHandler(lv_event_t *e);
 static void OpenLanguageSelectHandler(lv_event_t *e);
 static void BootSecureSwitchHandler(lv_event_t * e);
 static void RecoveryModeSwitchHandler(lv_event_t * e);
-#ifdef WEB3_VERSION
 static void PermitSingSwitchHandler(lv_event_t * e);
 static lv_obj_t *g_permitSw;
-#endif
 
 void GuiSystemSettingAreaInit(void)
 {
@@ -122,7 +120,6 @@ void GuiSystemSettingEntranceWidget(lv_obj_t *parent)
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, offset);
     offset += 100;
 
-#ifdef WEB3_VERSION
     // permit sign
     g_permitSw = lv_switch_create(parent);
     lv_obj_clear_flag(g_permitSw, LV_OBJ_FLAG_CLICKABLE);
@@ -140,7 +137,6 @@ void GuiSystemSettingEntranceWidget(lv_obj_t *parent)
                              PermitSingSwitchHandler, NULL);
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, offset);
     offset += 100;
-#endif
 
     // boot secure
     g_bootSecureSw = lv_switch_create(parent);
@@ -419,7 +415,6 @@ static void RecoveryModeSwitchHandler(lv_event_t * e)
     lv_obj_add_event_cb(rightBtn, GuiShowChangeKeyBoard, LV_EVENT_CLICKED, &sig);
 }
 
-#ifdef WEB3_VERSION
 static void GuiShowChangePermitKeyBoard(lv_event_t * e);
 void GuiDealChangePermitKeyBoard(bool pass)
 {
@@ -455,4 +450,3 @@ static void GuiShowChangePermitKeyBoard(lv_event_t * e)
     static uint16_t sig = SIG_SETTING_CHANGE_PERMIT_SWITCH;
     SetKeyboardWidgetSig(g_keyboardWidget, &sig);
 }
-#endif

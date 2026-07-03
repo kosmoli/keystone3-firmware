@@ -32,9 +32,6 @@ typedef enum {
     SIG_INIT_TRANSFER_NFT_SCREEN,
     SIG_INIT_CONNECT_USB,
     SIG_INIT_PULLOUT_USB,
-#ifdef BTC_ONLY
-    SIG_STATUS_BAR_TEST_NET,
-#endif
     SIG_INIT_VIEW_BUTT,
 
     SIG_LOCK_VIEW_VERIFY_PIN = SIG_INIT_VIEW_BUTT + 50,
@@ -190,15 +187,11 @@ extern GUI_VIEW g_createShareView;
 extern GUI_VIEW g_importShareView;
 extern GUI_VIEW g_settingView;
 extern GUI_VIEW g_connectWalletView;
-#ifndef BTC_ONLY
 extern GUI_VIEW g_USBTransportView;
-#endif
 extern GUI_VIEW g_passphraseView;
 extern GUI_VIEW g_utxoReceiveView;
-#ifndef BTC_ONLY
 extern GUI_VIEW g_multiPathCoinReceiveView;
 extern GUI_VIEW g_standardReceiveView;
-#endif
 extern GUI_VIEW g_forgetPassView;
 extern GUI_VIEW g_lockDeviceView;
 extern GUI_VIEW g_firmwareUpdateView;
@@ -218,12 +211,10 @@ extern GUI_VIEW g_displayView;
 extern GUI_VIEW g_tutorialView;
 extern GUI_VIEW g_connectionView;
 extern GUI_VIEW g_DevicePublicKeyView;
-#ifndef BTC_ONLY
 extern GUI_VIEW g_multiAccountsReceiveView;
 extern GUI_VIEW g_keyDerivationRequestView;
 extern GUI_VIEW g_deriveContextHashRequestView;
 extern GUI_VIEW g_ethBatchTxView;
-#endif
 extern GUI_VIEW g_checkDeleteWalletView;
 extern GUI_VIEW g_scanView;
 extern GUI_VIEW g_transactionDetailView;
@@ -232,16 +223,6 @@ extern GUI_VIEW g_diceRollsView;
 extern GUI_VIEW g_exportPubkeyView;
 extern GUI_VIEW g_updateSuccessView;
 extern GUI_VIEW g_bootUpdateView;
-#ifdef BTC_ONLY
-extern GUI_VIEW g_btcBtcWalletProfileView;
-extern GUI_VIEW g_multisigTransactionSignatureView;
-extern GUI_VIEW g_importMultisigWalletInfoView;
-extern GUI_VIEW g_multisigSelectImportMethodView;
-extern GUI_VIEW g_multisigWalletExportView;
-extern GUI_VIEW g_multisigReadSdcardView;
-extern GUI_VIEW g_createMultisigWalletView;
-extern GUI_VIEW g_manageMultisigWalletView;
-#endif
 
 typedef void (*ErrorWindowCallback)(void);
 

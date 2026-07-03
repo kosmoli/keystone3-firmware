@@ -26,9 +26,7 @@
 #include "account_manager.h"
 #include "gui_pending_hintbox.h"
 #include "general/eapdu_services/service_resolve_ur.h"
-#ifdef WEB3_VERSION
 #include "gui_eth.h"
-#endif
 #ifndef COMPILE_SIMULATOR
 #include "keystore.h"
 
@@ -83,7 +81,6 @@ static bool GuiCheckIsTransactionSign(void);
 static void TransactionGoToHomeViewHandler(lv_event_t *e);
 static void ThrowError(int32_t errorCode);
 
-#ifndef BTC_ONLY
 static TransactionMode GetCurrentTransactionMode(void);
 static TransactionMode GetCurrentTransactionMode(void)
 {
@@ -108,16 +105,13 @@ void GuiTransactionUsbPullout(void)
         }
     }
 }
-#endif
 
 static void TransactionGoToHomeViewHandler(lv_event_t *e)
 {
-#ifndef BTC_ONLY
     if (GetCurrentTransactionMode() == TRANSACTION_MODE_USB) {
         const char *data = "UR parsing rejected";
         HandleURResultViaUSBFunc(data, strlen(data), GetCurrentUSParsingRequestID(), PRS_PARSING_REJECTED);
     }
-#endif
     CloseQRTimer();
     GuiCloseToTargetView(&g_homeView);
 }
@@ -222,12 +216,6 @@ void GuiTransactionDetailVerifyPasswordSuccess(void)
 {
     GUI_DEL_OBJ(g_fingerSingContainer)
     GuiDeleteKeyboardWidget(g_keyboardWidget);
-#ifdef BTC_ONLY
-    if (g_transactionType == TRANSACTION_TYPE_BTC_MULTISIG) {
-        printf("transaction type is btc multisig\r\n");
-        GuiFrameOpenView(&g_multisigTransactionSignatureView);
-    }
-#else
     if (GetCurrentTransactionMode() == TRANSACTION_MODE_USB) {
         GenerateUR func = GetSingleUrGenerator(g_viewType);
         if (func == NULL) {
@@ -241,7 +229,6 @@ void GuiTransactionDetailVerifyPasswordSuccess(void)
         }
         return;
     }
-#endif
     if (g_transactionType == TRANSACTION_TYPE_NORMAL) {
         GuiFrameOpenViewWithParam(&g_transactionSignatureView, &g_viewType, sizeof(g_viewType));
     }
@@ -251,12 +238,10 @@ void GuiSignVerifyPasswordErrorCount(void *param)
 {
     PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
     if (passwordVerifyResult->errorCount == MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX) {
-#ifndef BTC_ONLY
         if (GetCurrentTransactionMode() == TRANSACTION_MODE_USB) {
             const char *data = "Please try again after unlocking";
             HandleURResultViaUSBFunc(data, strlen(data), GetCurrentUSParsingRequestID(), PRS_PARSING_VERIFY_PASSWORD_ERROR);
         }
-#endif
     }
     GuiShowErrorNumber(g_keyboardWidget, passwordVerifyResult);
 }
@@ -303,7 +288,6 @@ void GuiClearQrcodeSignCnt(void)
 static void GuiTransactionDetailNavBarInit()
 {
     SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, TransactionGoToHomeViewHandler, NULL);
-#ifdef WEB3_VERSION
     if (IsMessageType(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("transaction_parse_confirm_message"));
     } else if (isTonSignProof(g_viewType)) {
@@ -319,11 +303,8 @@ static void GuiTransactionDetailNavBarInit()
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("confirm_txo_signing"));
 #endif
     } else {
-#endif
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, NULL);
-#ifdef WEB3_VERSION
     }
-#endif
 }
 
 static void CheckSliderProcessHandler(lv_event_t *e)
@@ -407,20 +388,14 @@ static void RecognizeFailHandler(lv_timer_t *timer)
 
 static bool GuiCheckIsTransactionSign(void)
 {
-#ifdef WEB3_VERSION
     if (GetEthPermitCantSign(NULL, NULL)) {
         return false;
     }
-#endif
     return true;
 }
 
 bool supportBlindSigning(uint8_t viewType)
 {
     // now we only support blind signing for Sui and Cardano
-#ifdef WEB3_VERSION
     return viewType == SuiSignMessageHash || viewType == CardanoSignTxHash;
-#else
-    return false;
-#endif
 }

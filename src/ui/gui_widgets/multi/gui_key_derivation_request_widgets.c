@@ -107,13 +107,11 @@ static void FreeKeyDerivationRequestMemory(void);
 static KeyboardWidget_t *g_keyboardWidget = NULL;
 static void GuiShowKeyBoardDialog(lv_obj_t *parent);
 static HardwareCallResult_t CheckHardwareCallRequestIsLegal(void);
-#ifdef WEB3_VERSION
 static void SaveHardwareCallVersion1AdaDerivationAlgo(lv_event_t *e);
 static AdaXPubType GetAccountType(void);
 static void SetAccountType(uint8_t index);
 static bool IsCardano();
 static uint8_t GetXPubIndexByPath(char *path);
-#endif
 
 void GuiSetKeyDerivationRequestData(void *urResult, void *multiResult, bool is_multi)
 {
@@ -132,9 +130,7 @@ void FreeKeyDerivationRequestMemory(void)
         free_Response_QRHardwareCallData(g_response);
         g_response = NULL;
     }
-#ifdef WEB3_VERSION
     g_adaDerivationAlgo = HD_STANDARD_ADA;
-#endif
 }
 
 static char *GetChangeDerivationPathDesc(void)
@@ -179,13 +175,11 @@ void GuiKeyDerivationRequestInit(bool isUsb)
     RecalcCurrentWalletIndex(g_response->data->origin);
     SetWallet(g_keyDerivationTileView.pageWidget->navBarWidget, g_walletIndex, NULL);
     SetNavBarRightBtn(g_keyDerivationTileView.pageWidget->navBarWidget, NVS_BAR_MORE_INFO, OpenMoreHandler, NULL);
-#ifdef WEB3_VERSION
     if (IsCardano()) {
         g_adaDerivationAlgo = GetAccountType();
     } else {
         g_adaDerivationAlgo = HD_STANDARD_ADA;
     }
-#endif
     tile = lv_tileview_add_tile(tileView, TILE_QRCODE, 0, LV_DIR_HOR);
     // choose different animate qr widget by hardware call  version
     if (strcmp("1", g_callData->version) == 0) {
@@ -230,18 +224,14 @@ static void SelectDerivationHandler(lv_event_t *e)
     lv_obj_clear_state(g_derivationTypeCheck[!index], LV_STATE_CHECKED);
     SetCurrentSelectedIndex(index);
     ShowEgAddressCont(g_egCont);
-#ifdef WEB3_VERSION
     UpdateConfirmBtn(index != GetAccountType());
-#endif
 }
 
 static void OpenDerivationPath()
 {
-#ifdef WEB3_VERSION
     if (IsCardano()) {
         SetCurrentSelectedIndex(GetAccountType());
     }
-#endif
 
     lv_obj_t *bgCont = GuiCreateContainer(lv_obj_get_width(lv_scr_act()),
                                           lv_obj_get_height(lv_scr_act()) -
@@ -315,10 +305,7 @@ static void OpenDerivationPath()
     lv_obj_set_style_bg_color(tmCont, BLACK_COLOR, LV_PART_MAIN);
     lv_obj_t *btn = GuiCreateBtn(tmCont, USR_SYMBOL_CHECK);
     lv_obj_align(btn, LV_ALIGN_RIGHT_MID, -36, 0);
-#ifdef WEB3_VERSION
     lv_obj_add_event_cb(btn, SaveHardwareCallVersion1AdaDerivationAlgo, LV_EVENT_CLICKED, NULL);
-#else
-#endif
 
     g_derivationPathConfirmBtn = btn;
     UpdateConfirmBtn(false);
@@ -550,7 +537,6 @@ static UREncodeResult *ModelGenerateSyncUR(void)
                 break;
             case BIP32_ED25519:
                 if (g_adaDerivationAlgo == HD_STANDARD_ADA && !g_isUsb) {
-#ifdef WEB3_VERSION
                     if (isSlip39) {
                         pubkey[i] = cardano_get_pubkey_by_slip23(seed, seedLen, path);
                     } else {
@@ -561,15 +547,12 @@ static UREncodeResult *ModelGenerateSyncUR(void)
                         char* icarusMasterKey = cip3_response->data;
                         pubkey[i] = derive_bip32_ed25519_extended_pubkey(icarusMasterKey, path);
                     }
-#endif
-#ifdef CYPHERPUNK_VERSION
                     uint8_t entropyLen = 0;
                     uint8_t entropy[64];
                     GetAccountEntropy(GetCurrentAccountIndex(), entropy, &entropyLen, password);
                     SimpleResponse_c_char* cip3_response = get_icarus_master_key(entropy, entropyLen, GetPassphrase(GetCurrentAccountIndex()));
                     char* icarusMasterKey = cip3_response->data;
                     pubkey[i] = derive_bip32_ed25519_extended_pubkey(icarusMasterKey, path);
-#endif
                 } else if (g_adaDerivationAlgo == HD_LEDGER_BITBOX_ADA || g_isUsb) {
                     // seed -> mnemonic --> master key(m) -> derive key
                     uint8_t entropyLen = 0;
@@ -605,7 +588,6 @@ static UREncodeResult *ModelGenerateSyncUR(void)
         SetLockScreen(enable);
         return urResult;
     }
-#ifdef WEB3_VERSION
     ExtendedPublicKey xpubs[24];
     for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {
         KeyDerivationSchema schema = g_callData->key_derivation->schemas->data[i];
@@ -623,7 +605,6 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     }
     SetLockScreen(enable);
     return generate_key_derivation_ur(mfp, 4, &keys, firmwareVersion);
-#endif
     SetLockScreen(enable);
     return NULL;
 }
@@ -978,7 +959,6 @@ static void CloseDerivationHandler(lv_event_t *e)
 
 static void GetCardanoEgAddress(void)
 {
-#ifdef WEB3_VERSION
     char *xPub = NULL;
     xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ADA_0);
     SimpleResponse_c_char *result = cardano_get_base_address(xPub, 0, 1);
@@ -1003,7 +983,6 @@ static void GetCardanoEgAddress(void)
     CutAndFormatString(g_derivationPathAddr[LEDGER_ADA][1], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);
-#endif
 }
 
 static void UpdateCardanoEgAddress(uint8_t index)
@@ -1232,7 +1211,6 @@ static void RejectButtonHandler(lv_event_t *e)
     GuiCloseCurrentWorkingView();
 }
 
-#ifdef WEB3_VERSION
 static void SetAccountType(uint8_t index)
 {
     SetConnectWalletPathIndex(g_response->data->origin, index);
@@ -1289,4 +1267,3 @@ static bool IsCardano()
 {
     return g_walletIndex == WALLET_LIST_ETERNL || g_walletIndex == WALLET_LIST_TYPHON || g_walletIndex == WALLET_LIST_BEGIN || g_walletIndex == WALLET_LIST_MEDUSA;
 }
-#endif

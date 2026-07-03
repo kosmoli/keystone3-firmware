@@ -43,9 +43,6 @@ typedef struct StatusBar {
     lv_obj_t *batteryCharging;
     lv_obj_t *batteryPadImg;
     lv_obj_t *betaImg;
-#ifdef BTC_ONLY
-    lv_obj_t *testNetImg;
-#endif
 } StatusBar_t;
 static StatusBar_t g_guiStatusBar;
 
@@ -67,7 +64,6 @@ static void RefreshStatusBar(void);
 
 const static CoinWalletInfo_t g_coinWalletBtn[] = {
     {CHAIN_BTC, "", &coinBtc},
-#ifdef WEB3_VERSION
     {CHAIN_ETH, "", &coinEth},
     {CHAIN_SOL, "", &coinSol},
     {CHAIN_BNB, "", &coinBnb},
@@ -125,16 +121,12 @@ const static CoinWalletInfo_t g_coinWalletBtn[] = {
     {CHAIN_TGD, "", &coinTgd},
     {CHAIN_DOT, "", &coinDot},
     {CHAIN_ZCASH, "", &coinZec},
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     {CHAIN_ZCASH, "", &coinZec},
     {CHAIN_XMR, "", &coinXmr},
-#endif
 };
 
 const static WalletInfo_t g_walletBtn[] = {
-#ifdef WEB3_VERSION
     {WALLET_LIST_KEYSTONE, "Keystone Nexus", &walletKeystone},
     {WALLET_LIST_METAMASK, "MetaMask", &walletMetamask},
     {WALLET_LIST_OKX, "OKX Wallet", &walletOkx},
@@ -177,9 +169,7 @@ const static WalletInfo_t g_walletBtn[] = {
     {WALLET_LIST_FEATHER, "Feather Wallet", &walletFeather},
     {WALLET_LIST_CORE, "Core Wallet", &walletCore},
     {WALLET_LIST_IOTA, "IOTA Wallet", &walletIota},
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     {WALLET_LIST_BLUE, "BlueWallet", &walletBluewallet},
     {WALLET_LIST_SPARROW, "Sparrow", &walletSparrow},
     {WALLET_LIST_UNISAT, "UniSat", &walletUniSat},
@@ -189,19 +179,7 @@ const static WalletInfo_t g_walletBtn[] = {
     {WALLET_LIST_FEATHER, "Feather Wallet", &walletFeather},
     {WALLET_LIST_ZODL, "Zodl", &walletZodl},
     {WALLET_LIST_VIZOR, "Vizor", &walletVizor},
-#endif
 
-#ifdef BTC_ONLY
-    {WALLET_LIST_BLUE, "BlueWallet", &walletBluewallet},
-    {WALLET_LIST_SPECTER, "Specter", &walletSpecter},
-    {WALLET_LIST_SPARROW, "Sparrow", &walletSparrow},
-    {WALLET_LIST_NUNCHUK, "Nunchuk", &walletNunchuk},
-    {WALLET_LIST_ZEUS, "ZEUS Wallet", &walletZeus},
-    {WALLET_LIST_BABYLON, "Babylon", &walletBabylon},
-    {WALLET_LIST_BULL, "BULL", &walletBull},
-    {WALLET_LIST_UNISAT, "UniSat", &walletUniSat},
-    {WALLET_LIST_BITCOIN_SAFE, "Bitcoin Safe", &walletBtcSafe},
-#endif
 };
 
 void GuiNvsBarSetWalletName(const char *name)
@@ -295,11 +273,6 @@ void GuiStatusBarInit(void)
         img = GuiCreateImg(cont, &imgBeta);
         g_guiStatusBar.betaImg = img;
     }
-#ifdef BTC_ONLY
-    img = GuiCreateImg(cont, &imgTestNet);
-    g_guiStatusBar.testNetImg = img;
-    lv_obj_add_flag(img, LV_OBJ_FLAG_HIDDEN);
-#endif
     RefreshStatusBar();
 #ifdef COMPILE_SIMULATOR
     GuiStatusBarSetBattery(20, true);
@@ -371,18 +344,6 @@ void GuiStatusBarSetUsb(void)
     RefreshStatusBar();
 }
 
-#ifdef BTC_ONLY
-void GuiStatusBarSetTestNet(void)
-{
-    if ((GetIsTestNet() == true) && (GetCurrentWalletIndex() == SINGLE_WALLET) &&
-            GetCurrentAccountIndex() < 3) {
-        lv_obj_clear_flag(g_guiStatusBar.testNetImg, LV_OBJ_FLAG_HIDDEN);
-    } else {
-        lv_obj_add_flag(g_guiStatusBar.testNetImg, LV_OBJ_FLAG_HIDDEN);
-    }
-    RefreshStatusBar();
-}
-#else
 const char *GetWalletNameByIndex(WALLET_LIST_INDEX_ENUM index)
 {
     if (index == WALLET_LIST_ETERNL) {
@@ -406,7 +367,6 @@ const char *GetWalletNameByIndex(WALLET_LIST_INDEX_ENUM index)
     }
     return NULL;
 }
-#endif
 
 uint8_t GetCurrentDisplayPercent(void)
 {
@@ -508,10 +468,6 @@ static void RefreshStatusBar(void)
     if (!lv_obj_has_flag(g_guiStatusBar.usbImg, LV_OBJ_FLAG_HIDDEN)) {
         next = g_guiStatusBar.usbImg;
     }
-#ifdef BTC_ONLY
-    lv_obj_align_to(g_guiStatusBar.testNetImg, next, LV_ALIGN_OUT_LEFT_MID, -10, 0);
-    next = g_guiStatusBar.testNetImg;
-#endif
     if (SOFTWARE_VERSION_BUILD % 2) {
         lv_obj_align_to(g_guiStatusBar.betaImg, next, LV_ALIGN_OUT_LEFT_MID, -10, 0);
     }
@@ -535,11 +491,7 @@ static lv_obj_t *CreateCloseBtn(lv_obj_t *navBar)
 
 static lv_obj_t *CreateManageBtn(lv_obj_t *navBar)
 {
-#ifdef BTC_ONLY
-    lv_obj_t *btn = GuiCreateImgButton(navBar, &imgWallet2, 64, NULL, NULL);
-#else
     lv_obj_t *btn = GuiCreateImgButton(navBar, &imgManage, 64, NULL, NULL);
-#endif
     lv_obj_align(btn, LV_ALIGN_LEFT_MID, 10, 0);
 
     return btn;
@@ -751,7 +703,6 @@ void SetCoinWallet(NavBarWidget_t *navBarWidget, GuiChainCoinType index,
                    const char *name)
 {
     SetNavBarMidBtn(navBarWidget, NVS_BAR_MID_COIN, NULL, NULL);
-#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
     // KOSMO: HOME_WALLET_CARD_MONERO collides with CHAIN_ZCASH in g_coinWalletBtn[]
     if (index == HOME_WALLET_CARD_MONERO) {
         index = CHAIN_XMR;

@@ -18,7 +18,6 @@ typedef enum {
     XPUB_TYPE_BTC_LEGACY,
     XPUB_TYPE_BTC_NATIVE_SEGWIT,
     XPUB_TYPE_BTC_TAPROOT,
-#ifdef WEB3_VERSION
     XPUB_TYPE_LTC,
     XPUB_TYPE_LTC_NATIVE_SEGWIT,
     XPUB_TYPE_DOGE,
@@ -244,28 +243,11 @@ typedef enum {
     XPUB_TYPE_STELLAR_4,
     XPUB_TYPE_TON_BIP39,
     XPUB_TYPE_ZEC_TRANSPARENT_LEGACY,
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     ZCASH_UFVK_ENCRYPTED_0,
     XPUB_TYPE_MONERO_0,
     XPUB_TYPE_MONERO_PVK_0,
-#endif
 
-#ifdef BTC_ONLY
-    XPUB_TYPE_BTC_TEST,
-    XPUB_TYPE_BTC_LEGACY_TEST,
-    XPUB_TYPE_BTC_NATIVE_SEGWIT_TEST,
-    XPUB_TYPE_BTC_TAPROOT_TEST,
-
-    XPUB_TYPE_BTC_MULTI_SIG_P2SH,
-    XPUB_TYPE_BTC_MULTI_SIG_P2WSH_P2SH,
-    XPUB_TYPE_BTC_MULTI_SIG_P2WSH,
-    XPUB_TYPE_BTC_MULTI_SIG_P2SH_TEST,
-    XPUB_TYPE_BTC_MULTI_SIG_P2WSH_P2SH_TEST,
-    XPUB_TYPE_BTC_MULTI_SIG_P2WSH_TEST,
-
-#endif
     XPUB_TYPE_NUM,
 } ChainType;
 
@@ -294,22 +276,7 @@ void SetConnectWalletAccountIndex(const char* walletName, uint32_t index);
 uint32_t GetConnectWalletNetwork(const char* walletName);
 void SetConnectWalletNetwork(const char* walletName, uint32_t index);
 
-#ifdef WEB3_VERSION
 ChainType CheckSolPathSupport(char *path);
-#endif
 
-#ifdef BTC_ONLY
-void ExportMultiSigXpub(ChainType chainType);
-void MultiSigWalletSave(MultiSigWalletManager_t *manager);
-int32_t MultiSigWalletGet(uint8_t accountIndex, const char *password, MultiSigWalletManager_t *manager);
-
-void SetAccountMultiReceiveIndex(uint32_t index, char *verifyCode);
-uint32_t GetAccountMultiReceiveIndex(char *verifyCode);
-uint32_t GetAccountTestReceiveIndex(const char* chainName);
-void SetAccountTestReceiveIndex(const char* chainName, uint32_t index);
-uint32_t GetAccountTestReceivePath(const char* chainName);
-void SetAccountTestReceivePath(const char* chainName, uint32_t index);
-void DeleteAccountMultiReceiveIndex(const char* chainName, char *verifyCode);
-#endif
 #endif
 

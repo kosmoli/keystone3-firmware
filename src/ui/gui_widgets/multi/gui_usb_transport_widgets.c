@@ -142,11 +142,9 @@ void GuiUSBTransportWidgetsInit(EAPDUResultPage_t *param)
     case CMD_RESOLVE_UR:
         GuiResolveUrResultViewInit();
         break;
-#ifdef WEB3_VERSION
     case CMD_EXPORT_ADDRESS:
         GuiExportXPubViewInit();
         break;
-#endif
     default:
         break;
     }
@@ -172,7 +170,6 @@ void GuiUSBTransportWidgetsRefresh()
     return;
 }
 
-#ifdef WEB3_VERSION
 static void GuiExportXPubViewInit()
 {
     SetLockScreen(false);
@@ -234,4 +231,3 @@ static void RejectButtonHandler(lv_event_t *e)
     ExportAddressReject();
     GuiCloseCurrentWorkingView();
 }
-#endif

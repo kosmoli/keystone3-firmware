@@ -3,9 +3,7 @@
 
 #include "gui_animating_qrcode.h"
 #include "gui_btc.h"
-#ifndef BTC_ONLY
 #include "gui_zcash.h"
-#ifdef WEB3_VERSION
 #include "gui_eth.h"
 #include "gui_eth_batch_tx_widgets.h"
 #include "gui_trx.h"
@@ -20,18 +18,13 @@
 #include "gui_ton.h"
 #include "gui_avax.h"
 #include "gui_iota.h"
-#endif
-#ifdef CYPHERPUNK_VERSION
 #include "gui_monero.h"
-#endif
-#endif
 
 typedef void (*SetChainDataFunc)(void *resultData, void *multiResultData, bool multi);
 
 // Enumeration for displaying in the middle of the status bar
 typedef enum {
     CHAIN_BTC,
-#ifdef WEB3_VERSION
     CHAIN_ETH,
     CHAIN_SOL,
     CHAIN_BNB,
@@ -91,15 +84,10 @@ typedef enum {
     CHAIN_QCK,
     CHAIN_TGD,
     // cosmos end
-#endif
 
-#ifndef BTC_ONLY
     CHAIN_ZCASH,
-#endif
 
-#ifdef CYPHERPUNK_VERSION
     CHAIN_XMR,
-#endif
     CHAIN_BUTT,
 } GuiChainCoinType;
 
@@ -107,7 +95,6 @@ typedef enum {
 typedef enum {
     REMAPVIEW_BTC,
     REMAPVIEW_BTC_MESSAGE,
-#ifdef WEB3_VERSION
     REMAPVIEW_ETH,
     REMAPVIEW_ETH_PERSONAL_MESSAGE,
     REMAPVIEW_ETH_TYPEDDATA,
@@ -137,15 +124,9 @@ typedef enum {
     REMAPVIEW_TON_SIGNPROOF,
     REMAPVIEW_AVAX,
     REMAPVIEW_ZCASH,
-#endif
 
-#ifdef CYPHERPUNK_VERSION
-#ifndef WEB3_VERSION
-    REMAPVIEW_ZCASH,
-#endif
     REMAPVIEW_XMR_OUTPUT,
     REMAPVIEW_XMR_UNSIGNED,
-#endif
     REMAPVIEW_WEB_AUTH,
     REMAPVIEW_BUTT,
 } GuiRemapViewType;
@@ -194,10 +175,8 @@ GenerateUR GetUrGenerator(ViewType viewType);
 GenerateUR GetSingleUrGenerator(ViewType viewType);
 bool CheckViewTypeIsAllow(uint8_t viewType);
 UREncodeResult *SignInternal(SignFn sign_func, void *data);
-#ifndef BTC_ONLY
 bool IsMessageType(uint8_t type);
 bool isTonSignProof(uint8_t type);
 bool isCatalystVotingRegistration(uint8_t type);
 bool CheckViewTypeIsAllow(uint8_t viewType);
-#endif
 #endif

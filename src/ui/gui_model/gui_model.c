@@ -997,14 +997,12 @@ static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen)
         {
             void GuiResetCurrentUtxoAddressIndex(uint8_t index);
             GuiResetCurrentUtxoAddressIndex(accountIndex);
-#ifdef WEB3_VERSION
             void GuiResetCurrentEthAddressIndex(uint8_t index);
             void GuiResetCurrentStandardAddressIndex(uint8_t index);
             void GuiResetCurrentMultiAccountsCache(uint8_t index);
             GuiResetCurrentEthAddressIndex(accountIndex);
             GuiResetCurrentStandardAddressIndex(accountIndex);
             GuiResetCurrentMultiAccountsCache(accountIndex);
-#endif
         }
 
         uint8_t accountNum;
@@ -1167,11 +1165,6 @@ static void ModelVerifyPassSuccess(uint16_t *param)
             SecretCacheSetPassphrase("");
         }
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetPassword());
-#ifdef BTC_ONLY
-        if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) == 0) {
-            AccountPublicInfoSwitch(GetCurrentAccountIndex(), SecretCacheGetPassword(), false);
-        }
-#endif
         SetPageLockScreen(true);
         if (ret == SUCCESS_CODE) {
             GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_PASS, NULL, 0);
@@ -1380,12 +1373,10 @@ static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen)
     return SUCCESS_CODE;
 }
 
-#ifdef CYPHERPUNK_VERSION
 static bool CheckNeedDelay(ViewType viewType)
 {
     return viewType == ZcashTx;
 }
-#endif
 
 static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
 {
@@ -1416,11 +1407,9 @@ static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen)
 {
     GuiApiEmitSignal(SIG_SHOW_TRANSACTION_LOADING, NULL, 0);
     ViewType viewType = *((ViewType *)inData);
-#ifdef CYPHERPUNK_VERSION
     if (CheckNeedDelay(viewType)) {
         UserDelay(100);
     }
-#endif
     g_checkResult = CheckUrResult(viewType);
     if (g_checkResult != NULL && g_checkResult->error_code == 0) {
         GuiApiEmitSignal(SIG_TRANSACTION_CHECK_PASS, NULL, 0);
@@ -1630,7 +1619,6 @@ static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)
 }
 
 
-#ifdef WEB3_VERSION
 static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen);
 
 void GuiModelRsaGenerateKeyPair(void)
@@ -1693,4 +1681,3 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal)
     ClearLockScreenTime();
     return ret;
 }
-#endif

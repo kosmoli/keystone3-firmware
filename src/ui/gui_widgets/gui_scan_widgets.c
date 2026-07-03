@@ -26,32 +26,15 @@
 #include "account_manager.h"
 #include "gui_btc.h"
 #include "gui_pending_hintbox.h"
-#ifdef BTC_ONLY
 #include "gui_multisig_read_sdcard_widgets.h"
-#endif
 
 static void GuiScanNavBarInit();
 static void GuiSetScanCorner(void);
 static void ThrowError(int32_t errorCode);
 static void GuiScanStart();
 
-#ifdef BTC_ONLY
-static lv_obj_t *g_noticeWindow;
 
-static bool IsViewTypeSupported(ViewType viewType, ViewType *viewTypeFilter, size_t filterSize)
-{
-    for (size_t i = 0; i < filterSize; i++) {
-        if (viewType == viewTypeFilter[i]) {
-            return true;
-        }
-    }
-    return false;
-}
-#endif
-
-#ifdef CYPHERPUNK_VERSION
 #define IsSlip39WalletNotSupported(viewType) (viewType == CHAIN_XMR)
-#endif
 
 static PageWidget_t *g_pageWidget;
 static lv_obj_t *g_scanErrorHintBox = NULL;
@@ -85,9 +68,6 @@ void GuiScanDeInit()
         DestroyPageWidget(g_pageWidget);
         g_pageWidget = NULL;
     }
-#ifdef BTC_ONLY
-    GUI_DEL_OBJ(g_noticeWindow);
-#endif
 
     SetPageLockScreen(true);
 }
@@ -103,16 +83,7 @@ void GuiScanResult(bool result, void *param)
     if (result) {
         UrViewType_t urViewType = *(UrViewType_t *)param;
         g_qrcodeViewType = urViewType.viewType;
-#ifdef BTC_ONLY
-        if (g_viewTypeFilter[0] != 0xFF) {
-            if (!IsViewTypeSupported(g_qrcodeViewType, g_viewTypeFilter, NUMBER_OF_ARRAYS(g_viewTypeFilter))) {
-                g_scanErrorHintBox = GuiCreateErrorCodeWindow(ERR_MULTISIG_WALLET_CONFIG_INVALID, &g_scanErrorHintBox, GuiScanStart);
-                return;
-            }
-        }
-#endif
         g_chainType = ViewTypeToChainTypeSwitch(g_qrcodeViewType);
-#ifdef CYPHERPUNK_VERSION
         // Not a chain based transaction, e.g. WebAuth
         if (GetMnemonicType() == MNEMONIC_TYPE_SLIP39) {
             //we don't support ADA & XMR in Slip39 Wallet;
@@ -121,13 +92,11 @@ void GuiScanResult(bool result, void *param)
                 return;
             }
         }
-#endif
         if (g_chainType == CHAIN_BUTT) {
             if (g_qrcodeViewType == WebAuthResult) {
                 GuiCloseCurrentWorkingView();
                 GuiFrameOpenView(&g_webAuthResultView);
             }
-#ifdef WEB3_VERSION
             if (g_qrcodeViewType == KeyDerivationRequest) {
                 if (!GuiCheckIfTopView(&g_homeView)) {
                     GuiCloseCurrentWorkingView();
@@ -140,22 +109,9 @@ void GuiScanResult(bool result, void *param)
                 }
                 GuiFrameOpenViewWithParam(&g_deriveContextHashRequestView, NULL, 0);
             }
-#endif
 
-#ifdef BTC_ONLY
-            if (g_qrcodeViewType == MultisigWalletImport) {
-                GuiCloseCurrentWorkingView();
-                GuiFrameOpenView(&g_importMultisigWalletInfoView);
-            }
-
-            if (g_qrcodeViewType == MultisigCryptoImportXpub ||
-                    g_qrcodeViewType ==  MultisigBytesImportXpub) {
-                GuiCloseCurrentWorkingView();
-            }
-#endif
             return;
         }
-#ifdef WEB3_VERSION
         if (g_qrcodeViewType == EthBatchTx) {
             printf("g_qrcodeViewType == EthBatchTx\n");
             if (!GuiCheckIfTopView(&g_homeView)) {
@@ -164,7 +120,6 @@ void GuiScanResult(bool result, void *param)
             GuiFrameOpenView(&g_ethBatchTxView);
             return;
         }
-#endif
         uint8_t accountNum = 0;
         GetExistAccountNum(&accountNum);
         if (accountNum <= 0) {
@@ -187,7 +142,6 @@ void GuiTransactionCheckPass(void)
     GuiModelTransactionCheckResultClear();
     SetPageLockScreen(true);
     GuiCloseCurrentWorkingView();
-#ifdef WEB3_VERSION
     if (g_chainType == CHAIN_ARWEAVE) {
         if (GetIsTempAccount()) {
             ThrowError(ERR_INVALID_QRCODE);
@@ -201,7 +155,6 @@ void GuiTransactionCheckPass(void)
             return;
         }
     }
-#endif
     GuiFrameOpenViewWithParam(&g_transactionDetailView, &g_qrcodeViewType, sizeof(g_qrcodeViewType));
 }
 
@@ -220,8 +173,6 @@ void GuiTransactionCheckFailed(PtrT_TransactionCheckResult result)
         break;
     }
     GuiModelTransactionCheckResultClear();
-#if BTC_ONLY
-    FreePsbtUxtoMemory();
 #endif
 }
 
@@ -268,13 +219,6 @@ static void GuiSetScanCorner(void)
     lv_img_set_angle(img, 1800);
     lv_img_set_pivot(img, 0, 0);
 
-#ifdef BTC_ONLY
-    if (IsViewTypeSupported(MultisigWalletImport, g_viewTypeFilter, NUMBER_OF_ARRAYS(g_viewTypeFilter))) {
-        lv_obj_t *label = GuiCreateNoticeLabel(cont, _("multisig_scan_multisig_notice"));
-        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-        lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 526);
-    }
-#endif
 }
 
 static void ThrowError(int32_t errorCode)

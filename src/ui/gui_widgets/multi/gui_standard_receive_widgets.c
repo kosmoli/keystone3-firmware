@@ -121,9 +121,7 @@ static void SetKeyboardValid(bool validation);
 static void UpdateConfirmIndexBtn(void);
 static void RefreshSwitchAddress(void);
 
-#ifdef WEB3_VERSION
 static uint32_t* GetCosmosChainCurrentSelectIndex();
-#endif
 
 static StandardReceiveWidgets_t g_standardReceiveWidgets;
 static StandardReceiveTile g_StandardReceiveTileNow;
@@ -525,11 +523,9 @@ lv_obj_t* CreateStandardReceiveQRCode(lv_obj_t* parent, uint16_t w, uint16_t h)
 
 static uint16_t GetAddrYExtend(void)
 {
-#ifdef WEB3_VERSION
     if (g_chainCard == HOME_WALLET_CARD_SUI || g_chainCard == HOME_WALLET_CARD_APT || g_chainCard == HOME_WALLET_CARD_IOTA) {
         return 30;
     }
-#endif
     return 0;
 }
 
@@ -589,14 +585,12 @@ static void GuiCreateQrCodeWidget(lv_obj_t *parent)
 void GetAttentionText(char* text)
 {
     switch (g_chainCard) {
-#ifdef WEB3_VERSION
     case HOME_WALLET_CARD_TRX:
         strcpy_s(text, 1024, _("receive_trx_hint"));
         break;
     case HOME_WALLET_CARD_TON:
         strcpy_s(text, 1024, _("receive_ton_hint"));
         break;
-#endif
     default:
         snprintf_s(text, 1024, _("receive_coin_hint_fmt"), GetCoinCardByIndex(g_chainCard)->coin);
     }
@@ -716,15 +710,12 @@ static void RefreshQrCode(void)
         lv_qrcode_update(fullscreenQrcode, addressDataItem.address, strnlen_s(addressDataItem.address, ADDRESS_MAX_LEN));
     }
 
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_ZEC) {
         char addressString[256];
         CutAndFormatString(addressString, sizeof(addressString), addressDataItem.address, 56);
         lv_label_set_text(g_standardReceiveWidgets.addressLabel, addressString);
     }
-#endif
 
-#ifdef WEB3_VERSION
     if (g_chainCard == HOME_WALLET_CARD_ARWEAVE) {
         SimpleResponse_c_char *fixedAddress = fix_arweave_address(addressDataItem.address);
         if (fixedAddress->error_code == 0) {
@@ -742,7 +733,6 @@ static void RefreshQrCode(void)
     } else {
         lv_label_set_text(g_standardReceiveWidgets.addressLabel, addressDataItem.address);
     }
-#endif
     lv_label_set_text_fmt(g_standardReceiveWidgets.addressCountLabel, "%s-%u", _("account_head"), addressDataItem.index);
 }
 
@@ -788,7 +778,6 @@ static void RefreshSwitchAccount(void)
 
 static int GetMaxAddressIndex(void)
 {
-#ifdef WEB3_VERSION
     if (g_chainCard == HOME_WALLET_CARD_SUI || g_chainCard == HOME_WALLET_CARD_APT || g_chainCard == HOME_WALLET_CARD_IOTA) {
         return 10;
     }
@@ -798,7 +787,6 @@ static int GetMaxAddressIndex(void)
     if (g_chainCard == HOME_WALLET_CARD_XRP) {
         return 200;
     }
-#endif
     return GENERAL_ADDRESS_INDEX_MAX;
 }
 
@@ -860,7 +848,6 @@ static void ConfirmHandler(lv_event_t *e)
 
 static bool IsAccountSwitchable()
 {
-#ifdef WEB3_VERSION
     // all cosmos chain can switch account
     if (IsCosmosChain(g_chainCard)) {
         return true;
@@ -877,7 +864,6 @@ static bool IsAccountSwitchable()
     default:
         return false;
     }
-#endif
     return false;
 }
 
@@ -915,16 +901,13 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
     char hdPath[BUFFER_SIZE_128];
     SimpleResponse_c_char *result = NULL;
 
-#ifdef CYPHERPUNK_VERSION
     if (g_chainCard == HOME_WALLET_CARD_ZEC) {
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
         if (GetZcashUFVK(GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
             result = generate_zcash_default_address(ufvk);
         }
     }
-#endif
 
-#ifdef WEB3_VERSION
     char *xPub = NULL;
     switch (g_chainCard) {
     case HOME_WALLET_CARD_TRX:
@@ -995,7 +978,6 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
             return;
         }
     }
-#endif
     if (result != NULL && result->error_code == 0) {
         item->index = index;
         strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
@@ -1099,7 +1081,6 @@ void GuiResetAllStandardAddressIndex(void)
 
 static void SetCurrentSelectIndex(uint32_t selectIndex)
 {
-#ifdef WEB3_VERSION
     switch (g_chainCard) {
     case HOME_WALLET_CARD_SUI:
         g_suiSelectIndex[GetCurrentAccountIndex()] = selectIndex;
@@ -1126,7 +1107,6 @@ static void SetCurrentSelectIndex(uint32_t selectIndex)
             break;
         }
     }
-#endif
     SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
 }
 
@@ -1138,7 +1118,6 @@ static uint32_t GetCurrentSelectIndex()
     return GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
 }
 
-#ifdef WEB3_VERSION
 static uint32_t* GetCosmosChainCurrentSelectIndex()
 {
     switch (g_chainCard) {
@@ -1218,4 +1197,3 @@ static uint32_t* GetCosmosChainCurrentSelectIndex()
         return NULL;
     }
 }
-#endif

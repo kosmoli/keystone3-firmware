@@ -56,13 +56,11 @@ static void BackHandler(lv_event_t *e);
 static void ConfirmHandler(lv_event_t *e);
 static void RefreshSwitchAccount(void);
 
-#ifdef WEB3_VERSION
 static JumpButtonWidgets_t g_standardJumpButtonWidgets;
 static void SetKeyboardValid(bool validation);
 static void JumpToAccountHandler(lv_event_t *e);
 static void CloseSwitchAddressHandler(lv_event_t *e);
 static void InputAddressIndexKeyboardHandler(lv_event_t *e);
-#endif
 
 static void SelectAddressHandler(lv_event_t *e)
 {
@@ -85,7 +83,6 @@ static void SelectAddressHandler(lv_event_t *e)
 static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
 {
     switch (g_chainCoinType) {
-#ifdef WEB3_VERSION
     case CHAIN_XRP:
         item->index = index;
         strcpy(item->address, GuiGetXrpAddressByIndex(index));
@@ -102,7 +99,6 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         // we dont need to show the address,only show the account index. thus the address is empty.
         strcpy(item->address, "");
         break;
-#endif
     default:
         printf("ModelGetAddress cannot match %d\r\n", index);
         return;
@@ -127,12 +123,10 @@ static bool IsSelectChanged()
 static int GetMaxAddressIndex(void)
 {
     switch (g_chainCoinType) {
-#ifdef WEB3_VERSION
     case CHAIN_XRP:
         return 200;
     case CHAIN_ADA:
         return 23;
-#endif
     default:
         return 999999999;
     }
@@ -319,12 +313,10 @@ lv_obj_t *GuiCreateSelectAddressWidget(GuiChainCoinType chainCoinType, uint32_t 
     SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, BackHandler, NULL);
     SetMidBtnLabel(g_pageWidget->navBarWidget, NVS_BAR_MID_LABEL, _("switch_account"));
     switch (g_chainCoinType) {
-#ifdef WEB3_VERSION
     case CHAIN_ATOM:
         // add jump button at the right of the nav bar
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_SKIP, JumpToAccountHandler, NULL);
         break;
-#endif
     default:
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
         break;
@@ -334,7 +326,6 @@ lv_obj_t *GuiCreateSelectAddressWidget(GuiChainCoinType chainCoinType, uint32_t 
     return cont;
 }
 
-#ifdef WEB3_VERSION
 static void JumpToAccountHandler(lv_event_t *e)
 {
     lv_obj_t *cont, *label, *line, *closeBtn;
@@ -492,4 +483,3 @@ static void SetKeyboardValid(bool validation)
         lv_btnmatrix_set_btn_ctrl(g_standardJumpButtonWidgets.inputAccountKeyboard, 11, LV_BTNMATRIX_CTRL_DISABLED);
     }
 }
-#endif

@@ -69,17 +69,13 @@ void GuiTransactionSignatureHandleURUpdate(char *data, uint16_t len)
 static void GuiTransactionSignatureNVSBarInit()
 {
     SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, GoToHomeViewHandler, NULL);
-#ifdef WEB3_VERSION
     if (IsMessageType(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("transaction_parse_broadcast_message"));
     } else if (isTonSignProof(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("ton_sign_proof_title"));
     } else {
-#endif
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, NULL);
-#ifdef WEB3_VERSION
     }
-#endif
 }
 
 static void GuiCreateSignatureQRCode(lv_obj_t *parent)
@@ -106,8 +102,6 @@ static void GuiCreateSignatureQRCode(lv_obj_t *parent)
 
     if (func) {
         bool showPending = true;
-#if BTC_ONLY
-        showPending = false;
 #endif
         GuiAnimatingQRCodeInitWithCustomSize(qrCont, func, showPending, 336, 336, (char *)_("sign_transaction"));
     }

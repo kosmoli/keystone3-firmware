@@ -1,4 +1,3 @@
-#ifdef WEB3_VERSION
 #include "rsa.h"
 #include "user_utils.h"
 
@@ -158,4 +157,3 @@ int FlashWriteRsaPrimes(const uint8_t *data)
     CLEAR_ARRAY(seed);
     return ret;
 }
-#endif

@@ -18,10 +18,6 @@ static void UpdateSuccessNextStepHandler(lv_event_t *e)
     if (ModelGetPassphraseQuickAccess()) {
         GuiFrameOpenView(&g_passphraseView);
     } else if (GuiIsSetup()) {
-#ifndef WEB3_VERSION
-    } else if (GetMnemonicType() == MNEMONIC_TYPE_TON) {
-        GuiFrameOpenView(&g_checkDeleteWalletView);
-#endif
     } else {
         GuiFrameOpenView(&g_homeView);
     }

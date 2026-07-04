@@ -139,7 +139,6 @@ UREncodeResult *GuiGetCakeData(void)
     CHECK_CHAIN_PRINT(urEncode);
     return urEncode;
 }
-#endif
 
 typedef UREncodeResult *MetamaskUrGetter(PtrBytes master_fingerprint, uint32_t master_fingerprint_length, enum ETHAccountType account_type, PtrT_CSliceFFI_ExtendedPublicKey public_keys, PtrString wallet_name);
 

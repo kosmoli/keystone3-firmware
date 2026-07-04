@@ -96,7 +96,6 @@ static void GuiInitWalletState(void)
         g_walletState[HOME_WALLET_CARD_TON].enable = true;
         g_walletState[HOME_WALLET_CARD_ZEC].enable = IsZcashSupportedForCurrentMnemonic();
         g_walletState[HOME_WALLET_CARD_MONERO].enable = false;
-#endif
         g_coinFilterNum = 2;
         break;
     case MNEMONIC_TYPE_BIP39:
@@ -370,11 +369,10 @@ static void CoinDealHandler(HOME_WALLET_CARD_ENUM coin)
         GuiFrameOpenViewWithParam(&g_standardReceiveView, &coin, sizeof(coin));
         break;
     }
-    default:
     case HOME_WALLET_CARD_MONERO:
         GuiFrameOpenViewWithParam(&g_multiAccountsReceiveView, &coin, sizeof(coin));
         break;
-#endif
+    default:
         GuiFrameOpenViewWithParam(&g_standardReceiveView, &coin, sizeof(coin));
         break;
     }

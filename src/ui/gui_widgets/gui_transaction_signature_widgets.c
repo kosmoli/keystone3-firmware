@@ -102,7 +102,6 @@ static void GuiCreateSignatureQRCode(lv_obj_t *parent)
 
     if (func) {
         bool showPending = true;
-#endif
         GuiAnimatingQRCodeInitWithCustomSize(qrCont, func, showPending, 336, 336, (char *)_("sign_transaction"));
     }
 }

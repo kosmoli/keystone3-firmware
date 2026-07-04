@@ -26,7 +26,6 @@
 #include "account_manager.h"
 #include "gui_btc.h"
 #include "gui_pending_hintbox.h"
-#include "gui_multisig_read_sdcard_widgets.h"
 
 static void GuiScanNavBarInit();
 static void GuiSetScanCorner(void);
@@ -173,7 +172,6 @@ void GuiTransactionCheckFailed(PtrT_TransactionCheckResult result)
         break;
     }
     GuiModelTransactionCheckResultClear();
-#endif
 }
 
 static void GuiScanNavBarInit()

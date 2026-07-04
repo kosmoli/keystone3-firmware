@@ -15,7 +15,6 @@
 #include "gui_connect_ada_widgets.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_pending_hintbox.h"
-#endif
 #include "account_manager.h"
 #include "gui_animating_qrcode.h"
 #include "gui_global_resources.h"
@@ -216,7 +215,6 @@ static const lv_img_dsc_t *g_zodlCoinArray[1] = {
 
 static void AddCakeCoins(void);
 static void AddZecCoins(void);
-#endif
 
 WalletListItem_t g_walletListArray[] = {
     {WALLET_LIST_KEYSTONE, &walletKeystone, "Keystone Nexus", g_keystoneWalletCoinArray, 8, false, WALLET_FILTER_BTC | WALLET_FILTER_ETH | WALLET_FILTER_OTHER},
@@ -261,7 +259,6 @@ WalletListItem_t g_walletListArray[] = {
     {WALLET_LIST_FEATHER, &walletFeather, "Feather", g_cakeCoinArray, 1, true, WALLET_FILTER_OTHER},
     {WALLET_LIST_ZODL, &walletZodl, "Zodl", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
     {WALLET_LIST_VIZOR, &walletVizor, "Vizor", g_zodlCoinArray, 1, true, WALLET_FILTER_OTHER},
-#endif
 };
 
 typedef struct {
@@ -372,7 +369,6 @@ static void GuiInitWalletListArray()
         case WALLET_LIST_VIZOR:
             enable = IsZcashSupportedForCurrentMnemonic();
             break;
-#endif
         case WALLET_LIST_WANDER:
         case WALLET_LIST_BEACON:
             enable = !isTempAccount;
@@ -1188,7 +1184,6 @@ UREncodeResult *GuiGetZecData(void)
     data[0].index = 0;
     return get_connect_zcash_wallet_ur(sfp, 32, keys);
 }
-#endif
 
 void GuiPrepareArConnectWalletView(void)
 {
@@ -1346,7 +1341,6 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)
         func = GuiGetCakeData;
         AddCakeCoins();
         break;
-#endif
     default:
         return;
     }

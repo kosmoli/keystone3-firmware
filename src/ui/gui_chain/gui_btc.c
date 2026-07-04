@@ -14,7 +14,6 @@
 #include "gui_home_widgets.h"
 #include "gui_transaction_detail_widgets.h"
 #include "err_code.h"
-#include "gui_multisig_transaction_signature_widgets.h"
 
 #define CHECK_FREE_PARSE_RESULT(result)                       \
     if (result != NULL)                                       \

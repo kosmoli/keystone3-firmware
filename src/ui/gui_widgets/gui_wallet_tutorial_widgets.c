@@ -414,7 +414,6 @@ static void WalletTutorialsInit()
     g_tutorials[WALLET_LIST_CORE].items[0].qrTitle = _("connect_core_title");
     g_tutorials[WALLET_LIST_CORE].items[0].qrUrl = _("connect_core_link");
 
-#endif
 }
 
 void GuiWalletTutorialInit(WALLET_LIST_INDEX_ENUM tutorialIndex)

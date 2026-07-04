@@ -22,8 +22,6 @@
 #include "user_memory.h"
 
 #include "gui_home_widgets.h"
-#include "multi_sig_wallet_manager.h"
-#include "gui_multisig_wallet_export_widgets.h"
 
 #define ADDRESS_INDEX_MAX                               (999999999)
 #define DOGE_ADDRESS_INDEX_MAX                          (19)
@@ -1082,8 +1080,6 @@ static void RefreshQrCode(void)
     lv_label_set_text_fmt(g_utxoReceiveWidgets.addressCountLabel, "%s-%u", _("Address"), addressDataItem.index);
     lv_obj_align_to(g_utxoReceiveWidgets.addressCountLabel, g_utxoReceiveWidgets.addressLabel, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 16);
 
-#else
-#endif
 }
 
 static void RefreshSwitchAccount(void)
@@ -1470,7 +1466,6 @@ static void ModelGetUtxoAddress(uint32_t index, AddressDataItem_t *item)
     GetRootHdPath(rootPath, ADDRESS_MAX_LEN);
     snprintf_s(hdPath, ADDRESS_MAX_LEN, "%s/0/%u", rootPath, index);
     strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
-#endif
     ChainType chainType;
     uint8_t addrType = g_addressType[g_currentAccountIndex];
     if (g_utxoReceiveTileNow == UTXO_RECEIVE_TILE_ADDRESS_SETTINGS) {

@@ -298,10 +298,8 @@ static void GuiTransactionDetailNavBarInit()
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("confirm_transaction_hash"));
     } else if (g_viewType == CardanoSignTxHash) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("confirm_transaction_hash"));
-#ifdef FEATURE_MONERO
-    }  else if (g_viewType == XmrOutput) {
+    } else if (g_viewType == XmrOutput) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("confirm_txo_signing"));
-#endif
     } else {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, NULL);
     }

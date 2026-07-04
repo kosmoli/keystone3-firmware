@@ -1074,12 +1074,12 @@ static void RefreshSwitchAccount(void)
             char string[128] = {0};
             CutAndFormatString(string, sizeof(string), addressDataItem.address, 24);
             lv_label_set_text(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, string);
+        } else {
+            char temp[BUFFER_SIZE_64];
+            snprintf_s(temp, BUFFER_SIZE_64, "m/1852'/1815'/%u'", index);
+            lv_label_set_text(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, temp);
+            lv_label_set_text_fmt(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressCountLabel, "%s-%u", _("account_head"), index);
         }
-
-        char temp[BUFFER_SIZE_64];
-        snprintf_s(temp, BUFFER_SIZE_64, "m/1852'/1815'/%u'", index);
-        lv_label_set_text(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, temp);
-        lv_label_set_text_fmt(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressCountLabel, "%s-%u", _("account_head"), index);
         if (end) {
             lv_obj_add_flag(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressCountLabel, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(g_multiAccountsReceiveWidgets.switchAccountWidgets[i].addressLabel, LV_OBJ_FLAG_HIDDEN);

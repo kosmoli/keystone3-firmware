@@ -555,17 +555,17 @@ static void GuiCreateQrCodeWidget(lv_obj_t *parent)
     yOffset += 60;
 
     yOffset += 16;
-    g_standardReceiveWidgets.addressCountLabel = GuiCreateIllustrateLabel(g_standardReceiveWidgets.qrCodeCont, "");
-    lv_obj_align(g_standardReceiveWidgets.addressCountLabel, LV_ALIGN_TOP_LEFT, 36, yOffset + addrYExtend);
-
-    g_standardReceiveWidgets.addressButton = lv_btn_create(g_standardReceiveWidgets.qrCodeCont);
-    lv_obj_set_size(g_standardReceiveWidgets.addressButton, 336, 36);
-    lv_obj_align(g_standardReceiveWidgets.addressButton, LV_ALIGN_TOP_MID, 0, 464 + addrYExtend);
-    lv_obj_set_style_bg_opa(g_standardReceiveWidgets.addressButton, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_outline_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN);
-    lv_obj_set_style_shadow_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN);
     if (IsAccountSwitchable()) {
+        g_standardReceiveWidgets.addressCountLabel = GuiCreateIllustrateLabel(g_standardReceiveWidgets.qrCodeCont, "");
+        lv_obj_align(g_standardReceiveWidgets.addressCountLabel, LV_ALIGN_TOP_LEFT, 36, yOffset + addrYExtend);
+
+        g_standardReceiveWidgets.addressButton = lv_btn_create(g_standardReceiveWidgets.qrCodeCont);
+        lv_obj_set_size(g_standardReceiveWidgets.addressButton, 336, 36);
+        lv_obj_align(g_standardReceiveWidgets.addressButton, LV_ALIGN_TOP_MID, 0, 464 + addrYExtend);
+        lv_obj_set_style_bg_opa(g_standardReceiveWidgets.addressButton, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_border_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_outline_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN);
+        lv_obj_set_style_shadow_width(g_standardReceiveWidgets.addressButton, 0, LV_PART_MAIN);
         lv_obj_add_event_cb(g_standardReceiveWidgets.addressButton, OpenSwitchAddressHandler, LV_EVENT_CLICKED, NULL);
         tempObj = GuiCreateImg(g_standardReceiveWidgets.addressButton, &imgArrowRight);
         lv_obj_set_style_img_opa(tempObj, LV_OPA_80, LV_PART_MAIN);
@@ -733,7 +733,9 @@ static void RefreshQrCode(void)
     } else {
         lv_label_set_text(g_standardReceiveWidgets.addressLabel, addressDataItem.address);
     }
-    lv_label_set_text_fmt(g_standardReceiveWidgets.addressCountLabel, "%s-%u", _("account_head"), addressDataItem.index);
+    if (IsAccountSwitchable()) {
+        lv_label_set_text_fmt(g_standardReceiveWidgets.addressCountLabel, "%s-%u", _("account_head"), addressDataItem.index);
+    }
 }
 
 static void RefreshSwitchAccount(void)
@@ -947,13 +949,6 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ARWEAVE);
         if (xPub != NULL) {
             result = arweave_get_address(xPub);
-        }
-        break;
-    case HOME_WALLET_CARD_ZEC:
-        xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ZEC_TRANSPARENT_LEGACY);
-        if (xPub != NULL) {
-            snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/133'/0'/0/%u", index);
-            result = utxo_get_address(hdPath, xPub);
         }
         break;
     case HOME_WALLET_CARD_XLM:

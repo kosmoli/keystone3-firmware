@@ -714,9 +714,7 @@ static void RefreshQrCode(void)
         char addressString[256];
         CutAndFormatString(addressString, sizeof(addressString), addressDataItem.address, 56);
         lv_label_set_text(g_standardReceiveWidgets.addressLabel, addressString);
-    }
-
-    if (g_chainCard == HOME_WALLET_CARD_ARWEAVE) {
+    } else if (g_chainCard == HOME_WALLET_CARD_ARWEAVE) {
         SimpleResponse_c_char *fixedAddress = fix_arweave_address(addressDataItem.address);
         if (fixedAddress->error_code == 0) {
             lv_label_set_text(g_standardReceiveWidgets.addressLabel, fixedAddress->data);

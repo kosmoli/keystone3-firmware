@@ -4,7 +4,6 @@
 #include "stdint.h"
 #include "stdbool.h"
 #include "gui_home_widgets.h"
-#include "multi_sig_wallet_manager.h"
 #include "rsa.h"
 #include "bip39.h"
 

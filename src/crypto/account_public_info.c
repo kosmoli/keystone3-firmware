@@ -18,7 +18,6 @@
 #include "gui_api.h"
 #include "gui_home_widgets.h"
 #include "user_fatfs.h"
-#include "multi_sig_wallet_manager.h"
 #include "log_print.h"
 #include "rsa.h"
 #include "gui_model.h"

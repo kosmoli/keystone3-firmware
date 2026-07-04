@@ -5,7 +5,7 @@
 #include "lvgl.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_attention_hintbox.h"
-#include "web3/gui_general_home_widgets.h"
+#include "gui_general_home_widgets.h"
 #ifdef COMPILE_SIMULATOR
 #include "gui_pending_hintbox.h"
 #endif

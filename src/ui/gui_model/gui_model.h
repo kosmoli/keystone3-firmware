@@ -16,7 +16,7 @@
 #else
 #include "simulator_model.h"
 #endif
-#include "multi/web3/gui_general_analyze.h"
+#include "gui_analyze_chains.h"
 #include "rsa.h"
 #include "drv_rtc.h"
 #include "drv_battery.h"

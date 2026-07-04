@@ -8,8 +8,6 @@ set(BUILD_VARIANT "KOSMO")
 
 message(STATUS "Building for KOSMO_VERSION")
 add_compile_definitions(KOSMO_VERSION)
-set(WIDGET_PATH "multi")
-set(WIDGET_SUBPATH "multi/web3")
 if(BUILD_TYPE STREQUAL "Simulator")
     set(COMPILE_KEYSTONE OFF CACHE BOOL "compile on MAIN target" FORCE)
     set(COMPILE_SIMULATOR ON CACHE BOOL "compile on Simulator target" FORCE)
@@ -70,12 +68,9 @@ set(CRYPTO_INCLUDE_PATH
 )
 
 set(GUI_CUSTOM_INCLUDE_PATH
-    src/ui/gui_widgets/${WIDGET_SUBPATH}
-    src/ui/gui_widgets/${WIDGET_PATH}
-    src/ui/gui_chain/${WIDGET_SUBPATH}
-    src/ui/gui_chain/${WIDGET_PATH}
-    src/ui/gui_wallet/${WIDGET_SUBPATH}
-    src/ui/gui_wallet/${WIDGET_PATH}
+    src/ui/gui_widgets/multi
+    src/ui/gui_chain
+    src/ui/gui_wallet
 )
 
 set(GUI_INCLUDE_PATH
@@ -143,7 +138,6 @@ set(SRC_INCLUDE_PATH
     src/utils
     src/utils/log
     src/managers
-    src/managers/btc_only
     src/error_codes
     src/firmware
     src/msg
@@ -176,16 +170,8 @@ file(GLOB GUI_CUSTOM_VIEW_WIDGETS
     src/ui/gui_wallet/*.c
     src/ui/gui_chain/*.c
     src/ui/gui_analyze/*.c
-    src/ui/gui_widgets/${WIDGET_SUBPATH}/*.c
-    src/ui/gui_widgets/${WIDGET_PATH}/*.c
-    src/ui/gui_views/${WIDGET_SUBPATH}/*.c
-    src/ui/gui_views/${WIDGET_PATH}/*.c
-    src/ui/gui_chain/${WIDGET_SUBPATH}/*.c
-    src/ui/gui_chain/${WIDGET_PATH}/*.c
-    src/ui/gui_wallet/${WIDGET_SUBPATH}/*.c
-    src/ui/gui_wallet/${WIDGET_PATH}/*.c
-    src/ui/gui_analyze/${WIDGET_SUBPATH}/*.c
-    src/ui/gui_analyze/${WIDGET_PATH}/*.c
+    src/ui/gui_widgets/multi/*.c
+    src/ui/gui_views/multi/*.c
 )
 
 file(GLOB_RECURSE GUI
@@ -325,15 +311,6 @@ if(COMPILE_KEYSTONE)
 else()
     project(simulator)
     include(ui_simulator/simulator.cmake)
-
-    set(excluded_directories
-        src/ui/gui_views/btc_only
-        src/ui/gui_widgets/btc_only)
-
-    foreach(directory ${excluded_directories})
-        file(GLOB_RECURSE excluded_files "${directory}/*")
-        list(REMOVE_ITEM objsrc ${excluded_files})
-    endforeach()
 
     add_executable(${PROJECT_NAME}
         ${SIMULATOR_SRC}

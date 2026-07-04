@@ -908,6 +908,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         if (GetZcashUFVK(GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
             result = generate_zcash_default_address(ufvk);
         }
+        snprintf_s(hdPath, BUFFER_SIZE_128, "UFVK");
     }
 
     char *xPub = NULL;
@@ -950,6 +951,9 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         if (xPub != NULL) {
             result = arweave_get_address(xPub);
         }
+        break;
+    case HOME_WALLET_CARD_ZEC:
+        // ZEC UFVK address already generated above (before switch)
         break;
     case HOME_WALLET_CARD_XLM:
         xPub = GetCurrentAccountPublicKey(XPUB_TYPE_STELLAR_0 + index);

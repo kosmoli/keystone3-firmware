@@ -75,6 +75,7 @@ static lv_obj_t *g_coinListCont = NULL;
 static WalletState_t g_walletState[HOME_WALLET_CARD_BUTT] = {
     {HOME_WALLET_CARD_BTC, false, "BTC", true},
     HOME_WALLET_STATE_SURPLUS,
+    {HOME_WALLET_CARD_MONERO, false, "XMR", false},
 };
 static WalletState_t g_walletBakState[HOME_WALLET_CARD_BUTT] = {0};
 static KeyboardWidget_t *g_keyboardWidget = NULL;
@@ -123,6 +124,12 @@ static const ChainCoinCard_t g_coinCardArray[HOME_WALLET_CARD_BUTT] = {
         .icon = &coinBtc,
     },
     HOME_WALLET_CARD_SURPLUS,
+    {
+        .index = HOME_WALLET_CARD_MONERO,
+        .coin = "XMR",
+        .chain = "Monero",
+        .icon = &coinXmr,
+    },
 };
 
 static void CoinDealHandler(HOME_WALLET_CARD_ENUM coin);

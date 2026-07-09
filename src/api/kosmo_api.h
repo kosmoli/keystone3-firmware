@@ -92,6 +92,47 @@ const char *KosmoApi_GetPublicKey(KosmoChainType chain);
  */
 const char *KosmoApi_GetPath(KosmoChainType chain);
 
+/*
+ * 获取当前账户的种子数据（用于签名）。
+ * @param out      输出缓冲区（调用者分配，至少 64 字节）
+ * @param outLen   输出：实际种子长度
+ * @return KOSMO_OK 或错误码
+ */
+int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen);
+
+/*
+ * 获取当前账户索引。
+ */
+uint8_t KosmoApi_GetCurrentAccountIndex(void);
+
+/*
+ * 获取已存在的账户数量。
+ * @return 账户数量
+ */
+uint8_t KosmoApi_GetAccountCount(void);
+
+/*
+ * 检查 Solana 派生路径是否支持。
+ * @param path  HD 路径字符串
+ * @return 对应的 KosmoChainType，不支持返回 KOSMO_CHAIN_NUM
+ */
+KosmoChainType KosmoApi_CheckSolPathSupport(const char *path);
+
+/*
+ * 填充首页钱包列表（替代 AccountPublicHomeCoinGet）。
+ * @param walletList  输出数组
+ * @param count       数组容量
+ */
+void KosmoApi_GetHomeCoinList(void *walletList, uint8_t count);
+
+/* ── ChainType 映射（过渡期内部使用）────────────────── */
+
+/*
+ * KosmoChainType → 原 ChainType（XPUB_TYPE_*）的主类型映射。
+ * Phase 4 完成后将被内部化。
+ */
+uint32_t KosmoChainToXPubType(KosmoChainType chain);
+
 /* ── 便捷宏 ─────────────────────────────────────────── */
 
 /* 简化异步调用：自动构造 KosmoRequest */

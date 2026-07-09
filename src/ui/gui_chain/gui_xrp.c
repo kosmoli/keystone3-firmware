@@ -1,12 +1,11 @@
 #include "define.h"
 #include "gui_xrp.h"
 #include "gui_chain.h"
-#include "account_manager.h"
 #include "user_memory.h"
-#include "keystore.h"
 #include "secret_cache.h"
 #include "screen_manager.h"
 #include "librust_c.h"
+#include "kosmo_api.h"
 #define XRP_ROOT_PATH               ("m/44'/144'/0'")
 #define XRP_ADD_MAX_LEN             (40)
 #define HD_PATH_MAX_LEN             (26)
@@ -33,7 +32,7 @@ char *GuiGetXrpAddressByIndex(uint16_t index)
     char *hdPath = GuiGetXrpPath(index);
     SimpleResponse_c_char *result;
 
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_XRP);
+    xPub = KosmoApi_GetPublicKey(KOSMO_CHAIN_XRP);
     result = xrp_get_address(hdPath, xPub, XRP_ROOT_PATH);
 
     if (result->error_code == 0) {
@@ -82,8 +81,8 @@ PtrT_TransactionCheckResult GuiGetXrpCheckResult(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     TransactionCheckResult *result = NULL;
     char pubkey[XPUB_KEY_LEN] = {0};
-    if (g_cachedPubkey[GetCurrentAccountIndex()] != NULL) {
-        strcpy_s(pubkey, XPUB_KEY_LEN, g_cachedPubkey[GetCurrentAccountIndex()]);
+    if (g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()] != NULL) {
+        strcpy_s(pubkey, XPUB_KEY_LEN, g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()]);
     }
     enum QRCodeType urType = URTypeUnKnown;
     if (g_isMulti) {
@@ -98,19 +97,19 @@ PtrT_TransactionCheckResult GuiGetXrpCheckResult(void)
         result =  xrp_check_tx_bytes(data, mfp, sizeof(mfp), urType);
         return result;
     } else {
-        result = xrp_check_tx(data, GetCurrentAccountPublicKey(XPUB_TYPE_XRP), pubkey);
+        result = xrp_check_tx(data, KosmoApi_GetPublicKey(KOSMO_CHAIN_XRP), pubkey);
     }
     if (result != NULL && result->error_code == 0 && strlen(result->error_message) > 0) {
-        if (g_cachedPubkey[GetCurrentAccountIndex()] != NULL) {
-            SRAM_FREE(g_cachedPubkey[GetCurrentAccountIndex()]);
+        if (g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()] != NULL) {
+            SRAM_FREE(g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()]);
         }
         uint32_t len = strlen(result->error_message) + 1;
         char *res_str = SRAM_MALLOC(len);
         strcpy_s(res_str, len, result->error_message);
         char *p = strtok(res_str, ":");
         len = strlen(p) + 1;
-        g_cachedPubkey[GetCurrentAccountIndex()] = SRAM_MALLOC(len);
-        strcpy_s(g_cachedPubkey[GetCurrentAccountIndex()], len, p);
+        g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()] = SRAM_MALLOC(len);
+        strcpy_s(g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()], len, p);
 
         p = strtok(NULL, ":");
         int rootLen = strlen(XRP_ROOT_PATH);
@@ -119,14 +118,14 @@ PtrT_TransactionCheckResult GuiGetXrpCheckResult(void)
         g_hdPath[rootLen + extLen] = '\0';
         SRAM_FREE(res_str);
 
-        if (g_cachedPath[GetCurrentAccountIndex()] != NULL) {
-            SRAM_FREE(g_cachedPath[GetCurrentAccountIndex()]);
+        if (g_cachedPath[KosmoApi_GetCurrentAccountIndex()] != NULL) {
+            SRAM_FREE(g_cachedPath[KosmoApi_GetCurrentAccountIndex()]);
         }
         len = strnlen_s(g_hdPath, HD_PATH_MAX_LEN) + 1;
-        g_cachedPath[GetCurrentAccountIndex()] = SRAM_MALLOC(len);
-        strcpy_s(g_cachedPath[GetCurrentAccountIndex()], len, g_hdPath);
+        g_cachedPath[KosmoApi_GetCurrentAccountIndex()] = SRAM_MALLOC(len);
+        strcpy_s(g_cachedPath[KosmoApi_GetCurrentAccountIndex()], len, g_hdPath);
     } else {
-        strcpy_s(g_hdPath, HD_PATH_MAX_LEN, g_cachedPath[GetCurrentAccountIndex()]);
+        strcpy_s(g_hdPath, HD_PATH_MAX_LEN, g_cachedPath[KosmoApi_GetCurrentAccountIndex()]);
     }
     return result;
 }
@@ -160,17 +159,18 @@ UREncodeResult *GuiGetXrpSignQrCodeData(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
         uint8_t seed[64];
-        GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
+        uint32_t seedLen = 0;
+        KosmoApi_GetSeed(seed, &seedLen);
+        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
         if (is_keystone_xrp_tx(data)) {
             uint8_t mfp[4] = {0};
             GetMasterFingerPrint(mfp);
             // sign the bytes from keystone hot wallet
             char pubkey[XPUB_KEY_LEN] = {0};
-            if (g_cachedPubkey[GetCurrentAccountIndex()] != NULL) {
-                strcpy_s(pubkey, XPUB_KEY_LEN, g_cachedPubkey[GetCurrentAccountIndex()]);
+            if (g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()] != NULL) {
+                strcpy_s(pubkey, XPUB_KEY_LEN, g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()]);
             }
-            encodeResult = xrp_sign_tx_bytes(data, seed, len, mfp, sizeof(mfp), GetCurrentAccountPublicKey(XPUB_TYPE_XRP));
+            encodeResult = xrp_sign_tx_bytes(data, seed, len, mfp, sizeof(mfp), KosmoApi_GetPublicKey(KOSMO_CHAIN_XRP));
         } else {
             encodeResult = xrp_sign_tx(data, g_hdPath, seed, len);
         }

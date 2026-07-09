@@ -107,6 +107,17 @@ int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen);
 KosmoMnemonicType KosmoApi_GetMnemonicType(void);
 
 /*
+ * 获取当前账户的种子长度。
+ * BIP39: 64 字节, TON: 32 字节。
+ */
+uint32_t KosmoApi_GetSeedLen(void);
+
+/*
+ * 获取当前账户的熵长度。
+ */
+uint32_t KosmoApi_GetEntropyLen(void);
+
+/*
  * 获取当前账户索引。
  */
 uint8_t KosmoApi_GetCurrentAccountIndex(void);
@@ -130,6 +141,12 @@ KosmoChainType KosmoApi_CheckSolPathSupport(const char *path);
  * @param count       数组容量
  */
 void KosmoApi_GetHomeCoinList(void *walletList, uint8_t count);
+
+/*
+ * Zcash 特有操作。
+ */
+int32_t KosmoApi_GetZcashSFP(uint8_t accountIndex, uint8_t *outSFP);
+int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK);
 
 /* ── ChainType 映射（过渡期内部使用）────────────────── */
 

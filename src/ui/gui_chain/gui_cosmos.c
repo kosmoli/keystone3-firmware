@@ -1,13 +1,11 @@
 #include "gui_analyze.h"
 #include "rust.h"
-#include "keystore.h"
 #include "version.h"
-#include "secret_cache.h"
 #include "screen_manager.h"
 #include "cjson/cJSON.h"
-#include "user_memory.h"
-#include "account_manager.h"
+#include "account_public_info.h"
 #include "gui_chain.h"
+#include "kosmo_api.h"
 
 static bool g_isMulti = false;
 static URParseResult *g_urResult = NULL;
@@ -635,11 +633,12 @@ UREncodeResult *GuiGetCosmosSignQrCodeData(void)
     UREncodeResult *encodeResult;
     uint8_t seed[SEED_LEN];
     do {
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        if (ret != SUCCESS_CODE) {
+        uint32_t seedLen = 0;
+        int ret = KosmoApi_GetSeed(seed, &seedLen);
+        if (ret != KOSMO_OK) {
             break;
         }
-        encodeResult = cosmos_sign_tx(GetCosmosUrData(), GetCosmosUrType(), seed, GetCurrentAccountSeedLen());
+        encodeResult = cosmos_sign_tx(GetCosmosUrData(), GetCosmosUrType(), seed, seedLen);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));

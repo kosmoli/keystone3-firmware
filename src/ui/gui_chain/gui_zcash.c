@@ -1,11 +1,8 @@
 #include "gui_zcash.h"
 #include "gui_chain_components.h"
-#include "user_memory.h"
-#include "account_manager.h"
 #include "gui_chain.h"
-#include "keystore.h"
 #include "screen_manager.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 
 #define MAX_MEMO_LENGTH 1024
 
@@ -34,12 +31,12 @@ void *GuiGetZcashGUIData(void)
     CHECK_FREE_PARSE_RESULT(g_parseResult);
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t sfp[32];
-    GetZcashSFP(GetCurrentAccountIndex(), sfp);
+    KosmoApi_GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
 
     PtrT_TransactionParseResult_DisplayPczt parseResult = NULL;
     do {
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
-        GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
+        KosmoApi_GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
         parseResult = parse_zcash_tx_cypherpunk(data, ufvk, sfp);
         CHECK_CHAIN_BREAK(parseResult);
         g_zcashData = parseResult->data;
@@ -301,11 +298,11 @@ PtrT_TransactionCheckResult GuiGetZcashCheckResult(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t sfp[32];
-    GetZcashSFP(GetCurrentAccountIndex(), sfp);
+    KosmoApi_GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
     uint32_t zcash_account_index = 0;
 
     char ufvk[ZCASH_UFVK_MAX_LEN + 1] = {0};
-    GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
+    KosmoApi_GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
     return check_zcash_tx_cypherpunk(data, ufvk, sfp, zcash_account_index, !IsZcashSupportedForCurrentMnemonic());
 }
 

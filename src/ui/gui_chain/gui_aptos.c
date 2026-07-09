@@ -1,13 +1,10 @@
 #include "define.h"
 #include "rust.h"
-#include "keystore.h"
 #include "gui_chain.h"
 #include "screen_manager.h"
-#include "keystore.h"
-#include "account_manager.h"
-#include "secret_cache.h"
+#include "account_public_info.h"
 #include "assert.h"
-#include "user_memory.h"
+#include "kosmo_api.h"
 
 static uint8_t GetAptosPublickeyIndex(char* rootPath);
 
@@ -92,14 +89,15 @@ UREncodeResult *GuiGetAptosSignQrCodeData(void)
     int ret = 0;
 
     do {
-        ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        if (ret != SUCCESS_CODE) {
+        uint32_t seedLen = 0;
+        ret = KosmoApi_GetSeed(seed, &seedLen);
+        if (ret != KOSMO_OK) {
             break;
         }
         char *path = aptos_get_path(data);
-        char *pubKey = GetCurrentAccountPublicKey(GetAptosPublickeyIndex(path));
+        const char *pubKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_APT);
         free_ptr_string(path);
-        encodeResult = aptos_sign_tx(data, seed, GetCurrentAccountSeedLen(), pubKey);
+        encodeResult = aptos_sign_tx(data, seed, seedLen, (char *)pubKey);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));

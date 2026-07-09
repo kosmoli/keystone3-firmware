@@ -186,6 +186,16 @@ KosmoMnemonicType KosmoApi_GetMnemonicType(void)
     }
 }
 
+uint32_t KosmoApi_GetSeedLen(void)
+{
+    return GetCurrentAccountSeedLen();
+}
+
+uint32_t KosmoApi_GetEntropyLen(void)
+{
+    return GetCurrentAccountEntropyLen();
+}
+
 bool KosmoApi_IsMoneroSupported(void)
 {
     return IsMoneroSupportedForCurrentMnemonic();
@@ -248,4 +258,14 @@ void KosmoApi_GetHomeCoinList(void *walletList, uint8_t count)
 {
     /* Phase 1: 直接包装，后续改为独立实现 */
     AccountPublicHomeCoinGet((WalletState_t *)walletList, count);
+}
+
+int32_t KosmoApi_GetZcashSFP(uint8_t accountIndex, uint8_t *outSFP)
+{
+    return GetZcashSFP(accountIndex, outSFP);
+}
+
+int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK)
+{
+    return GetZcashUFVK(accountIndex, outUFVK);
 }

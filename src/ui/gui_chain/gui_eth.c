@@ -1,17 +1,14 @@
 #include "gui_analyze.h"
-#include "user_memory.h"
-#include "secret_cache.h"
 #include "account_public_info.h"
-#include "keystore.h"
 #include "gui_model.h"
 #include "gui_qr_hintbox.h"
 #include "screen_manager.h"
 #include "user_sqlite3.h"
-#include "account_manager.h"
 #include "math.h"
 #include "stdio.h"
 #include "string.h"
 #include "drv_mpu.h"
+#include "kosmo_api.h"
 #include "device_setting.h"
 #include "cjson/cJSON.h"
 #include "gui_hintbox.h"
@@ -693,8 +690,9 @@ static UREncodeResult *GetEthSignDataDynamic(bool isUnlimited)
     }
     do {
         uint8_t seed[64];
-        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
-        GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        uint32_t seedLen = 0;
+        KosmoApi_GetSeed(seed, &seedLen);
+        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : seedLen;
         if (isUnlimited) {
             if (urType == Bytes) {
                 uint8_t mfp[4] = {0};

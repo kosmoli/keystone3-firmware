@@ -1,12 +1,10 @@
 #include "gui_analyze.h"
 #include "rust.h"
 #include "account_public_info.h"
-#include "keystore.h"
 #include "gui_chain.h"
 #include "version.h"
-#include "secret_cache.h"
 #include "screen_manager.h"
-#include "account_manager.h"
+#include "kosmo_api.h"
 
 static bool g_isMulti = false;
 static URParseResult *g_urResult = NULL;
@@ -45,7 +43,7 @@ void *GuiGetTrxData(void)
     uint8_t mfp[4];
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
-    char *trxXpub = GetCurrentAccountPublicKey(XPUB_TYPE_TRX);
+    const char *trxXpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX);
     GetMasterFingerPrint(mfp);
     do {
         PtrT_TransactionParseResult_DisplayTron parseResult = NULL;
@@ -66,7 +64,7 @@ PtrT_TransactionCheckResult GuiGetTrxCheckResult(void)
 {
     uint8_t mfp[4];
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    char *trxXpub = GetCurrentAccountPublicKey(XPUB_TYPE_TRX);
+    const char *trxXpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX);
     QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
     GetMasterFingerPrint(mfp);
     if (urType == TronSignRequest) {
@@ -299,15 +297,16 @@ static UREncodeResult *GuiGetTrxSignUrDataDynamic(bool unLimit)
     uint32_t fragmentLen = unLimit ? FRAGMENT_UNLIMITED_LENGTH : FRAGMENT_MAX_LENGTH_DEFAULT;
 
     do {
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        if (ret != 0) {
+        uint32_t seedLen = 0;
+        int ret = KosmoApi_GetSeed(seed, &seedLen);
+        if (ret != KOSMO_OK) {
             break;
         }
         if (urType == TronSignRequest) {
-            encodeResult = tron_sign_request(data, seed, GetCurrentAccountSeedLen(), fragmentLen);
+            encodeResult = tron_sign_request(data, seed, seedLen, fragmentLen);
         } else {
-            encodeResult = tron_sign_keystone(data, urType, mfp, sizeof(mfp), GetCurrentAccountPublicKey(XPUB_TYPE_TRX),
-                                              SOFTWARE_VERSION, seed, GetCurrentAccountSeedLen());
+            encodeResult = tron_sign_keystone(data, urType, mfp, sizeof(mfp), (char *)KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX),
+                                              SOFTWARE_VERSION, seed, seedLen);
         }
 
         CHECK_CHAIN_BREAK(encodeResult);
@@ -336,12 +335,12 @@ void *GuiGetTrxPersonalMessage(void)
 
     uint8_t mfp[4];
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    char *trxXpub = GetCurrentAccountPublicKey(XPUB_TYPE_TRX);
+    const char *trxXpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX);
     GetMasterFingerPrint(mfp);
 
     TransactionCheckResult *result = NULL;
     do {
-        result = tron_check_sign_request(data, trxXpub, mfp, sizeof(mfp));
+        result = tron_check_sign_request(data, (char *)trxXpub, mfp, sizeof(mfp));
         CHECK_CHAIN_BREAK(result);
 
         PtrT_TransactionParseResult_DisplayTRONPersonalMessage parseResult = tron_parse_personal_message(data, trxXpub);

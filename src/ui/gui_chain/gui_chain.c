@@ -1,10 +1,9 @@
 #include "define.h"
 #include "gui_chain.h"
-#include "keystore.h"
-#include "user_memory.h"
 #ifdef COMPILE_SIMULATOR
 #include "simulator_model.h"
 #endif
+#include "kosmo_api.h"
 
 typedef TransactionCheckResult *(*CheckUrResultHandler)(void);
 
@@ -192,12 +191,13 @@ UREncodeResult *SignInternal(SignFn sign_func, void *data)
     int ret = 0;
 
     do {
-        ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        if (ret != 0) {
+        uint32_t seedLen = 0;
+        ret = KosmoApi_GetSeed(seed, &seedLen);
+        if (ret != KOSMO_OK) {
             break;
         }
 
-        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
+        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
         encodeResult = sign_func(data, seed, len);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);

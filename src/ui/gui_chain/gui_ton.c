@@ -1,6 +1,6 @@
 #include "gui_ton.h"
+#include "kosmo_api.h"
 #include "rust.h"
-#include "account_manager.h"
 #include "secret_cache.h"
 #include "gui_chain.h"
 #include "gui_chain_components.h"
@@ -50,11 +50,11 @@ UREncodeResult *GuiGetTonSignQrCodeData(void)
     UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
+    uint32_t seedLen;
     do {
-        int len = GetCurrentAccountSeedLen();
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
         CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = ton_sign_transaction(data, seed, len);
+        encodeResult = ton_sign_transaction(data, seed, seedLen);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));
@@ -70,11 +70,11 @@ UREncodeResult *GuiGetTonProofSignQrCodeData(void)
     UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
+    uint32_t seedLen;
     do {
-        int len = GetCurrentAccountSeedLen();
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
         CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = ton_sign_proof(data, seed, len);
+        encodeResult = ton_sign_proof(data, seed, seedLen);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));
@@ -88,7 +88,7 @@ PtrT_TransactionCheckResult GuiGetTonCheckResult(void)
     uint8_t mfp[4];
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     GetMasterFingerPrint(mfp);
-    char* publicKey = GetCurrentAccountPublicKey(XPUB_TYPE_TON_BIP39);
+    const char *publicKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_TON);
     return ton_check_transaction(data, publicKey);
 }
 
@@ -219,8 +219,7 @@ static lv_obj_t *CreateOverviewDestinationView(lv_obj_t *parent, DisplayTonMessa
 {
     lv_obj_t *container = CreateContentContainer(parent, 408, 244);
     lv_obj_align_to(container, lastView, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 16);
-    char *xPub = NULL;
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_TON_BIP39);
+    const char *xPub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TON);
     SimpleResponse_c_char *from = ton_get_address(xPub);
 
     lv_obj_t *label = GuiCreateIllustrateLabel(container, _("From"));

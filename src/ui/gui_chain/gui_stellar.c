@@ -1,4 +1,6 @@
 #include "gui_stellar.h"
+#include "kosmo_api.h"
+#include "secret_cache.h"
 
 static bool g_isMulti = false;
 static URParseResult *g_urResult = NULL;
@@ -79,9 +81,10 @@ UREncodeResult *GuiGetStellarSignQrCodeData(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
         uint8_t seed[64];
-        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
-        GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        encodeResult = stellar_sign(data, seed, len);
+        uint32_t seedLen;
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+        (void)ret;
+        encodeResult = stellar_sign(data, seed, seedLen);
         ClearSecretCache();
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);

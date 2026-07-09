@@ -166,8 +166,24 @@ int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen)
     int32_t ret = GetAccountSeed(accountIdx, out, password);
     if (ret != 0) return KOSMO_ERR_GENERAL;
 
-    *outLen = GetCurrentAccountSeedLen();
+    /* BIP39: 64 字节 seed; TON: entropy 长度 */
+    MnemonicType mt = GetMnemonicType();
+    if (mt == MNEMONIC_TYPE_TON) {
+        *outLen = GetCurrentAccountEntropyLen();
+    } else {
+        *outLen = GetCurrentAccountSeedLen();
+    }
     return KOSMO_OK;
+}
+
+KosmoMnemonicType KosmoApi_GetMnemonicType(void)
+{
+    MnemonicType mt = GetMnemonicType();
+    switch (mt) {
+    case MNEMONIC_TYPE_SLIP39: return KOSMO_MNEMONIC_SLIP39;
+    case MNEMONIC_TYPE_TON:    return KOSMO_MNEMONIC_TON;
+    default:                   return KOSMO_MNEMONIC_BIP39;
+    }
 }
 
 bool KosmoApi_IsMoneroSupported(void)

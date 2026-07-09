@@ -94,11 +94,17 @@ const char *KosmoApi_GetPath(KosmoChainType chain);
 
 /*
  * 获取当前账户的种子数据（用于签名）。
+ * 自动处理 BIP39（64 字节 seed）vs TON（entropy）差异。
  * @param out      输出缓冲区（调用者分配，至少 64 字节）
- * @param outLen   输出：实际种子长度
+ * @param outLen   输出：实际数据长度
  * @return KOSMO_OK 或错误码
  */
 int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen);
+
+/*
+ * 获取当前助记词类型。
+ */
+KosmoMnemonicType KosmoApi_GetMnemonicType(void);
 
 /*
  * 获取当前账户索引。

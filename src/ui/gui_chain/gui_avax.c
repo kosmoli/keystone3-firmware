@@ -1,4 +1,5 @@
 #include "gui_avax.h"
+#include "kosmo_api.h"
 #include "rust.h"
 #include "account_manager.h"
 #include "secret_cache.h"

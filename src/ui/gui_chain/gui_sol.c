@@ -1,12 +1,10 @@
 #include "gui_analyze.h"
+#include "kosmo_api.h"
 #include "rust.h"
-#include "account_public_info.h"
-#include "keystore.h"
 #include "gui_chain.h"
 #include "version.h"
 #include "secret_cache.h"
 #include "screen_manager.h"
-#include "account_manager.h"
 #include "assert.h"
 #include "cjson/cJSON.h"
 #include "user_memory.h"
@@ -57,9 +55,10 @@ UREncodeResult *GuiGetSolSignQrCodeData(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
         uint8_t seed[64];
-        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
-        GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-        encodeResult = solana_sign_tx(data, seed, len);
+        uint32_t seedLen;
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+        (void)ret;
+        encodeResult = solana_sign_tx(data, seed, seedLen);
         ClearSecretCache();
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
@@ -107,10 +106,10 @@ void *GuiGetSolMessageData(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
         char *path = sol_get_path(data);
-        ChainType pubkeyIndex = CheckSolPathSupport(path);
-        char *pubKey = "";
-        if (pubkeyIndex != XPUB_TYPE_NUM) {
-            pubKey = GetCurrentAccountPublicKey(pubkeyIndex);
+        KosmoChainType chain = KosmoApi_CheckSolPathSupport(path);
+        const char *pubKey = "";
+        if (chain != KOSMO_CHAIN_NUM) {
+            pubKey = KosmoApi_GetPublicKey(chain);
         }
         PtrT_TransactionParseResult_DisplaySolanaMessage parseResult = solana_parse_message(data, pubKey);
         free_ptr_string(path);

@@ -88,6 +88,7 @@ set(GUI_INCLUDE_PATH
     src/ui/gui_chain
     src/ui/gui_components
     src/ui/gui_wallet
+    src/api
 )
 
 set(EXTERNAL_INCLUDE_PATH
@@ -184,6 +185,7 @@ file(GLOB_RECURSE GUI
     "src/ui/lv_i18n/*.c"
     "src/ui/gui_model/*.c"
     "src/ui/gui_components/*.c"
+    "src/api/*.c"
 )
 
 file(GLOB_RECURSE LVGL

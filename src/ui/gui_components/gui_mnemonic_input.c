@@ -205,6 +205,7 @@ bool GuiMnemonicInputCheck(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
 {
     char trueText[12] = {0};
     if (mkb->currentId != mkb->wordCnt) {
+        GuiSetLetterBoardConfirm(letterKb, 0);
         return false;
     }
 
@@ -213,6 +214,7 @@ bool GuiMnemonicInputCheck(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
         const char *text = lv_btnmatrix_get_btn_text(mkb->btnm, i);
         GuiMnemonicGetTrueWord(text, trueText);
         if (strlen(trueText) > 0 && !GuiWordsWhole(trueText)) {
+            GuiSetLetterBoardConfirm(letterKb, 0);
             return false;
         }
     }
@@ -290,15 +292,18 @@ void GuiMnemonicInputHandler(lv_event_t *e)
 
         // 1.Determine if the current word is complete
         const char *currText = lv_btnmatrix_get_btn_text(obj, currentId);
-        GuiMnemonicGetTrueWord(currText, trueText);
-        GuiSetMnemonicCache(letterKb, trueText);
-        if (strlen(trueText) > 0 && GuiWordsWhole(trueText)) {
+        char clickedBuf[16] = {0};
+        GuiMnemonicGetTrueWord(currText, clickedBuf);
+        GuiSetMnemonicCache(letterKb, clickedBuf);
+        bool clickedComplete = (strlen(clickedBuf) > 0 && GuiWordsWhole(clickedBuf));
+        if (clickedComplete) {
             GuiSetLetterBoardNext(letterKb);
         }
         // GuiClearKeyBoard(letterKb);
         isClick = 2;
 
         // 2.first determine whether the previous word is complete or not
+        bool allComplete = clickedComplete;
         for (int i = 0; i < mkb->wordCnt; i++) {
             if (i == currentId) {
                 continue;
@@ -311,10 +316,14 @@ void GuiMnemonicInputHandler(lv_event_t *e)
                 char buf[BUFFER_SIZE_32] = { 0 };
                 snprintf_s(buf, BUFFER_SIZE_32, "#FF0000 %s#", trueText);
                 GuiInputMnemonicKeyBoard(mkb, buf, i, 1);
+                allComplete = false;
             }
         }
 
         mkb->currentId = currentId;
+        if (allComplete && currentId + 1 == mkb->wordCnt) {
+            mkb->currentId = mkb->wordCnt;
+        }
         GuiMnemonicInputCheck(mkb, letterKb);
     } else if (code == LV_EVENT_READY) {
         if (mkb->currentId == mkb->wordCnt) {

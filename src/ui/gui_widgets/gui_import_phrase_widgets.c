@@ -42,14 +42,14 @@ static uint8_t g_inputWordsCnt = 0;
 static lv_obj_t *g_buttonCont = NULL;
 static PageWidget_t *g_pageWidget;
 static lv_obj_t *g_noticeWindow = NULL;
+static bool g_errorRecovery = false;
 
 void GuiImportPhraseWriteSe(bool en, int32_t errCode)
 {
     if (en == true) {
         ClearMnemonicKeyboard(g_importMkb, &g_importMkb->currentId);
     } else {
-        lv_btnmatrix_set_selected_btn(g_importMkb->btnm, g_importMkb->currentId - 1);
-        g_importMkb->currentId--;
+        g_errorRecovery = true;
     }
     GuiWriteSeResult(en, errCode);
 }
@@ -160,18 +160,18 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_QUESTION_MARK, OpenPassphraseTutorialHandler, NULL);
         } else {
             SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
-            g_importSinglePhraseTileView.currentTile++;
-            GuiModelBip39CalWriteSe(bip39);
             GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+            GuiModelBip39CalWriteSe(bip39);
+            return SUCCESS_CODE;
         }
         break;
     case SINGLE_PHRASE_PASSPHRASE:
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
-        GuiModelBip39CalWriteSe(bip39);
         GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-        break;
+        GuiModelBip39CalWriteSe(bip39);
+        return SUCCESS_CODE;
     }
 
     g_importSinglePhraseTileView.currentTile++;
@@ -183,7 +183,10 @@ int8_t GuiImportPhrasePrevTile(void)
 {
     switch (g_importSinglePhraseTileView.currentTile) {
     case SINGLE_PHRASE_INPUT_PHRASE:
-        GuiCloseCurrentWorkingView();
+        if (!g_errorRecovery) {
+            GuiCloseCurrentWorkingView();
+        }
+        g_errorRecovery = false;
         break;
     case SINGLE_PHRASE_PASSPHRASE:
         GuiPassphraseWidgetClearText();

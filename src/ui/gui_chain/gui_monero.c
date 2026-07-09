@@ -1,6 +1,7 @@
 #include "gui_monero.h"
+#include "kosmo_api.h"
 #include "account_manager.h"
-#include "account_public_info.h"
+#include "secret_cache.h"
 #include "screen_manager.h"
 
 static bool g_isMulti = false;
@@ -67,7 +68,7 @@ static lv_obj_t *CreateNetworkContainer(lv_obj_t *container)
 
 static void SetUpMoneroDecryptKey(void)
 {
-    char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+    const char *pvk = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
     SimpleResponse_u8 *decryptKeyData = monero_generate_decrypt_key(pvk);
     if (decryptKeyData->error_code == SUCCESS_CODE) {
         memcpy(g_decryptKey, decryptKeyData->data, 32);
@@ -80,7 +81,7 @@ PtrT_TransactionCheckResult GuiGetMoneroOutputCheckResult(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     g_requestType = OutputRequest;
     SetUpMoneroDecryptKey();
-    char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+    const char *pvk = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
     return monero_output_request_check(data, g_decryptKey, pvk);
 }
 
@@ -89,7 +90,7 @@ PtrT_TransactionCheckResult GuiGetMoneroUnsignedTxCheckResult(void)
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     g_requestType = UnsignedTxRequest;
     SetUpMoneroDecryptKey();
-    char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+    const char *pvk = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
     return monero_unsigned_request_check(data, g_decryptKey, pvk);
 }
 
@@ -105,7 +106,7 @@ void *GuiGetMoneroOutputData(void)
     CHECK_FREE_PARSE_RESULT(g_parseResult);
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
-        char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+        const char *pvk = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
         PtrT_TransactionParseResult_DisplayMoneroOutput parseResult = monero_parse_output(data, g_decryptKey, pvk);
         CHECK_CHAIN_BREAK(parseResult);
         g_parseResult = (void *)parseResult;
@@ -118,7 +119,7 @@ void *GuiGetMoneroUnsignedTxData(void)
     CHECK_FREE_PARSE_RESULT(g_parseResult);
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     do {
-        char *pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+        const char *pvk = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
         PtrT_TransactionParseResult_DisplayMoneroUnsignedTx parseResult = monero_parse_unsigned_tx(data, g_decryptKey, pvk);
         CHECK_CHAIN_BREAK(parseResult);
         g_parseResult = (void *)parseResult;
@@ -133,11 +134,11 @@ UREncodeResult *GuiGetMoneroKeyimagesQrCodeData(void)
     UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
+    uint32_t seedLen;
     do {
-        int len = GetCurrentAccountSeedLen();
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
         CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = monero_generate_keyimage(data, seed, len, 0);
+        encodeResult = monero_generate_keyimage(data, seed, seedLen, 0);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));
@@ -153,11 +154,11 @@ UREncodeResult *GuiGetMoneroSignedTransactionQrCodeData(void)
     UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
+    uint32_t seedLen;
     do {
-        int len = GetCurrentAccountSeedLen();
-        int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
         CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = monero_generate_signature(data, seed, len, 0);
+        encodeResult = monero_generate_signature(data, seed, seedLen, 0);
         CHECK_CHAIN_BREAK(encodeResult);
     } while (0);
     memset_s(seed, sizeof(seed), 0, sizeof(seed));

@@ -4,9 +4,10 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
+#include "gui_model.h"          /* TODO: 骰子路径迁移后移除 */
 #include "gui_single_phrase_widgets.h"
 #include "gui_create_wallet_widgets.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "bip39.h"
 #include "secret_cache.h"
@@ -83,12 +84,15 @@ static void ShowDiceRollsNotEnoughHint(void)
 
 static void UpdatePhraseHandler(lv_event_t *e)
 {
-    GuiModelBip39UpdateMnemonic(g_phraseCnt);
+    KosmoRequest req = { .type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC,
+                         .bip39_update = { .wordCnt = g_phraseCnt } };
+    KosmoApi_Request(&req, NULL);
 }
 
 static void WriteSE()
 {
-    GuiModelWriteSe();
+    KosmoRequest req = { .type = KOSMO_REQ_WRITE_SE };
+    KosmoApi_Request(&req, NULL);
 }
 
 static void GuiRandomPhraseWidget(lv_obj_t *parent)
@@ -126,8 +130,11 @@ static void GuiRandomPhraseWidget(lv_obj_t *parent)
     SetRightBtnLabel(g_pageWidget->navBarWidget, NVS_BAR_WORD_SELECT, g_phraseCnt == 12 ? "12" : "24");
     SetRightBtnCb(g_pageWidget->navBarWidget, SelectPhraseCntHandler, NULL);
     if (!g_isDiceRolls) {
-        GuiModelBip39UpdateMnemonic(g_phraseCnt);
+        KosmoRequest req = { .type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC,
+                             .bip39_update = { .wordCnt = g_phraseCnt } };
+        KosmoApi_Request(&req, NULL);
     } else {
+        /* TODO: 需要 KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE 枚举 */
         GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
     }
 }
@@ -300,7 +307,9 @@ static void SelectCheckBoxHandler(lv_event_t* e)
         if (g_phraseCnt != 12) {
             g_phraseCnt = 12;
             if (!g_isDiceRolls) {
-                GuiModelBip39UpdateMnemonic(g_phraseCnt);
+                KosmoRequest req = { .type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC,
+                                     .bip39_update = { .wordCnt = g_phraseCnt } };
+                KosmoApi_Request(&req, NULL);
             } else {
                 GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
             }
@@ -315,7 +324,9 @@ static void SelectCheckBoxHandler(lv_event_t* e)
         if (g_phraseCnt != 24) {
             g_phraseCnt = 24;
             if (!g_isDiceRolls) {
-                GuiModelBip39UpdateMnemonic(g_phraseCnt);
+                KosmoRequest req = { .type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC,
+                                     .bip39_update = { .wordCnt = g_phraseCnt } };
+                KosmoApi_Request(&req, NULL);
             } else {
                 GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
             }

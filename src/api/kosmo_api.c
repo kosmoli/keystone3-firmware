@@ -20,6 +20,10 @@
 #include "wordlist.h"
 #include "secret_cache.h"
 
+/* Phase 2: gui_model.h 的 GuiModel* 函数作为异步分发目标。
+ * Phase 4 完成后将移除此依赖，逻辑直接内联到本文件。 */
+#include "gui_model.h"
+
 #ifndef COMPILE_SIMULATOR
 #include "user_memory.h"
 #include "gui_views.h"
@@ -81,15 +85,7 @@ void KosmoApi_Init(void)
 
 /* ── 异步请求 ───────────────────────────────────────── */
 
-int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
-{
-    if (request == NULL || request->type >= KOSMO_REQ_NUM) {
-        return KOSMO_ERR_INVALID;
-    }
-    /* Phase 2: 路由到原 gui_model 的 Model 函数 */
-    (void)cb;
-    return KOSMO_ERR_GENERAL;
-}
+/* KosmoApi_Request 实现在文件末尾（Phase 2 分发逻辑） */
 
 /* ── 同步查询：账户 ─────────────────────────────────── */
 
@@ -268,4 +264,207 @@ int32_t KosmoApi_GetZcashSFP(uint8_t accountIndex, uint8_t *outSFP)
 int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK)
 {
     return GetZcashUFVK(accountIndex, outUFVK);
+}
+
+/* ── Phase 2: 异步请求统一分发 ──────────────────────── */
+
+/*
+ * KosmoApi_Request() — 统一异步入口
+ *
+ * 当前实现：分发到 GuiModel* 包装函数（保留旧 signal 回传机制）。
+ * Phase 3 将改为：分发到 Model* 内部函数 + KosmoCallback 回传。
+ * Phase 4 将改为：逻辑直接内联，移除 gui_model.h 依赖。
+ *
+ * callback 参数暂时未使用（Model* 函数仍通过 GuiApiEmitSignal 回传结果）。
+ * Phase 3 完成后将启用。
+ */
+int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
+{
+    if (request == NULL) return KOSMO_ERR_INVALID;
+
+    (void)cb; /* Phase 3 启用 */
+
+    switch (request->type) {
+    /* ── 助记词 / 钱包创建 ─────────────────────────── */
+    case KOSMO_REQ_BIP39_GENERATE_ENTROPY: {
+        GuiModelBip39UpdateMnemonic(request->bip39_generate.wordCnt);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_BIP39_WRITE_SE: {
+        Bip39Data_t d = { .wordCnt = request->bip39_write_se.wordCnt,
+                          .forget = request->bip39_write_se.forget };
+        GuiModelBip39CalWriteSe(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_BIP39_VERIFY_MNEMONIC: {
+        GuiModelBip39RecoveryCheck(request->bip39_verify.wordCnt);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_BIP39_UPDATE_MNEMONIC: {
+        GuiModelBip39UpdateMnemonic(request->bip39_update.wordCnt);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_BIP39_FORGET_PASSWORD: {
+        GuiModelBip39ForgetPassword(request->bip39_forget.wordCnt);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_GENERATE_ENTROPY: {
+        Slip39Data_t d = { .threShold = request->slip39_generate.threshold,
+                           .memberCnt = request->slip39_generate.memberCnt,
+                           .wordCnt = request->slip39_generate.wordCnt,
+                           .forget = request->slip39_generate.forget };
+        GuiModelSlip39UpdateMnemonic(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_WRITE_SE: {
+        GuiModelSlip39WriteSe(request->slip39_write_se.wordCnt);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_CAL_WRITE_SE: {
+        Slip39Data_t d = { .threShold = request->slip39_cal_write.threshold,
+                           .memberCnt = request->slip39_cal_write.memberCnt,
+                           .wordCnt = request->slip39_cal_write.wordCnt,
+                           .forget = request->slip39_cal_write.forget };
+        GuiModelSlip39CalWriteSe(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_UPDATE_MNEMONIC: {
+        Slip39Data_t d = { .threShold = request->slip39_update.threshold,
+                           .memberCnt = request->slip39_update.memberCnt,
+                           .wordCnt = request->slip39_update.wordCnt };
+        GuiModelSlip39UpdateMnemonic(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_FORGET_PASSWORD: {
+        Slip39Data_t d = { .threShold = request->slip39_forget.threshold,
+                           .memberCnt = request->slip39_forget.memberCnt,
+                           .wordCnt = request->slip39_forget.wordCnt,
+                           .forget = request->slip39_forget.forget };
+        GuiModelSlip39ForgetPassword(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_WRITE_SE: {
+        GuiModelWriteSe();
+        return KOSMO_OK;
+    }
+
+    /* ── 账户管理 ─────────────────────────────────── */
+    case KOSMO_REQ_GET_ACCOUNT: {
+        GuiModeGetAccount();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_GET_WALLET_DESC: {
+        GuiModeGetWalletDesc();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SAVE_WALLET_DESC: {
+        WalletDesc_t w = { .iconIndex = request->save_wallet_desc.iconIndex };
+        strncpy(w.name, request->save_wallet_desc.name, WALLET_NAME_MAX_LEN);
+        w.name[WALLET_NAME_MAX_LEN] = '\0';
+        GuiModelSettingSaveWalletDesc(&w);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_DEL_WALLET_DESC: {
+        GuiModelSettingDelWalletDesc();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_DEL_ALL_WALLET_DESC: {
+        GuiModelLockedDeviceDelAllWalletDesc();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_WRITE_PASSPHRASE: {
+        GuiModelSettingWritePassphrase();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_CHANGE_PASSWORD: {
+        GuiModelChangeAccountPassWord();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_VERIFY_PASSWORD: {
+        uint16_t param = request->verify_password.errorCount;
+        GuiModelVerifyAccountPassWord(&param);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_WRITE_LOCK_TIME: {
+        GuiModelWriteLastLockDeviceTime(request->uint32_param.value);
+        return KOSMO_OK;
+    }
+
+    /* ── 系统操作 ─────────────────────────────────── */
+    case KOSMO_REQ_CALCULATE_CHECKSUM: {
+        GuiModelCalculateCheckSum();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_STOP_CHECKSUM: {
+        GuiModelStopCalculateCheckSum();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_CALCULATE_SHA256: {
+        GuiModelCalculateBinSha256();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_FORMAT_SD_CARD: {
+        GuiModelFormatMicroSd();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_COPY_SD_CARD_OTA: {
+        GuiModelCopySdCardOta();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_UPDATE_BOOT: {
+        GuiModelUpdateBoot();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_CALCULATE_WEB_AUTH_CODE: {
+        GuiModelCalculateWebAuthCode(request->raw_ptr.ptr);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_CONTROL_QR_DECODE: {
+        GuiModeControlQrDecode(request->bool_param.enable);
+        return KOSMO_OK;
+    }
+
+    /* ── UR 操作 ──────────────────────────────────── */
+    case KOSMO_REQ_UR_GENERATE_QR: {
+        /* GenerateUR 函数指针通过 raw_ptr 传入 */
+        GuiModelURGenerateQRCode((GenerateUR)request->raw_ptr.ptr);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_UR_UPDATE: {
+        GuiModelURUpdate();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_UR_CLEAR: {
+        GuiModelURClear();
+        return KOSMO_OK;
+    }
+
+    /* ── 交易 ─────────────────────────────────────── */
+    case KOSMO_REQ_CHECK_TRANSACTION: {
+        GuiModelCheckTransaction((ViewType)request->view_type.viewType);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_CLEAR_CHECK_RESULT: {
+        GuiModelTransactionCheckResultClear();
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_PARSE_TRANSACTION: {
+        /* ReturnVoidPointerFunc 通过 raw_ptr 传入 */
+        GuiModelParseTransaction((ReturnVoidPointerFunc)request->raw_ptr.ptr);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_PARSE_TRANSACTION_RAW: {
+        GuiModelParseTransactionRawData();
+        return KOSMO_OK;
+    }
+
+    /* ── RSA ──────────────────────────────────────── */
+    case KOSMO_REQ_RSA_GENERATE_KEYPAIR: {
+        GuiModelRsaGenerateKeyPair();
+        return KOSMO_OK;
+    }
+
+    default:
+        return KOSMO_ERR_INVALID;
+    }
 }

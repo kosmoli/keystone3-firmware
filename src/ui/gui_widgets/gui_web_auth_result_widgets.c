@@ -4,7 +4,7 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "presetting.h"
 #include "gui_web_auth_widgets.h"
@@ -162,7 +162,7 @@ static void WebAuthWipeDevice(void)
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 612);
 
-    GuiModelLockedDeviceDelAllWalletDesc();
+    { KosmoRequest req = { .type = KOSMO_REQ_DEL_ALL_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
 }
 
 void GuiWebAuthResultFailedWidget(lv_obj_t *parent)
@@ -315,7 +315,7 @@ void GuiWebAuthResultHidePending()
 
 void GuiWebAuthCalculateAuthCode()
 {
-    GuiModelCalculateWebAuthCode(g_web_auth_data);
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, .raw_ptr = { .ptr = g_web_auth_data } }; KosmoApi_Request(&req, NULL); }
 }
 
 void GuiWebAuthShowAuthCode(char *authCode)

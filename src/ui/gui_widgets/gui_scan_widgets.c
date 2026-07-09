@@ -3,10 +3,10 @@
 #include "gui_views.h"
 #include "gui_enter_passcode.h"
 #include "gui_status_bar.h"
-#include "gui_model.h"
 #include "gui_scan_widgets.h"
 #include "gui_status_bar.h"
 #include "gui_hintbox.h"
+#include "kosmo_api.h"
 #include "gui_analyze.h"
 #include "gui_button.h"
 #include "gui_qr_code.h"
@@ -125,7 +125,7 @@ void GuiScanResult(bool result, void *param)
             ThrowError(ERR_INVALID_QRCODE);
             return;
         }
-        GuiModelCheckTransaction(g_qrcodeViewType);
+        { KosmoRequest req = { .type = KOSMO_REQ_CHECK_TRANSACTION, .view_type = { .viewType = g_qrcodeViewType } }; KosmoApi_Request(&req, NULL); }
     } else {
         UrViewType_t *urViewType = (UrViewType_t *)param;
         if (urViewType->viewType == InvalidMessage) {
@@ -138,7 +138,7 @@ void GuiScanResult(bool result, void *param)
 
 void GuiTransactionCheckPass(void)
 {
-    GuiModelTransactionCheckResultClear();
+    { KosmoRequest req = { .type = KOSMO_REQ_CLEAR_CHECK_RESULT }; KosmoApi_Request(&req, NULL); }
     SetPageLockScreen(true);
     GuiCloseCurrentWorkingView();
     if (g_chainType == CHAIN_ARWEAVE) {
@@ -171,7 +171,7 @@ void GuiTransactionCheckFailed(PtrT_TransactionCheckResult result)
         ThrowError(ERR_INVALID_QRCODE);
         break;
     }
-    GuiModelTransactionCheckResultClear();
+    { KosmoRequest req = { .type = KOSMO_REQ_CLEAR_CHECK_RESULT }; KosmoApi_Request(&req, NULL); }
 }
 
 static void GuiScanNavBarInit()
@@ -228,5 +228,5 @@ static void ThrowError(int32_t errorCode)
 static void GuiScanStart()
 {
     GuiSetScanCorner();
-    GuiModeControlQrDecode(true);
+    { KosmoRequest req = { .type = KOSMO_REQ_CONTROL_QR_DECODE, .bool_param = { .enable = true } }; KosmoApi_Request(&req, NULL); }
 }

@@ -7,7 +7,7 @@
 #include "bip39.h"
 #include "user_memory.h"
 #include "bip39_english.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "secret_cache.h"
 #include "background_task.h"
 #include "gui_import_phrase_widgets.h"
@@ -161,7 +161,7 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
         } else {
             SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
             GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-            GuiModelBip39CalWriteSe(bip39);
+            { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, NULL); }
             return SUCCESS_CODE;
         }
         break;
@@ -170,7 +170,7 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
         GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-        GuiModelBip39CalWriteSe(bip39);
+        { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, NULL); }
         return SUCCESS_CODE;
     }
 

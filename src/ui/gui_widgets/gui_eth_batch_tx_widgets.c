@@ -2,7 +2,7 @@
 #include "keystore.h"
 #include "gui.h"
 #include "gui_page.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "rust.h"
 #include "gui_chain_components.h"
 #include "gui_obj.h"
@@ -372,7 +372,7 @@ void GuiEthBatchTxWidgetsSignDealFingerRecognize(void *param)
     }
     if (errCode == FP_SUCCESS_CODE) {
         lv_img_set_src(g_fpErrorImg, &imgYellowFinger);
-        GuiModelVerifyAccountPassWord(&passCodeType);
+        { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = passCodeType } }; KosmoApi_Request(&req, NULL); }
         g_fingerSignErrCount = 0;
     } else {
         g_fingerSignErrCount++;
@@ -472,7 +472,7 @@ void GuiEthBatchTxWidgetsInit()
     GuiEthBatchTxNavBarInit();
     GuiCreatePageContent(g_cont);
     GuiEmitSignal(SIG_SHOW_TRANSACTION_LOADING, NULL, 0);
-    GuiModelParseTransaction(GuiParseEthBatchTxData);
+    { KosmoRequest req = { .type = KOSMO_REQ_PARSE_TRANSACTION, .raw_ptr = { .ptr = (void *)GuiParseEthBatchTxData } }; KosmoApi_Request(&req, NULL); }
 }
 
 static void GuiCreatePageContent(lv_obj_t *container)

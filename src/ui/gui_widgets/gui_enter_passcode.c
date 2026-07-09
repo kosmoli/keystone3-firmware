@@ -5,7 +5,7 @@
 #include "gui_button.h"
 #include "user_memory.h"
 #include "secret_cache.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "keystore.h"
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"
@@ -130,7 +130,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 case ENTER_PASSCODE_VERIFY_PIN:
                     SecretCacheSetPassword(g_pinBuf);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    GuiModelVerifyAccountPassWord(g_userParam);
+                    { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, NULL); }
                     break;
                 case ENTER_PASSCODE_SET_PIN:
                     if (CheckPasswordExisted(g_pinBuf, index)) {
@@ -202,7 +202,7 @@ static void SetPassWordHandler(lv_event_t *e)
                 if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
                     SecretCacheSetPassword((char *)currText);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    GuiModelVerifyAccountPassWord(g_userParam);
+                    { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, NULL); }
                 }
             }
             lv_textarea_set_text(ta, "");

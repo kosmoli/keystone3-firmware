@@ -6,7 +6,7 @@
 #include "gui_hintbox.h"
 #include "slip39.h"
 #include "user_memory.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "secret_cache.h"
 #include "gui_lock_widgets.h"
 #include "gui_single_phrase_widgets.h"
@@ -187,7 +187,7 @@ int8_t GuiImportShareNextTile(const char *passphrase)
             SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
             GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
-            GuiModelSlip39CalWriteSe(slip39);
+            { KosmoRequest req = { .type = KOSMO_REQ_SLIP39_CAL_WRITE_SE, .slip39_cal_write = { .threshold = slip39.threShold, .wordCnt = slip39.wordCnt, .forget = slip39.forget } }; KosmoApi_Request(&req, NULL); }
         }
         lv_obj_add_flag(g_nextCont, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(g_ssbImportKb->cont, LV_OBJ_FLAG_HIDDEN);
@@ -197,7 +197,7 @@ int8_t GuiImportShareNextTile(const char *passphrase)
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
         GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-        GuiModelSlip39CalWriteSe(slip39);
+        { KosmoRequest req = { .type = KOSMO_REQ_SLIP39_CAL_WRITE_SE, .slip39_cal_write = { .threshold = slip39.threShold, .wordCnt = slip39.wordCnt, .forget = slip39.forget } }; KosmoApi_Request(&req, NULL); }
         break;
     }
     g_importShareTileView.currentTile++;

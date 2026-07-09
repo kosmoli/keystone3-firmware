@@ -6,7 +6,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_enter_passcode.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "secret_cache.h"
 #include "keystore.h"
@@ -161,18 +161,20 @@ void GuiForgetPassRepeatPinPass(const char* buf)
         memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
         GuiForgetAnimContDel(true);
         if (g_forgetMkb->wordCnt == 33 || g_forgetMkb->wordCnt == 20) {
-            Slip39Data_t slip39 = {
-                .threShold = g_forgetMkb->threShold,
-                .wordCnt = g_forgetMkb->wordCnt,
-                .forget = true,
-            };
-            GuiModelSlip39CalWriteSe(slip39);
+            KosmoRequest req = { .type = KOSMO_REQ_SLIP39_CAL_WRITE_SE,
+                                 .slip39_cal_write = { .threshold = g_forgetMkb->threShold,
+                                                       .wordCnt = g_forgetMkb->wordCnt,
+                                                       .forget = true } };
+            KosmoApi_Request(&req, NULL);
         } else {
             Bip39Data_t bip39 = {
                 .wordCnt = g_forgetMkb->wordCnt,
                 .forget = true,
             };
-            GuiModelBip39CalWriteSe(bip39);
+            KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE,
+                                 .bip39_write_se = { .wordCnt = bip39.wordCnt,
+                                                     .forget = bip39.forget } };
+            KosmoApi_Request(&req, NULL);
         }
     } else {
         GuiEnterPassCodeStatus(g_repeatPassCode, false);
@@ -508,5 +510,5 @@ static void CloseCurrentParentAndCloseViewHandler(lv_event_t *e)
     GuiLockScreenTurnOn(&single);
     GuiEmitSignal(SIG_CLEAR_HOME_PAGE_INDEX, NULL, 0);
     ResetSuccess();
-    GuiModelWriteLastLockDeviceTime(0);
+    { KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = 0 } }; KosmoApi_Request(&req, NULL); }
 }

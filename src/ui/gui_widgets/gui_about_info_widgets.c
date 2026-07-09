@@ -4,7 +4,7 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_about_info_widgets.h"
 #include "gui_page.h"
 #include "user_msg.h"
@@ -352,12 +352,12 @@ static void StartFirmwareCheckSumHandler(lv_event_t *e)
     lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeHintBox, "0%");
     lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -140);
     lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, 0);
-    GuiModelCalculateCheckSum();
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_CHECKSUM }; KosmoApi_Request(&req, NULL); }
 }
 
 void GuiStopFirmwareCheckSumHandler(lv_event_t *e)
 {
-    GuiModelStopCalculateCheckSum();
+    { KosmoRequest req = { .type = KOSMO_REQ_STOP_CHECKSUM }; KosmoApi_Request(&req, NULL); }
     void **param = lv_event_get_user_data(e);
     if (param != NULL) {
         lv_obj_t *obj = *param;

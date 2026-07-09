@@ -4,7 +4,7 @@
 #include "gui_views.h"
 #include "gui_status_bar.h"
 #include "gui_lock_device_widgets.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "keystore.h"
 #include "gui_lock_widgets.h"
 #include "screen_manager.h"
@@ -127,7 +127,7 @@ void GuiLockDeviceRefresh(void)
     uint32_t currentTime = GetCurrentStampTime();
     if (currentTime - startTime >= needLockTime) {
         GuiLockedDeviceCountDownDestruct(NULL, NULL);
-        GuiModelWriteLastLockDeviceTime(0);
+        { KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = 0 } }; KosmoApi_Request(&req, NULL); }
         GuiCloseCurrentWorkingView();
         SetLockDeviceAlive(false);
         if (!g_resetSuccessful) {
@@ -196,7 +196,7 @@ static void CountDownTimerLockTimeHandler(lv_timer_t *timer)
             }
         }
         GuiLockedDeviceCountDownDestruct(NULL, NULL);
-        GuiModelWriteLastLockDeviceTime(0);
+        { KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = 0 } }; KosmoApi_Request(&req, NULL); }
         SetLockDeviceAlive(false);
     }
 }
@@ -241,7 +241,7 @@ static void WipeDevice(void)
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 612);
 
-    GuiModelLockedDeviceDelAllWalletDesc();
+    { KosmoRequest req = { .type = KOSMO_REQ_DEL_ALL_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
 }
 
 void GuiDelALLWalletSetup(void)

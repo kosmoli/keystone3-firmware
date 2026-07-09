@@ -3,10 +3,10 @@
 #include "gui_views.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
 #include "gui_obj.h"
 #include "gui_status_bar.h"
 #include "gui_lock_widgets.h"
+#include "kosmo_api.h"
 #include "gui_setup_widgets.h"
 #include "background_task.h"
 #include "gui_keyboard_hintbox.h"
@@ -396,7 +396,7 @@ static void ConfirmSdCardUpdate(void)
     GetExistAccountNum(&accountCnt);
     if (accountCnt == 0) {
         GuiFirmwareSdCardCopy();
-        GuiModelCopySdCardOta();
+        { KosmoRequest req = { .type = KOSMO_REQ_COPY_SD_CARD_OTA }; KosmoApi_Request(&req, NULL); }
     } else {
         GuiDeleteKeyboardWidget(g_keyboardWidget);
         g_keyboardWidget = GuiCreateKeyboardWidget(g_firmwareUpdateWidgets.cont);
@@ -408,7 +408,7 @@ static void ConfirmSdCardUpdate(void)
 static void FirmwareSdcardUpdateHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_noticeWindow)
-    GuiModelStopCalculateCheckSum();
+    { KosmoRequest req = { .type = KOSMO_REQ_STOP_CHECKSUM }; KosmoApi_Request(&req, NULL); }
     if (CHECK_BATTERY_LOW_POWER()) {
         g_noticeWindow = GuiCreateErrorCodeWindow(ERR_KEYSTORE_SAVE_LOW_POWER, &g_noticeWindow, NULL);
     } else if (!SdCardInsert()) {
@@ -457,14 +457,14 @@ static void FirmwareSdcardCheckSha256Handler(lv_event_t *e)
     lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeWindow, "0%");
     lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -140);
     lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, 0);
-    GuiModelCalculateBinSha256();
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256 }; KosmoApi_Request(&req, NULL); }
 }
 
 static void FirmwareSdcardCheckSha256HintBoxHandler(lv_event_t *e)
 {
     if (SdCardInsert()) {
         lv_obj_del(lv_event_get_target(e));
-        GuiModelCalculateBinSha256();
+        { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256 }; KosmoApi_Request(&req, NULL); }
     }
 }
 
@@ -682,6 +682,6 @@ static void GuiFirmwareUpdateViewSha256(uint8_t percent)
 
 static void GuiFirmwareUpdateCancelUpdate(lv_event_t *e)
 {
-    GuiModelStopCalculateCheckSum();
+    { KosmoRequest req = { .type = KOSMO_REQ_STOP_CHECKSUM }; KosmoApi_Request(&req, NULL); }
     GUI_DEL_OBJ(g_noticeWindow)
 }

@@ -3,10 +3,10 @@
 #include "gui_views.h"
 #include "gui_enter_passcode.h"
 #include "gui_status_bar.h"
-#include "gui_model.h"
 #include "gui_lock_widgets.h"
 #include "gui_status_bar.h"
 #include "gui_hintbox.h"
+#include "kosmo_api.h"
 #include "gui_api.h"
 #include "keystore.h"
 #include "gui_lock_device_widgets.h"
@@ -154,7 +154,7 @@ static void LockViewWipeDeviceHandler(lv_event_t *e)
     lv_obj_set_width(label, 408);
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 612);
-    GuiModelLockedDeviceDelAllWalletDesc();
+    { KosmoRequest req = { .type = KOSMO_REQ_DEL_ALL_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
 }
 
 void GuiLockScreenWipeDevice(void)
@@ -310,7 +310,7 @@ void GuiLockScreenToHome(void)
 {
     GuiLockScreenHideVerifyLoading();
     lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-    GuiModeGetWalletDesc();
+    { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
     GuiEnterPassCodeStatus(g_verifyLock, true);
     GuiCloseToTargetView(&g_homeView);
     HardwareInitAfterWake();
@@ -334,7 +334,7 @@ void GuiLockScreenPassCode(bool en)
 
         if (IsUpdateSuccess()) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-            GuiModeGetWalletDesc();
+            { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
             GuiEnterPassCodeStatus(g_verifyLock, true);
             GuiFrameOpenView(&g_homeView);
             GuiFrameOpenView(&g_updateSuccessView);
@@ -348,9 +348,9 @@ void GuiLockScreenPassCode(bool en)
         } else if (GetMnemonicType() != MNEMONIC_TYPE_TON && g_checkDeleteWalletView.isActive) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
             GuiFrameCLoseView(&g_checkDeleteWalletView);
-        } else if (ModelGetPassphraseQuickAccess()) {
+        } else if (KosmoApi_GetPassphraseQuickAccess()) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-            GuiModeGetWalletDesc();
+            { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
             GuiEnterPassCodeStatus(g_verifyLock, true);
             GuiFrameOpenView(&g_passphraseView);
             if (NeedUpdateBoot()) {
@@ -409,7 +409,7 @@ static void GuiPassowrdToLockTimePage(uint16_t leftErrorCount)
     if (leftErrorCount < 5 && leftErrorCount > 0) {
         staticLeftErrorCount = leftErrorCount;
         GuiFrameOpenViewWithParam(&g_lockDeviceView, &staticLeftErrorCount, sizeof(staticLeftErrorCount));
-        GuiModelWriteLastLockDeviceTime(GetCurrentStampTime());
+        { KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = GetCurrentStampTime() } }; KosmoApi_Request(&req, NULL); }
     }
 }
 

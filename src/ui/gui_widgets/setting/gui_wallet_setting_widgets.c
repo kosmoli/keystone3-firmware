@@ -6,7 +6,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_enter_passcode.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"
 #include "gui_keyboard_hintbox.h"
@@ -287,7 +287,7 @@ void GuiSettingRepeatPinPass(const char *buf)
     if (!strcmp(buf, g_passCode)) {
         GuiResettingWriteSe();
         SecretCacheSetNewPassword((char *)buf);
-        GuiModelChangeAccountPassWord();
+        {KosmoRequest r = {.type = KOSMO_REQ_CHANGE_PASSWORD}; KosmoApi_Request(&r, NULL);};
     } else {
         GuiEnterPassCodeStatus(g_repeatPassCode, false);
     }
@@ -568,7 +568,7 @@ static void DelWalletConfirmHandler(lv_event_t *e)
     g_waitAnimWidget.cont = GuiCreateAnimHintBox(480, 278, 82);
     g_waitAnimWidget.label = GuiCreateTextLabel(g_waitAnimWidget.cont, _("wallet_settings_delete_loading_title"));
     lv_obj_align(g_waitAnimWidget.label, LV_ALIGN_BOTTOM_MID, 0, -76);
-    GuiModelSettingDelWalletDesc();
+    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, NULL);};
 }
 
 static void FingerCancelRegisterHandler(lv_event_t *e)

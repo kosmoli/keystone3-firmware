@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
@@ -19,7 +19,7 @@ static void DeleteWalletNextStepHandler(lv_event_t *e)
     lv_obj_t *label = GuiCreateTextLabel(g_deleteWalletCont, _("wallet_deleting"));
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 427);
     GuiCreateCircleAroundAnimation(lv_scr_act(), -35);
-    GuiModelSettingDelWalletDesc();
+    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, NULL);};
 }
 
 static void DeleteWalletNotNowHandler(lv_event_t *e)

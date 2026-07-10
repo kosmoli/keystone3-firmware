@@ -5,7 +5,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_enter_passcode.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "secret_cache.h"
 #include "keystore.h"
@@ -29,12 +29,12 @@ static void UpdateWalletDescHandler(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_READY) {
-        WalletDesc_t wallet = {
-            .iconIndex = GuiSearchIconIndex(g_walletIcon),
-        };
-        GuiSetEmojiIconIndex(wallet.iconIndex);
-        strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, lv_textarea_get_text(g_setNameKb->ta));
-        GuiModelSettingSaveWalletDesc(&wallet);
+        uint8_t iconIdx = GuiSearchIconIndex(g_walletIcon);
+        GuiSetEmojiIconIndex(iconIdx);
+        {KosmoRequest r = {.type = KOSMO_REQ_SAVE_WALLET_DESC,
+                           .save_wallet_desc = {.iconIndex = iconIdx}};
+         strcpy_s(r.save_wallet_desc.name, WALLET_NAME_MAX_LEN + 1, lv_textarea_get_text(g_setNameKb->ta));
+         KosmoApi_Request(&r, NULL);}
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         if (strlen(lv_textarea_get_text(g_setNameKb->ta)) > 0) {
             lv_obj_set_style_text_font(g_setNameKb->ta, &buttonFont, 0);

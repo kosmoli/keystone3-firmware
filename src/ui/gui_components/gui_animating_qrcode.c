@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "gui_animating_qrcode.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_pending_hintbox.h"
 #ifndef COMPILE_WIN_SIMULATOR
 #include "lvgl/src/extra/libs/qrcode/lv_qrcode.h"
@@ -13,7 +13,7 @@ bool g_showPending = false;
 
 static void TimerHandler(lv_timer_t *timer)
 {
-    GuiModelURUpdate();
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_UPDATE}; KosmoApi_Request(&r, NULL);};
 }
 
 void GuiAnimatingQRCodeControl(bool pause)
@@ -55,7 +55,7 @@ void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFu
         GuiPendingHintBoxOpen(title, subtitle);
     }
 
-    GuiModelURGenerateQRCode(dataFunc);
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, NULL);};
 
 }
 
@@ -83,7 +83,7 @@ void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc,
         GuiPendingHintBoxOpen(loadingTitle, NULL);
     }
 
-    GuiModelURGenerateQRCode(dataFunc);
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, NULL);};
 }
 
 void GuiAnimantingQRCodeFirstUpdate(char* data, uint16_t len)
@@ -114,7 +114,7 @@ void GuiAnimatingQRCodeDestroyTimer()
         lv_timer_del(g_timer);
         g_timer = NULL;
     }
-    GuiModelURClear();
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_CLEAR}; KosmoApi_Request(&r, NULL);};
 
     GuiFullscreenModeCleanUp();
 }

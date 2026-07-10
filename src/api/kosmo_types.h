@@ -74,11 +74,13 @@ typedef enum {
     KOSMO_REQ_BIP39_WRITE_SE,                /* 写入 SE */
     KOSMO_REQ_BIP39_VERIFY_MNEMONIC,         /* 验证助记词 */
     KOSMO_REQ_BIP39_UPDATE_MNEMONIC,         /* 更新助记词（骰子） */
+    KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE,    /* 骰子路径更新助记词 */
     KOSMO_REQ_BIP39_FORGET_PASSWORD,         /* 忘记密码 */
     KOSMO_REQ_SLIP39_GENERATE_ENTROPY,       /* SLIP39 生成 */
     KOSMO_REQ_SLIP39_WRITE_SE,               /* SLIP39 写入 SE */
     KOSMO_REQ_SLIP39_CAL_WRITE_SE,           /* SLIP39 计算+写入 */
     KOSMO_REQ_SLIP39_UPDATE_MNEMONIC,        /* SLIP39 更新 */
+    KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE,   /* SLIP39 骰子更新 */
     KOSMO_REQ_SLIP39_FORGET_PASSWORD,        /* SLIP39 忘记密码 */
     KOSMO_REQ_WRITE_SE,                      /* 通用写入 SE */
 
@@ -130,6 +132,7 @@ typedef struct {
         struct { uint8_t wordCnt; bool forget; } bip39_write_se;
         struct { uint8_t wordCnt; } bip39_verify;
         struct { uint8_t wordCnt; } bip39_update;
+        struct { uint8_t wordCnt; } bip39_update_dice;
         struct { uint8_t wordCnt; } bip39_forget;
 
         /* SLIP39 */
@@ -137,6 +140,7 @@ typedef struct {
         struct { uint8_t wordCnt; } slip39_write_se;
         struct { uint8_t threshold; uint8_t memberCnt; uint8_t wordCnt; bool forget; } slip39_cal_write;
         struct { uint8_t threshold; uint8_t memberCnt; uint8_t wordCnt; } slip39_update;
+        struct { uint8_t threshold; uint8_t memberCnt; uint8_t wordCnt; } slip39_update_dice;
         struct { uint8_t threshold; uint8_t memberCnt; uint8_t wordCnt; bool forget; } slip39_forget;
 
         /* 账户 */

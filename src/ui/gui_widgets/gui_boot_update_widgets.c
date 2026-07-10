@@ -4,7 +4,7 @@
 #include "gui_status_bar.h"
 #include "gui_hintbox.h"
 #include "presetting.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "version.h"
 
 static lv_obj_t *g_bootUpdateCont = NULL;
@@ -33,7 +33,7 @@ void GuiCreateBootUpdateHandler(lv_event_t * e)
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
 
     printf("GuiCreateBootUpdateHandler\n");
-    GuiModelUpdateBoot();
+    {KosmoRequest r = {.type = KOSMO_REQ_UPDATE_BOOT}; KosmoApi_Request(&r, NULL);};
 }
 
 void GuiCreateBootUpdateSkipHandler(lv_event_t * e)

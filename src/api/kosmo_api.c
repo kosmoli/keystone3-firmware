@@ -304,6 +304,10 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         GuiModelBip39UpdateMnemonic(request->bip39_update.wordCnt);
         return KOSMO_OK;
     }
+    case KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE: {
+        GuiModelBip39UpdateMnemonicWithDiceRolls(request->bip39_update_dice.wordCnt);
+        return KOSMO_OK;
+    }
     case KOSMO_REQ_BIP39_FORGET_PASSWORD: {
         GuiModelBip39ForgetPassword(request->bip39_forget.wordCnt);
         return KOSMO_OK;
@@ -333,6 +337,13 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
                            .memberCnt = request->slip39_update.memberCnt,
                            .wordCnt = request->slip39_update.wordCnt };
         GuiModelSlip39UpdateMnemonic(d);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE: {
+        Slip39Data_t d = { .threShold = request->slip39_update_dice.threshold,
+                           .memberCnt = request->slip39_update_dice.memberCnt,
+                           .wordCnt = request->slip39_update_dice.wordCnt };
+        GuiModelSlip39UpdateMnemonicWithDiceRolls(d);
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_FORGET_PASSWORD: {

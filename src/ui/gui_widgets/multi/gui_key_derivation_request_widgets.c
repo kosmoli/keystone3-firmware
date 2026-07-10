@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "kosmo_api.h"
 #include "gui_page.h"
 #include "librust_c.h"
 #include "keystore.h"
@@ -357,7 +358,7 @@ void GuiKeyDerivationRequestPrevTile()
 
 void UpdateAndParseHardwareCall(void)
 {
-    GuiModelURClear();
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_CLEAR}; KosmoApi_Request(&r, NULL);};
     if (strnlen_s(SecretCacheGetPassword(), PASSWORD_MAX_LEN) != 0 && g_isUsbPassWordCheck) {
         if (g_response != NULL) {
             free_Response_QRHardwareCallData(g_response);

@@ -12,7 +12,7 @@
 #include "gui_chain.h"
 #include "account_public_info.h"
 #include "gui_keyboard.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_web_auth_widgets.h"
 #include "gui_setup_widgets.h"
 #include "keystore.h"
@@ -390,7 +390,7 @@ void GuiRemoveKeyboardWidget(void)
     if (g_keyboardWidget != NULL) {
         GuiDeleteKeyboardWidget(g_keyboardWidget);
     }
-    GuiModelRsaGenerateKeyPair();
+    {KosmoRequest r = {.type = KOSMO_REQ_RSA_GENERATE_KEYPAIR}; KosmoApi_Request(&r, NULL);};
 }
 
 void RecalculateManageWalletState(void)

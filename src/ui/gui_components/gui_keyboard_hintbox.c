@@ -15,7 +15,7 @@
 #include "gui_views.h"
 #include "gui_lock_widgets.h"
 #include "fingerprint_process.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "usb_task.h"
 
 #ifndef COMPILE_SIMULATOR
@@ -59,7 +59,7 @@ static void KeyboardConfirmHandler(lv_event_t *e)
         if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
             SecretCacheSetPassword((char *)currText);
             GuiClearKeyboardInput(keyboardWidget);
-            GuiModelVerifyAccountPassWord(keyboardWidget->sig);
+            {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, NULL);};
         }
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         GuiHideErrorLabel(keyboardWidget);
@@ -163,7 +163,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
                 keyboardWidget->currentNum = 0;
                 GuiClearKeyboardInput(keyboardWidget);
-                GuiModelVerifyAccountPassWord(keyboardWidget->sig);
+                {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, NULL);};
             }
 
         }

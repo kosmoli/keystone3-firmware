@@ -4,7 +4,7 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "presetting.h"
 #include "gui_wipe_device_widgets.h"
@@ -141,7 +141,7 @@ static void WipeDeviceDeal(void)
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 612);
 
-    GuiModelLockedDeviceDelAllWalletDesc();
+    {KosmoRequest r = {.type = KOSMO_REQ_DEL_ALL_WALLET_DESC}; KosmoApi_Request(&r, NULL);};
 }
 
 static void CountDownTimerHandler(lv_timer_t *timer)

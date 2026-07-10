@@ -6,6 +6,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_create_wallet_widgets.h"
 #include "slip39.h"
 #include "user_memory.h"
@@ -484,9 +485,13 @@ int8_t GuiCreateShareNextTile(const char *passphrase)
     switch (g_createShareTileView.currentTile) {
     case CREATE_SHARE_SELECT_SLICE:
         if (g_entropyMethod == 0) {
-            GuiModelSlip39UpdateMnemonic(slip39);
+            {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC,
+                   .slip39_update = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
         } else {
-            GuiModelSlip39UpdateMnemonicWithDiceRolls(slip39);
+            {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE,
+                   .slip39_update_dice = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
         }
         lv_label_set_text_fmt(g_custodianTile.titleLabel, _("shamir_phrase_share_number_fmt"), g_createShareTileView.currentSlice + 1, g_selectSliceTile.memberCnt);
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_CLOSE, StopCreateViewHandler, NULL);
@@ -517,14 +522,14 @@ int8_t GuiCreateShareNextTile(const char *passphrase)
             SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
             g_createShareTileView.currentTile++;
-            GuiModelSlip39WriteSe(g_selectCnt);
+            {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, NULL);};
         }
         break;
     case CREATE_SHARE_PASSPHRASE:
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
-        GuiModelSlip39WriteSe(g_selectCnt);
+        {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, NULL);};
         break;
     }
     g_createShareTileView.currentTile++;
@@ -668,9 +673,13 @@ static void SelectCheckBoxHandler(lv_event_t* e)
             g_selectCnt = 20;
             slip39.wordCnt = g_selectCnt;
             if (g_entropyMethod == 0) {
-                GuiModelSlip39UpdateMnemonic(slip39);
+                {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC,
+                   .slip39_update = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
             } else {
-                GuiModelSlip39UpdateMnemonicWithDiceRolls(slip39);
+                {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE,
+                   .slip39_update_dice = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
             }
         }
     } else if (!strcmp(currText, _("wallet_phrase_33words"))) {
@@ -683,9 +692,13 @@ static void SelectCheckBoxHandler(lv_event_t* e)
             g_selectCnt = 33;
             slip39.wordCnt = g_selectCnt;
             if (g_entropyMethod == 0) {
-                GuiModelSlip39UpdateMnemonic(slip39);
+                {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC,
+                   .slip39_update = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
             } else {
-                GuiModelSlip39UpdateMnemonicWithDiceRolls(slip39);
+                {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE,
+                   .slip39_update_dice = {.threshold = slip39.threShold, .memberCnt = slip39.memberCnt, .wordCnt = slip39.wordCnt}};
+ KosmoApi_Request(&r, NULL);};
             }
         }
     }

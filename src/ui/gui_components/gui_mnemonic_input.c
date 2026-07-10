@@ -10,7 +10,7 @@
 #include "string.h"
 #include "gui_mnemonic_input.h"
 #include "slip39.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "bip39.h"
 #include "sha256.h"
 #include "gui_setting_widgets.h"
@@ -174,12 +174,12 @@ static void HandleInputType(MnemonicKeyBoard_t *mkb)
         GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
         break;
     case MNEMONIC_INPUT_SETTING_VIEW:
-        GuiModelBip39RecoveryCheck(mkb->wordCnt);
+        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_VERIFY_MNEMONIC, .bip39_verify = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, NULL);};
         GuiSettingRecoveryCheck();
         break;
     case MNEMONIC_INPUT_FORGET_VIEW:
         GuiForgetAnimContDel(false);
-        GuiModelBip39ForgetPassword(mkb->wordCnt);
+        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_FORGET_PASSWORD, .bip39_forget = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, NULL);};
         break;
     }
 }
@@ -490,11 +490,9 @@ static void CompleteSlip39Import(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
     if (mkb->intputType == MNEMONIC_INPUT_FORGET_VIEW) {
         GuiForgetAnimContDel(false);
         lv_obj_add_flag(letterKb->cont, LV_OBJ_FLAG_HIDDEN);
-        Slip39Data_t slip39 = {
-            .threShold = mkb->threShold,
-            .wordCnt = mkb->wordCnt,
-        };
-        GuiModelSlip39ForgetPassword(slip39);
+        {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_FORGET_PASSWORD,
+                           .slip39_forget = {.threshold = mkb->threShold, .wordCnt = mkb->wordCnt}};
+         KosmoApi_Request(&r, NULL);}
     } else {
         GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
     }

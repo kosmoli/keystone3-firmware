@@ -4,7 +4,7 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "presetting.h"
 #include "gui_connection_widgets.h"
@@ -139,7 +139,7 @@ static void FormatMicroSDHandler(lv_event_t *e)
         lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeWindow, _("sdcard_formating_desc"));
         lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -76);
         lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-        GuiModelFormatMicroSd();
+        {KosmoRequest r = {.type = KOSMO_REQ_FORMAT_SD_CARD}; KosmoApi_Request(&r, NULL);};
     } else {
         g_noticeWindow = GuiCreateErrorCodeWindow(ERR_UPDATE_SDCARD_NOT_DETECTED, &g_noticeWindow, NULL);
     }

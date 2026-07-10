@@ -134,8 +134,8 @@ static void GuiRandomPhraseWidget(lv_obj_t *parent)
                              .bip39_update = { .wordCnt = g_phraseCnt } };
         KosmoApi_Request(&req, NULL);
     } else {
-        /* TODO: 需要 KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE 枚举 */
-        GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
+        /* Dice path: update mnemonic with dice rolls */
+        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, .bip39_update_dice = {.wordCnt = g_phraseCnt}}; KosmoApi_Request(&r, NULL);}
     }
 }
 
@@ -311,7 +311,7 @@ static void SelectCheckBoxHandler(lv_event_t* e)
                                      .bip39_update = { .wordCnt = g_phraseCnt } };
                 KosmoApi_Request(&req, NULL);
             } else {
-                GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
+                {KosmoRequest r = {.type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, .bip39_update_dice = {.wordCnt = g_phraseCnt}}; KosmoApi_Request(&r, NULL);};
             }
         }
     } else if (!strcmp(currText, _("wallet_phrase_24words"))) {
@@ -328,7 +328,7 @@ static void SelectCheckBoxHandler(lv_event_t* e)
                                      .bip39_update = { .wordCnt = g_phraseCnt } };
                 KosmoApi_Request(&req, NULL);
             } else {
-                GuiModelBip39UpdateMnemonicWithDiceRolls(g_phraseCnt);
+                {KosmoRequest r = {.type = KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, .bip39_update_dice = {.wordCnt = g_phraseCnt}}; KosmoApi_Request(&r, NULL);};
             }
         }
     }

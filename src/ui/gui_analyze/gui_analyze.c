@@ -4,7 +4,7 @@
 #include "lvgl.h"
 #include "gui_analyze.h"
 #include "gui_chain.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 
 #ifndef COMPILE_SIMULATOR
 #include "safe_mem_lib.h"
@@ -1041,7 +1041,7 @@ void ParseTransaction(uint8_t index)
 
     for (int i = 0; i < NUMBER_OF_ARRAYS(g_analyzeArray); i++) {
         if (g_reMapIndex == g_analyzeArray[i].index) {
-            GuiModelParseTransaction(g_analyzeArray[i].func);
+            {KosmoRequest r = {.type = KOSMO_REQ_PARSE_TRANSACTION, .raw_ptr = {g_analyzeArray[i].func}}; KosmoApi_Request(&r, NULL);};
             break;
         }
     }

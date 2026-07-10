@@ -36,6 +36,32 @@ typedef struct ContLabelWidget_t {
 static void DelWalletConfirmHandler(lv_event_t *e);
 static void FingerCancelRegisterHandler(lv_event_t *e);
 
+/* CALLBACKS */
+static void DelWalletCallback(const KosmoResult *result)
+{
+    if (result->errorCode != SUCCESS_CODE) {
+        GuiDelWallet(false);
+        return;
+    }
+    if (result->dataLen > 0 && result->data != NULL) {
+        uint8_t mode = *(uint8_t *)result->data;
+        if (mode == 0) {
+            GuiDelWalletSetup(); // last wallet deleted → setup
+        } else {
+            GuiDelWallet(true);  // normal delete
+        }
+    } else {
+        GuiDelWallet(true);
+    }
+}
+
+static void ChangePasswordCallback(const KosmoResult *result)
+{
+    if (result->errorCode == SUCCESS_CODE) {
+        GuiChangePassWord(true);
+    }
+}
+
 /* STATIC VARIABLES */
 static bool g_delWalletStatus = false;                      // delete wallet status
 static char g_passCode[PASSWORD_MAX_LEN + 1];    // passcode
@@ -287,7 +313,7 @@ void GuiSettingRepeatPinPass(const char *buf)
     if (!strcmp(buf, g_passCode)) {
         GuiResettingWriteSe();
         SecretCacheSetNewPassword((char *)buf);
-        {KosmoRequest r = {.type = KOSMO_REQ_CHANGE_PASSWORD}; KosmoApi_Request(&r, NULL);};
+        {KosmoRequest r = {.type = KOSMO_REQ_CHANGE_PASSWORD}; KosmoApi_Request(&r, ChangePasswordCallback);};
     } else {
         GuiEnterPassCodeStatus(g_repeatPassCode, false);
     }
@@ -568,7 +594,7 @@ static void DelWalletConfirmHandler(lv_event_t *e)
     g_waitAnimWidget.cont = GuiCreateAnimHintBox(480, 278, 82);
     g_waitAnimWidget.label = GuiCreateTextLabel(g_waitAnimWidget.cont, _("wallet_settings_delete_loading_title"));
     lv_obj_align(g_waitAnimWidget.label, LV_ALIGN_BOTTOM_MID, 0, -76);
-    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, NULL);};
+    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, DelWalletCallback);};
 }
 
 static void FingerCancelRegisterHandler(lv_event_t *e)

@@ -25,6 +25,11 @@
 static KeyBoard_t *g_setNameKb = NULL;         // setting keyboard
 static lv_obj_t *g_walletIcon;                 // wallet icon
 
+static void SaveWalletDescCallback(const KosmoResult *result)
+{
+    GuiChangeWalletDesc(result->errorCode == SUCCESS_CODE);
+}
+
 static void UpdateWalletDescHandler(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -34,7 +39,7 @@ static void UpdateWalletDescHandler(lv_event_t *e)
         {KosmoRequest r = {.type = KOSMO_REQ_SAVE_WALLET_DESC,
                            .save_wallet_desc = {.iconIndex = iconIdx}};
          strcpy_s(r.save_wallet_desc.name, WALLET_NAME_MAX_LEN + 1, lv_textarea_get_text(g_setNameKb->ta));
-         KosmoApi_Request(&r, NULL);}
+         KosmoApi_Request(&r, SaveWalletDescCallback);}
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         if (strlen(lv_textarea_get_text(g_setNameKb->ta)) > 0) {
             lv_obj_set_style_text_font(g_setNameKb->ta, &buttonFont, 0);

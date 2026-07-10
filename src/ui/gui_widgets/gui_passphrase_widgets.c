@@ -9,6 +9,7 @@
 #include "gui_enter_passcode.h"
 #include "gui_lock_widgets.h"
 #include "kosmo_api.h"
+#include "gui_setting_widgets.h"
 #include "stdio.h"
 #include "secret_cache.h"
 #include "keystore.h"
@@ -34,6 +35,11 @@ typedef struct ContLabelWidget_t {
 static void SkipHandler(lv_event_t *e);
 static void SetKeyboardTaHandler(lv_event_t *e);
 static void UpdatePassPhraseHandler(lv_event_t *e);
+
+static void WritePassphraseCallback(const KosmoResult *result)
+{
+    GuiWritePassphrase(result->errorCode == SUCCESS_CODE);
+}
 
 static PassphraseWidgets_t g_passphraseWidgets;
 static ContLabelWidget_t g_waitAnimWidget;
@@ -254,7 +260,7 @@ static void UpdatePassPhraseHandler(lv_event_t *e)
                     g_waitAnimWidget.label = GuiCreateTextLabel(g_waitAnimWidget.cont, _("seed_check_wait_verify"));
                     lv_obj_align(g_waitAnimWidget.label, LV_ALIGN_BOTTOM_MID, 0, -76);
                     lv_obj_add_flag(g_waitAnimWidget.cont, LV_OBJ_FLAG_CLICKABLE);
-                    {KosmoRequest r = {.type = KOSMO_REQ_WRITE_PASSPHRASE}; KosmoApi_Request(&r, NULL);};
+                    {KosmoRequest r = {.type = KOSMO_REQ_WRITE_PASSPHRASE}; KosmoApi_Request(&r, WritePassphraseCallback);};
                 }
             } else {
                 delayFlag = true;

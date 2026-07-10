@@ -12,6 +12,23 @@
 
 static lv_obj_t *g_deleteWalletCont = NULL;
 
+static void DelWalletCheckCallback(const KosmoResult *result)
+{
+    if (result->errorCode != SUCCESS_CODE) {
+        return;
+    }
+    if (result->dataLen > 0 && result->data != NULL) {
+        uint8_t mode = *(uint8_t *)result->data;
+        if (mode == 0) {
+            GuiDelWalletSetup(); // last wallet deleted → setup
+        } else {
+            GuiDelWallet(true);  // normal delete
+        }
+    } else {
+        GuiDelWallet(true);
+    }
+}
+
 static void DeleteWalletNextStepHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_deleteWalletCont)
@@ -19,7 +36,7 @@ static void DeleteWalletNextStepHandler(lv_event_t *e)
     lv_obj_t *label = GuiCreateTextLabel(g_deleteWalletCont, _("wallet_deleting"));
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 427);
     GuiCreateCircleAroundAnimation(lv_scr_act(), -35);
-    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, NULL);};
+    {KosmoRequest r = {.type = KOSMO_REQ_DEL_WALLET_DESC}; KosmoApi_Request(&r, DelWalletCheckCallback);};
 }
 
 static void DeleteWalletNotNowHandler(lv_event_t *e)

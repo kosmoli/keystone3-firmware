@@ -20,6 +20,13 @@ static char *g_authCode = NULL;
 static lv_obj_t *g_hintBox = NULL;
 static PageWidget_t *g_pageWidget;
 
+static void WebAuthCallback(const KosmoResult *result)
+{
+    if (result->errorCode == SUCCESS_CODE && result->data != NULL) {
+        GuiWebAuthShowAuthCode((char *)result->data);
+    }
+}
+
 typedef struct WebAuthResultWidget {
     uint8_t currentTile;
     lv_obj_t *cont;
@@ -315,7 +322,7 @@ void GuiWebAuthResultHidePending()
 
 void GuiWebAuthCalculateAuthCode()
 {
-    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, .raw_ptr = { .ptr = g_web_auth_data } }; KosmoApi_Request(&req, NULL); }
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, .raw_ptr = { .ptr = g_web_auth_data } }; KosmoApi_Request(&req, WebAuthCallback); }
 }
 
 void GuiWebAuthShowAuthCode(char *authCode)

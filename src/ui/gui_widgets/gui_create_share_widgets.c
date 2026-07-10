@@ -81,6 +81,11 @@ static PageWidget_t *g_pageWidget;
 static void SelectParseCntHandler(lv_event_t *e);
 static void SelectCheckBoxHandler(lv_event_t* e);
 
+static void ShareWriteSECallback(const KosmoResult *result)
+{
+    GuiWriteSeResult(result->errorCode == SUCCESS_CODE, result->errorCode);
+}
+
 static bool DiceRollsNotEnoughForWordCnt(uint8_t wordCnt)
 {
     return (g_entropyMethod & ENTROPY_TYPE_MASK) &&
@@ -522,14 +527,14 @@ int8_t GuiCreateShareNextTile(const char *passphrase)
             SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
             g_createShareTileView.currentTile++;
-            {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, NULL);};
+            {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, ShareWriteSECallback);};
         }
         break;
     case CREATE_SHARE_PASSPHRASE:
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
-        {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, NULL);};
+        {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_WRITE_SE, .slip39_write_se = {.wordCnt = g_selectCnt}}; KosmoApi_Request(&r, ShareWriteSECallback);};
         break;
     }
     g_createShareTileView.currentTile++;

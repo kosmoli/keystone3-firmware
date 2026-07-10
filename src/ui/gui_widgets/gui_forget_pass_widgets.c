@@ -61,6 +61,11 @@ static bool g_isForgetPass = false;
 
 static void CloseCurrentParentAndCloseViewHandler(lv_event_t *e);
 
+static void ForgetWriteSECallback(const KosmoResult *result)
+{
+    GuiForgetPassResetPass(result->errorCode == SUCCESS_CODE, result->errorCode);
+}
+
 bool GuiIsForgetPass(void)
 {
     if (g_isForgetPass) {
@@ -165,7 +170,7 @@ void GuiForgetPassRepeatPinPass(const char* buf)
                                  .slip39_cal_write = { .threshold = g_forgetMkb->threShold,
                                                        .wordCnt = g_forgetMkb->wordCnt,
                                                        .forget = true } };
-            KosmoApi_Request(&req, NULL);
+            KosmoApi_Request(&req, ForgetWriteSECallback);
         } else {
             Bip39Data_t bip39 = {
                 .wordCnt = g_forgetMkb->wordCnt,
@@ -174,7 +179,7 @@ void GuiForgetPassRepeatPinPass(const char* buf)
             KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE,
                                  .bip39_write_se = { .wordCnt = bip39.wordCnt,
                                                      .forget = bip39.forget } };
-            KosmoApi_Request(&req, NULL);
+            KosmoApi_Request(&req, ForgetWriteSECallback);
         }
     } else {
         GuiEnterPassCodeStatus(g_repeatPassCode, false);

@@ -44,6 +44,11 @@ static PageWidget_t *g_pageWidget;
 static lv_obj_t *g_noticeWindow = NULL;
 static bool g_errorRecovery = false;
 
+static void ImportWriteSECallback(const KosmoResult *result)
+{
+    GuiImportPhraseWriteSe(result->errorCode == SUCCESS_CODE, result->errorCode);
+}
+
 void GuiImportPhraseWriteSe(bool en, int32_t errCode)
 {
     if (en == true) {
@@ -161,7 +166,7 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
         } else {
             SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
             GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-            { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, NULL); }
+            { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, ImportWriteSECallback); }
             return SUCCESS_CODE;
         }
         break;
@@ -170,7 +175,7 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
         SetNavBarMidBtn(g_pageWidget->navBarWidget, NVS_MID_BUTTON_BUTT, NULL, NULL);
         GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
-        { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, NULL); }
+        { KosmoRequest req = { .type = KOSMO_REQ_BIP39_WRITE_SE, .bip39_write_se = { .wordCnt = bip39.wordCnt, .forget = bip39.forget } }; KosmoApi_Request(&req, ImportWriteSECallback); }
         return SUCCESS_CODE;
     }
 

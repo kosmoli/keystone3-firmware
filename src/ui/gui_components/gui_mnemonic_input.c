@@ -37,6 +37,23 @@ static void CompleteSlip39Import(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb);
 static void ShowShareSuccessDialog(void);
 static void UpdateSliceLabels(MnemonicKeyBoard_t *mkb);
 
+static void VerifyMnemonicCallback(const KosmoResult *result)
+{
+    GuiWalletRecoveryWriteSe(result->errorCode == SUCCESS_CODE);
+}
+
+static void ForgetPassCallback(const KosmoResult *result)
+{
+    GuiForgetPassVerifyResult(result->errorCode == SUCCESS_CODE,
+                              result->errorCode == SUCCESS_CODE ? 0 : result->errorCode);
+}
+
+static void Slip39ForgetPassCallback(const KosmoResult *result)
+{
+    GuiForgetPassVerifyResult(result->errorCode == SUCCESS_CODE,
+                              result->errorCode == SUCCESS_CODE ? 0 : result->errorCode);
+}
+
 char *GuiMnemonicGetTrueWord(const char *word, char *trueWord)
 {
     char *temp = trueWord;
@@ -174,12 +191,12 @@ static void HandleInputType(MnemonicKeyBoard_t *mkb)
         GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
         break;
     case MNEMONIC_INPUT_SETTING_VIEW:
-        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_VERIFY_MNEMONIC, .bip39_verify = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, NULL);};
+        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_VERIFY_MNEMONIC, .bip39_verify = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, VerifyMnemonicCallback);};
         GuiSettingRecoveryCheck();
         break;
     case MNEMONIC_INPUT_FORGET_VIEW:
         GuiForgetAnimContDel(false);
-        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_FORGET_PASSWORD, .bip39_forget = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, NULL);};
+        {KosmoRequest r = {.type = KOSMO_REQ_BIP39_FORGET_PASSWORD, .bip39_forget = {.wordCnt = mkb->wordCnt}}; KosmoApi_Request(&r, ForgetPassCallback);};
         break;
     }
 }
@@ -492,7 +509,7 @@ static void CompleteSlip39Import(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
         lv_obj_add_flag(letterKb->cont, LV_OBJ_FLAG_HIDDEN);
         {KosmoRequest r = {.type = KOSMO_REQ_SLIP39_FORGET_PASSWORD,
                            .slip39_forget = {.threshold = mkb->threShold, .wordCnt = mkb->wordCnt}};
-         KosmoApi_Request(&r, NULL);}
+         KosmoApi_Request(&r, Slip39ForgetPassCallback);}
     } else {
         GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
     }

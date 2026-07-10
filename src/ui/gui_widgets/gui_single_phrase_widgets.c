@@ -89,10 +89,15 @@ static void UpdatePhraseHandler(lv_event_t *e)
     KosmoApi_Request(&req, NULL);
 }
 
+static void WriteSECallback(const KosmoResult *result)
+{
+    GuiWriteSeResult(result->errorCode == SUCCESS_CODE, result->errorCode);
+}
+
 static void WriteSE()
 {
     KosmoRequest req = { .type = KOSMO_REQ_WRITE_SE };
-    KosmoApi_Request(&req, NULL);
+    KosmoApi_Request(&req, WriteSECallback);
 }
 
 static void GuiRandomPhraseWidget(lv_obj_t *parent)

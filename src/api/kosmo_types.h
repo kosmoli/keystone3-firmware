@@ -115,6 +115,7 @@ typedef enum {
     KOSMO_REQ_CLEAR_CHECK_RESULT,            /* 清除检查结果 */
     KOSMO_REQ_PARSE_TRANSACTION,             /* 解析交易 */
     KOSMO_REQ_PARSE_TRANSACTION_RAW,         /* 解析原始交易 */
+    KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY,   /* 延迟解析原始交易 */
 
     /* RSA */
     KOSMO_REQ_RSA_GENERATE_KEYPAIR,          /* 生成 RSA 密钥对 */

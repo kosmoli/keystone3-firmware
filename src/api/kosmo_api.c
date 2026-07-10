@@ -468,6 +468,10 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         GuiModelParseTransactionRawData();
         return KOSMO_OK;
     }
+    case KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY: {
+        GuiModelTransactionParseRawDataDelay();
+        return KOSMO_OK;
+    }
 
     /* ── RSA ──────────────────────────────────────── */
     case KOSMO_REQ_RSA_GENERATE_KEYPAIR: {

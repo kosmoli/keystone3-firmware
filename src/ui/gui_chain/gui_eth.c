@@ -1711,7 +1711,7 @@ lv_obj_t *GuiCreateContractRawDataHintbox(const char *titleText, const char *des
 void EthContractCheckRawData(lv_event_t *e)
 {
     GuiNoPendingHintBoxOpen(_("Loading"));
-    GuiModelParseTransactionRawData();
+    {KosmoRequest r = {.type = KOSMO_REQ_PARSE_TRANSACTION_RAW}; KosmoApi_Request(&r, NULL);};
 }
 
 void EthContractCheckRawDataCallback(void)
@@ -1721,7 +1721,7 @@ void EthContractCheckRawDataCallback(void)
     g_contractRawDataHintbox = GuiCreateContractRawDataHintbox("Raw Data", rawData);
     lv_obj_t *rightBtn = GuiGetHintBoxRightBtn(g_contractRawDataHintbox);
     lv_obj_add_event_cb(rightBtn, CloseHintBoxHandler, LV_EVENT_CLICKED, &g_contractRawDataHintbox);
-    GuiModelTransactionParseRawDataDelay();
+    {KosmoRequest r = {.type = KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY}; KosmoApi_Request(&r, NULL);};
     ClearLockScreenTime();
     SetLockScreen(true);
 }

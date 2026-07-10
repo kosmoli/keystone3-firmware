@@ -981,7 +981,6 @@ static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen)
     SetWalletIconIndex(wallet->iconIndex);
 
     KosmoApi_NotifyResult(KOSMO_REQ_SAVE_WALLET_DESC, SUCCESS_CODE, NULL, 0);
-    GuiApiEmitSignal(SIG_SETTING_CHANGE_WALLET_DESC_PASS, NULL, 0);
     SetLockScreen(enable);
     return SUCCESS_CODE;
 }
@@ -1019,15 +1018,12 @@ static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen)
             g_reboot = true;
             uint8_t mode = 0; // 0 = setup mode (last wallet deleted)
             KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, SUCCESS_CODE, &mode, sizeof(mode));
-            GuiApiEmitSignal(SIG_SETTING_DEL_WALLET_PASS_SETUP, NULL, 0);
         } else {
             uint8_t mode = 1; // 1 = normal delete
             KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, SUCCESS_CODE, &mode, sizeof(mode));
-            GuiApiEmitSignal(SIG_SETTING_DEL_WALLET_PASS, NULL, 0);
         }
     } else {
         KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, ret, NULL, 0);
-        GuiApiEmitSignal(SIG_SETTING_DEL_WALLET_FAIL, &ret, sizeof(ret));
     }
     SetLockScreen(enable);
     return SUCCESS_CODE;
@@ -1043,7 +1039,6 @@ static int32_t ModelDelAllWallet(const void *inData, uint32_t inDataLen)
     SystemReboot();
 #else
     KosmoApi_NotifyResult(KOSMO_REQ_DEL_ALL_WALLET_DESC, SUCCESS_CODE, NULL, 0);
-    GuiEmitSignal(SIG_SETTING_DEL_WALLET_PASS, NULL, 0);
 #endif
     SetLockScreen(enable);
     return SUCCESS_CODE;
@@ -1057,16 +1052,13 @@ static int32_t ModelWritePassphrase(const void *inData, uint32_t inDataLen)
     int32_t ret = 0;
     if (CheckPassphraseSame(GetCurrentAccountIndex(), SecretCacheGetPassphrase())) {
         KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, SUCCESS_CODE, NULL, 0);
-        GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_PASS, NULL, 0);
     } else {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetPassword());
         if (ret == SUCCESS_CODE) {
             KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, SUCCESS_CODE, NULL, 0);
-            GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_PASS, NULL, 0);
             ClearSecretCache();
         } else {
             KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, ret, NULL, 0);
-            GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_FAIL, NULL, 0);
         }
         ClearSecretCache();
     }
@@ -1087,10 +1079,8 @@ static int32_t ModelChangeAccountPass(const void *inData, uint32_t inDataLen)
     UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
     if (ret == SUCCESS_CODE) {
         KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, SUCCESS_CODE, NULL, 0);
-        GuiApiEmitSignal(SIG_SETTING_CHANGE_PASSWORD_PASS, NULL, 0);
     } else {
         KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, ret, NULL, 0);
-        GuiApiEmitSignal(SIG_SETTING_CHANGE_PASSWORD_FAIL, NULL, 0);
     }
 
     ClearSecretCache();
@@ -1100,9 +1090,7 @@ static int32_t ModelChangeAccountPass(const void *inData, uint32_t inDataLen)
     int32_t ret;
     uint8_t *accountIndex = (uint8_t *)inData;
 
-    // GuiApiEmitSignal(SIG_SETTING_CHANGE_PASSWORD_FAIL, &ret, sizeof(ret));
     KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, SUCCESS_CODE, NULL, 0);
-    GuiApiEmitSignal(SIG_SETTING_CHANGE_PASSWORD_PASS, &ret, sizeof(ret));
 #endif
     SetLockScreen(enable);
     return SUCCESS_CODE;
@@ -1118,7 +1106,6 @@ static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
     if (key == NULL) {
         char *authCode = "";
         KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-        GuiApiEmitSignal(SIG_WEB_AUTH_CODE_SUCCESS, authCode, strlen(authCode) + 1);
         SetLockScreen(enable);
         return SUCCESS_CODE;
     }
@@ -1128,7 +1115,6 @@ static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
         SRAM_FREE(key);
         char *authCode = "";
         KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, ret, authCode, strlen(authCode) + 1);
-        GuiApiEmitSignal(SIG_WEB_AUTH_CODE_SUCCESS, authCode, strlen(authCode) + 1);
         SetLockScreen(enable);
         return SUCCESS_CODE;
     }
@@ -1140,7 +1126,6 @@ static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
         authCode = "";
     }
     KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-    GuiApiEmitSignal(SIG_WEB_AUTH_CODE_SUCCESS, authCode, strlen(authCode) + 1);
     if (shouldFreeAuthCode) {
         free_ptr_string(authCode);
     }
@@ -1150,10 +1135,8 @@ static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
     int32_t ret;
     uint8_t *accountIndex = (uint8_t *)inData;
 
-    // GuiApiEmitSignal(SIG_SETTING_CHANGE_PASSWORD_FAIL, &ret, sizeof(ret));
     char *authCode = "12345Yyq";
     KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-    GuiEmitSignal(SIG_WEB_AUTH_CODE_SUCCESS, authCode, strlen(authCode) + 1);
 #endif
     SetLockScreen(enable);
     return SUCCESS_CODE;
@@ -1384,11 +1367,9 @@ static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen)
         NVIC_SystemReset();
     } else {
         SetPageLockScreen(true);
-        GuiApiEmitSignal(SIG_INIT_SD_CARD_OTA_COPY_FAIL, NULL, 0);
         KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
     }
 #else
-    GuiApiEmitSignal(SIG_INIT_SD_CARD_OTA_COPY_FAIL, NULL, 0);
     KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
 #endif
     return SUCCESS_CODE;
@@ -1410,18 +1391,14 @@ static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
     SetPageLockScreen(true);
     if (ret == SUCCESS_CODE) {
         NVIC_SystemReset();
-        GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
         KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
     } else {
-        GuiApiEmitSignal(SIG_BOOT_UPDATE_FAIL, NULL, 0);
         KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, ERR_GENERAL_FAIL, NULL, 0);
     }
 #else
-    GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
     KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
 #endif
 #else
-    GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
     KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
 #endif
     return SUCCESS_CODE;
@@ -1634,10 +1611,8 @@ static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)
 {
     int ret = FormatSdFatfs();
     if (ret != SUCCESS_CODE) {
-        GuiApiEmitSignal(SIG_SETTING_MICRO_CARD_FORMAT_FAILED, NULL, 0);
         KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, ERR_GENERAL_FAIL, NULL, 0);
     } else {
-        GuiApiEmitSignal(SIG_SETTING_MICRO_CARD_FORMAT_SUCCESS, NULL, 0);
         KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, KOSMO_OK, NULL, 0);
     }
     SetPageLockScreen(true);

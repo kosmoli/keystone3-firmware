@@ -427,13 +427,13 @@ static int32_t ModelGenerateEntropyWithDiceRolls(const void *inData, uint32_t in
 static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen)
 {
     UserDelay(100);
-    GuiApiEmitSignal(SIG_SHOW_TRANSACTION_LOADING_DELAY, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION_RAW, KOSMO_OK, NULL, 0);
     return SUCCESS_CODE;
 }
 
 static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen)
 {
-    GuiApiEmitSignal(SIG_HIDE_TRANSACTION_PARSE_LOADING_DELAY, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY, KOSMO_OK, NULL, 0);
     return SUCCESS_CODE;
 }
 
@@ -1292,7 +1292,7 @@ static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen)
     if (ret != SUCCESS_CODE) {
         walletAmount = 0xFF;
     }
-    GuiApiEmitSignal(SIG_INIT_GET_ACCOUNT_NUMBER, &walletAmount, sizeof(walletAmount));
+    KosmoApi_NotifyResult(KOSMO_REQ_GET_ACCOUNT, KOSMO_OK, &walletAmount, sizeof(walletAmount));
     SetLockScreen(enable);
     return SUCCESS_CODE;
 }
@@ -1309,7 +1309,7 @@ static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen)
     }
     wallet.iconIndex = GetWalletIconIndex();
     strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, GetWalletName());
-    GuiApiEmitSignal(SIG_INIT_GET_CURRENT_WALLET_DESC, &wallet, sizeof(wallet));
+    KosmoApi_NotifyResult(KOSMO_REQ_GET_WALLET_DESC, KOSMO_OK, &wallet, sizeof(wallet));
     SetLockScreen(enable);
     return SUCCESS_CODE;
 }
@@ -1407,18 +1407,16 @@ static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
 static PtrT_TransactionCheckResult g_checkResult = NULL;
 static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen)
 {
-    GuiApiEmitSignal(SIG_SHOW_TRANSACTION_LOADING, NULL, 0);
     ViewType viewType = *((ViewType *)inData);
     if (CheckNeedDelay(viewType)) {
         UserDelay(100);
     }
     g_checkResult = CheckUrResult(viewType);
     if (g_checkResult != NULL && g_checkResult->error_code == 0) {
-        GuiApiEmitSignal(SIG_TRANSACTION_CHECK_PASS, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_CHECK_TRANSACTION, KOSMO_OK, g_checkResult, sizeof(g_checkResult));
     } else {
         printf("transaction check fail, error code: %d, error msg: %s\r\n", g_checkResult->error_code, g_checkResult->error_message);
-        GuiApiEmitSignal(SIG_HIDE_TRANSACTION_LOADING, NULL, 0);
-        GuiApiEmitSignal(SIG_TRANSACTION_CHECK_FAIL, g_checkResult, sizeof(g_checkResult));
+        KosmoApi_NotifyResult(KOSMO_REQ_CHECK_TRANSACTION, ERR_GENERAL_FAIL, g_checkResult, sizeof(g_checkResult));
     }
 
     return SUCCESS_CODE;
@@ -1441,11 +1439,10 @@ static int32_t ModelParseTransaction(const void *indata, uint32_t inDataLen, Bac
     // There is no need to release here, the parsing results will be released when exiting the details page.
     TransactionParseResult_DisplayTx *parsedResult = (TransactionParseResult_DisplayTx *)func();
     if (parsedResult != NULL && parsedResult->error_code == 0 && parsedResult->data != NULL) {
-        GuiApiEmitSignal(SIG_TRANSACTION_PARSE_SUCCESS, parsedResult, sizeof(parsedResult));
+        KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION, KOSMO_OK, parsedResult, sizeof(parsedResult));
     } else {
-        GuiApiEmitSignal(SIG_TRANSACTION_PARSE_FAIL, parsedResult, sizeof(parsedResult));
+        KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION, ERR_GENERAL_FAIL, parsedResult, sizeof(parsedResult));
     }
-    GuiApiEmitSignal(SIG_HIDE_TRANSACTION_LOADING, NULL, 0);
     SetPageLockScreen(true);
     return SUCCESS_CODE;
 }

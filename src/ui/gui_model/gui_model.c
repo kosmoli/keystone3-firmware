@@ -607,11 +607,11 @@ static int32_t ModelURGenerateQRCode(const void *indata, uint32_t inDataLen, Bac
     g_urResult = func();
     if (g_urResult->error_code == 0) {
         // printf("%s\r\n", g_urResult->data);
-        GuiApiEmitSignal(SIG_BACKGROUND_UR_GENERATE_SUCCESS, g_urResult->data, strnlen_s(g_urResult->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, KOSMO_OK, g_urResult->data, strnlen_s(g_urResult->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
     } else {
         char *message = g_urResult->error_message != NULL ? g_urResult->error_message : "";
         printf("error message: %s\r\n", message);
-        GuiApiEmitSignal(SIG_BACKGROUND_UR_GENERATE_FAIL, message, strnlen_s(message, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, ERR_GENERAL_FAIL, message, strnlen_s(message, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
     }
     return SUCCESS_CODE;
 }
@@ -638,7 +638,7 @@ static int32_t ModelURUpdate(const void *inData, uint32_t inDataLen)
         }
         if (result->error_code == 0) {
             // printf("%s\r\n", result->data);
-            GuiApiEmitSignal(SIG_BACKGROUND_UR_UPDATE, result->data, strnlen_s(result->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+            KosmoApi_NotifyResult(KOSMO_REQ_UR_UPDATE, KOSMO_OK, result->data, strnlen_s(result->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
         } else {
             //TODO: deal with error
         }

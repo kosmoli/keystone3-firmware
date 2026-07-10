@@ -1347,14 +1347,14 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)
     if (func) {
         bool skipGenerateArweaveKey = IsArweaveSetupComplete();
         if (index == WALLET_LIST_WANDER && !skipGenerateArweaveKey) {
-            GuiAnimatingQRCodeInitWithLoadingParams(g_connectWalletTileView.qrCode, func, true, _("InitializingRsaTitle"), _("FindingRsaPrimes"));
+            GuiAnimatingQRCodeInitWithLoadingParams(g_connectWalletTileView.qrCode, func, true, _("InitializingRsaTitle"), _("FindingRsaPrimes"), GuiConnectWalletHandleURGenerate, NULL);
             return;
         }
         if (index == WALLET_LIST_BEACON && !skipGenerateArweaveKey) {
-            GuiAnimatingQRCodeInitWithLoadingParams(g_connectWalletTileView.qrCode, func, true, _("InitializingRsaTitle"), _("FindingRsaPrimes"));
+            GuiAnimatingQRCodeInitWithLoadingParams(g_connectWalletTileView.qrCode, func, true, _("InitializingRsaTitle"), _("FindingRsaPrimes"), GuiConnectWalletHandleURGenerate, NULL);
             return;
         }
-        GuiAnimatingQRCodeInit(g_connectWalletTileView.qrCode, func, true);
+        GuiAnimatingQRCodeInit(g_connectWalletTileView.qrCode, func, true, GuiConnectWalletHandleURGenerate, NULL);
     }
 }
 

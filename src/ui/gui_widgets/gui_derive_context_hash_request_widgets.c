@@ -343,7 +343,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
 void DeriveContextHashHiddenKeyboardAndShowAnimateQR(void)
 {
     GuiDeleteKeyboardWidget(g_keyboardWidget);
-    GuiAnimatingQRCodeInit(g_widget.qrCode, ModelGenerateSyncUR, true);
+    GuiAnimatingQRCodeInit(g_widget.qrCode, ModelGenerateSyncUR, true, GuiDeriveContextHashWidgetHandleURGenerate, GuiDeriveContextHashWidgetHandleURGenerateFail);
     NextTile();
 }
 

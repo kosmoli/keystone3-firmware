@@ -832,7 +832,7 @@ static void OnApproveHandler(lv_event_t *e)
         lv_obj_t *parent = lv_obj_get_parent(lv_event_get_target(e));
         GuiShowKeyBoardDialog(parent);
     } else {
-        GuiAnimatingQRCodeInit(g_keyDerivationTileView.qrCode, ModelGenerateSyncUR, true);
+        GuiAnimatingQRCodeInit(g_keyDerivationTileView.qrCode, ModelGenerateSyncUR, true, GuiKeyDerivationWidgetHandleURGenerate, NULL);
         GuiKeyDerivationRequestNextTile();
     }
 }
@@ -879,7 +879,7 @@ void HiddenKeyboardAndShowAnimateQR()
     } else {
         GuiDeleteKeyboardWidget(g_keyboardWidget);
         // show dynamic qr code
-        GuiAnimatingQRCodeInit(g_keyDerivationTileView.qrCode, ModelGenerateSyncUR, true);
+        GuiAnimatingQRCodeInit(g_keyDerivationTileView.qrCode, ModelGenerateSyncUR, true, GuiKeyDerivationWidgetHandleURGenerate, NULL);
         // jump to next page to show qr code
         GuiKeyDerivationRequestNextTile();
     }

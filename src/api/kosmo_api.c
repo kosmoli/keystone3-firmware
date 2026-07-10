@@ -98,7 +98,7 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
     if (type >= KOSMO_REQ_NUM) return;
 
     KosmoCallback cb = g_pendingCallbacks[type];
-    g_pendingCallbacks[type] = NULL; /* 一次性：清空后再调用，防止重入 */
+    /* callback 保持注册，由调用方负责清除（如 UR_CLEAR 清除 UR callback） */
 
     if (cb != NULL) {
         KosmoResult result = {

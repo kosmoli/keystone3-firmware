@@ -13,10 +13,12 @@
 #include "lvgl.h"
 
 typedef UREncodeResult *(*GenerateUR)(void);
+typedef void (*URSuccessCallback)(char *data, uint16_t len);
+typedef void (*URFailCallback)(char *message);
 
-void GuiAnimatingQRCodeInit(lv_obj_t* parent, GenerateUR dataFunc, bool showPending);
-void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, char *title, char *subtitle);
-void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, uint16_t w, uint16_t h, char* loadingTitle);
+void GuiAnimatingQRCodeInit(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, URSuccessCallback onSuccess, URFailCallback onFail);
+void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, char *title, char *subtitle, URSuccessCallback onSuccess, URFailCallback onFail);
+void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, uint16_t w, uint16_t h, char* loadingTitle, URSuccessCallback onSuccess, URFailCallback onFail);
 void GuiAnimatingQRCodeControl(bool pause);
 void GuiAnimantingQRCodeFirstUpdate(char* data, uint16_t len);
 void GuiAnimatingQRCodeUpdate(char* data, uint16_t len);

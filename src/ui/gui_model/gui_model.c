@@ -72,10 +72,8 @@
     if (ret == SUCCESS_CODE) {                                                  \
         ClearSecretCache();                                                     \
         KosmoApi_NotifyResult(reqType, SUCCESS_CODE, NULL, 0);                  \
-        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_SUCCESS, &ret, sizeof(ret));  \
     } else {                                                                            \
         KosmoApi_NotifyResult(reqType, ret, NULL, 0);                          \
-        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_FAIL, &ret, sizeof(ret));     \
     }
 
 static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen);
@@ -372,10 +370,8 @@ cleanup:
     if (ret != SUCCESS_CODE) {
         // This error path should theoretically not be reached if entropy generation and mnemonic creation work correctly
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, ret, NULL, 0);
-        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_UPDATE_MNEMONIC_FAIL, &ret, sizeof(ret));
     } else {
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, SUCCESS_CODE, NULL, 0);
-        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_UPDATE_MNEMONIC, &ret, sizeof(ret));
     }
     CLEAR_ARRAY(entropy);
     SetLockScreen(enable);
@@ -420,10 +416,8 @@ static int32_t ModelGenerateEntropyWithDiceRolls(const void *inData, uint32_t in
     }
     if (ret == SUCCESS_CODE) {
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, SUCCESS_CODE, NULL, 0);
-        GuiEmitSignal(SIG_CREAT_SINGLE_PHRASE_UPDATE_MNEMONIC, &ret, sizeof(ret));
     } else {
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, ret, NULL, 0);
-        GuiEmitSignal(SIG_CREAT_SINGLE_PHRASE_UPDATE_MNEMONIC_FAIL, &ret, sizeof(ret));
     }
     CLEAR_ARRAY(entropy);
     SetLockScreen(enable);
@@ -536,11 +530,9 @@ if (ret == SUCCESS_CODE)
 {
     ClearSecretCache();
     KosmoApi_NotifyResult(KOSMO_REQ_BIP39_WRITE_SE, SUCCESS_CODE, NULL, 0);
-    GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_SUCCESS, &ret, sizeof(ret));
 } else
 {
     KosmoApi_NotifyResult(KOSMO_REQ_BIP39_WRITE_SE, ret, NULL, 0);
-    GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_FAIL, &ret, sizeof(ret));
 }
 memset_s(entropy, entropyInLen, 0, entropyInLen);
 memset_s(&accountInfo, sizeof(accountInfo), 0, sizeof(accountInfo));
@@ -577,10 +569,8 @@ static int32_t ModelBip39VerifyMnemonic(const void *inData, uint32_t inDataLen)
     ClearSecretCache();
     if (ret != SUCCESS_CODE) {
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_VERIFY_MNEMONIC, ret, NULL, 0);
-        GuiApiEmitSignal(SIG_CREATE_SINGLE_PHRASE_WRITESE_FAIL, NULL, 0);
     } else {
         KosmoApi_NotifyResult(KOSMO_REQ_BIP39_VERIFY_MNEMONIC, SUCCESS_CODE, NULL, 0);
-        GuiApiEmitSignal(SIG_CREATE_SINGLE_PHRASE_WRITESE_PASS, NULL, 0);
     }
     SetLockScreen(enable);
     return 0;
@@ -599,14 +589,12 @@ static int32_t ModelBip39ForgetPass(const void *inData, uint32_t inDataLen)
         if (ret != SUCCESS_CODE) {
             // Mnemonic doesn't match wallet → password reset allowed
             KosmoApi_NotifyResult(KOSMO_REQ_BIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
-            GuiApiEmitSignal(SIG_FORGET_PASSWORD_SUCCESS, NULL, 0);
             SetLockScreen(enable);
             return ret;
         }
         ret = ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET;
     } while (0);
     KosmoApi_NotifyResult(KOSMO_REQ_BIP39_FORGET_PASSWORD, ret, NULL, 0);
-    GuiApiEmitSignal(SIG_FORGET_PASSWORD_FAIL, &ret, sizeof(ret));
     SetLockScreen(enable);
     return ret;
 }
@@ -709,7 +697,7 @@ static int32_t ModelComparePubkey(MnemonicType mnemonicType, uint8_t *ems, uint8
     return ret;
 }
 
-static int32_t Slip39CreateGenerate(Slip39Data_t *slip39, bool isDiceRoll)
+static int32_t Slip39CreateGenerate(Slip39Data_t *slip39, bool isDiceRoll, KosmoRequestType requestType)
 {
     bool enable = IsPreviousLockScreenEnable();
     SetLockScreen(false);
@@ -764,7 +752,7 @@ static int32_t Slip39CreateGenerate(Slip39Data_t *slip39, bool isDiceRoll)
     for (int i = 0; i < slip39->memberCnt; i++) {
         SecretCacheSetSlip39Mnemonic(wordsList[i], i);
     }
-    GuiApiEmitSignal(SIG_CREATE_SHARE_UPDATE_MNEMONIC, NULL, 0);
+    KosmoApi_NotifyResult(requestType, SUCCESS_CODE, NULL, 0);
 
 cleanup_words:
     for (int i = 0; i < slip39->memberCnt; i++) {
@@ -775,7 +763,7 @@ cleanup_words:
     }
 cleanup:
     if (ret != SUCCESS_CODE) {
-        GuiApiEmitSignal(SIG_CREATE_SHARE_UPDATE_MNEMONIC_FAIL, NULL, 0);
+        KosmoApi_NotifyResult(requestType, ret, NULL, 0);
     }
     CLEAR_ARRAY(ems);
     CLEAR_ARRAY(entropy);
@@ -786,13 +774,13 @@ cleanup:
 // slip39 generate
 static int32_t ModelGenerateSlip39Entropy(const void *inData, uint32_t inDataLen)
 {
-    return Slip39CreateGenerate((Slip39Data_t *)inData, false);
+    return Slip39CreateGenerate((Slip39Data_t *)inData, false, KOSMO_REQ_SLIP39_UPDATE_MNEMONIC);
 }
 
 // slip39 generate
 static int32_t ModelGenerateSlip39EntropyWithDiceRolls(const void *inData, uint32_t inDataLen)
 {
-    return Slip39CreateGenerate((Slip39Data_t *)inData, true);
+    return Slip39CreateGenerate((Slip39Data_t *)inData, true, KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE);
 }
 
 // Generate slip39 wallet writes
@@ -925,11 +913,9 @@ if (ret == SUCCESS_CODE)
 {
     ClearSecretCache();
     KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_CAL_WRITE_SE, SUCCESS_CODE, NULL, 0);
-    GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_SUCCESS, &ret, sizeof(ret));
 } else
 {
     KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_CAL_WRITE_SE, ret, NULL, 0);
-    GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_FAIL, &ret, sizeof(ret));
 }
 SRAM_FREE(entropy);
 SetLockScreen(enable);
@@ -970,19 +956,16 @@ static int32_t ModelSlip39ForgetPass(const void *inData, uint32_t inDataLen)
         if (ret != SUCCESS_CODE) {
             // Mnemonic doesn't match wallet → password reset allowed
             KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
-            GuiApiEmitSignal(SIG_FORGET_PASSWORD_SUCCESS, NULL, 0);
             SetLockScreen(enable);
             return ret;
         }
         ret = ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET;
     } while (0);
     KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, ret, NULL, 0);
-    GuiApiEmitSignal(SIG_FORGET_PASSWORD_FAIL, &ret, sizeof(ret));
 
     SRAM_FREE(entropy);
 #else
     KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
-    GuiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_SUCCESS, &ret, sizeof(ret));
 #endif
     SetLockScreen(enable);
     return ret;

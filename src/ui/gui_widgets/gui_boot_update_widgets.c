@@ -11,6 +11,15 @@ static lv_obj_t *g_bootUpdateCont = NULL;
 static lv_obj_t *g_noticeWindow = NULL;
 static lv_obj_t *g_startBtn = NULL;
 
+/* Phase 3 callback：boot 更新结果 */
+static void BootUpdateCallback(const KosmoResult *result)
+{
+    if (result->errorCode == KOSMO_OK) {
+        GuiBootUpdateSuccess();
+    }
+    /* FAIL handler is currently a no-op in the view, so we skip it */
+}
+
 void GuiCreateBootUpdateHandler(lv_event_t * e)
 {
     if (GetCurrentDisplayPercent() <= 40 ||
@@ -33,7 +42,8 @@ void GuiCreateBootUpdateHandler(lv_event_t * e)
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
 
     printf("GuiCreateBootUpdateHandler\n");
-    {KosmoRequest r = {.type = KOSMO_REQ_UPDATE_BOOT}; KosmoApi_Request(&r, NULL);};
+    KosmoRequest r = {.type = KOSMO_REQ_UPDATE_BOOT};
+    KosmoApi_Request(&r, BootUpdateCallback);
 }
 
 void GuiCreateBootUpdateSkipHandler(lv_event_t * e)

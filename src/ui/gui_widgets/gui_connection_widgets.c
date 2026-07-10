@@ -129,6 +129,12 @@ void FormatMicroHandleResult(int32_t errCode)
     }
 }
 
+/* Phase 3 callback：格式化 SD 卡结果 */
+static void FormatSDCardCallback(const KosmoResult *result)
+{
+    FormatMicroHandleResult(result->errorCode);
+}
+
 static void FormatMicroSDHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_noticeWindow)
@@ -139,7 +145,8 @@ static void FormatMicroSDHandler(lv_event_t *e)
         lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeWindow, _("sdcard_formating_desc"));
         lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -76);
         lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-        {KosmoRequest r = {.type = KOSMO_REQ_FORMAT_SD_CARD}; KosmoApi_Request(&r, NULL);};
+        KosmoRequest r = {.type = KOSMO_REQ_FORMAT_SD_CARD};
+        KosmoApi_Request(&r, FormatSDCardCallback);
     } else {
         g_noticeWindow = GuiCreateErrorCodeWindow(ERR_UPDATE_SDCARD_NOT_DETECTED, &g_noticeWindow, NULL);
     }

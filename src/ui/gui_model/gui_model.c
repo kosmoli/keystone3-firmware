@@ -1371,9 +1371,11 @@ static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen)
     } else {
         SetPageLockScreen(true);
         GuiApiEmitSignal(SIG_INIT_SD_CARD_OTA_COPY_FAIL, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
     }
 #else
     GuiApiEmitSignal(SIG_INIT_SD_CARD_OTA_COPY_FAIL, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
 #endif
     return SUCCESS_CODE;
 }
@@ -1395,14 +1397,18 @@ static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
     if (ret == SUCCESS_CODE) {
         NVIC_SystemReset();
         GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
     } else {
         GuiApiEmitSignal(SIG_BOOT_UPDATE_FAIL, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, ERR_GENERAL_FAIL, NULL, 0);
     }
 #else
     GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
 #endif
 #else
     GuiApiEmitSignal(SIG_BOOT_UPDATE_SUCCESS, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
 #endif
     return SUCCESS_CODE;
 }
@@ -1615,8 +1621,10 @@ static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)
     int ret = FormatSdFatfs();
     if (ret != SUCCESS_CODE) {
         GuiApiEmitSignal(SIG_SETTING_MICRO_CARD_FORMAT_FAILED, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, ERR_GENERAL_FAIL, NULL, 0);
     } else {
         GuiApiEmitSignal(SIG_SETTING_MICRO_CARD_FORMAT_SUCCESS, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, KOSMO_OK, NULL, 0);
     }
     SetPageLockScreen(true);
 

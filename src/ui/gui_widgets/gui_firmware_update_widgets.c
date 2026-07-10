@@ -389,6 +389,12 @@ static void GuiCreateUsbInstructionTile(lv_obj_t *parent)
     GuiAlignToPrevObj(label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 12);
 }
 
+/* Phase 3 callback：SD 卡 OTA 复制结果 */
+static void SdCardOtaCopyCallback(const KosmoResult *result)
+{
+    GuiFirmwareSdCardCopyResult(result->errorCode == KOSMO_OK);
+}
+
 static void ConfirmSdCardUpdate(void)
 {
     static uint16_t walletSetIndex = SIG_INIT_SD_CARD_OTA_COPY;
@@ -396,7 +402,7 @@ static void ConfirmSdCardUpdate(void)
     GetExistAccountNum(&accountCnt);
     if (accountCnt == 0) {
         GuiFirmwareSdCardCopy();
-        { KosmoRequest req = { .type = KOSMO_REQ_COPY_SD_CARD_OTA }; KosmoApi_Request(&req, NULL); }
+        { KosmoRequest req = { .type = KOSMO_REQ_COPY_SD_CARD_OTA }; KosmoApi_Request(&req, SdCardOtaCopyCallback); }
     } else {
         GuiDeleteKeyboardWidget(g_keyboardWidget);
         g_keyboardWidget = GuiCreateKeyboardWidget(g_firmwareUpdateWidgets.cont);

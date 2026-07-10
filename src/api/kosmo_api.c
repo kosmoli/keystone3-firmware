@@ -85,6 +85,32 @@ void KosmoApi_Init(void)
 
 /* ── 异步请求 ───────────────────────────────────────── */
 
+/*
+ * KosmoApi_NotifyResult() — 后端结果回调入口
+ *
+ * Model* 函数完成操作后调用此函数，触发 UI 层注册的 callback。
+ * 替代原来的 GuiApiEmitSignal() 全局广播。
+ *
+ * Phase 3 PoC：当前仅 WRITE_LOCK_TIME 使用。逐步扩展到所有请求类型。
+ */
+void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen)
+{
+    if (type >= KOSMO_REQ_NUM) return;
+
+    KosmoCallback cb = g_pendingCallbacks[type];
+    g_pendingCallbacks[type] = NULL; /* 一次性：清空后再调用，防止重入 */
+
+    if (cb != NULL) {
+        KosmoResult result = {
+            .requestType = type,
+            .errorCode = errorCode,
+            .data = data,
+            .dataLen = dataLen,
+        };
+        cb(&result);
+    }
+}
+
 /* KosmoApi_Request 实现在文件末尾（Phase 2 分发逻辑） */
 
 /* ── 同步查询：账户 ─────────────────────────────────── */
@@ -282,7 +308,10 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 {
     if (request == NULL) return KOSMO_ERR_INVALID;
 
-    (void)cb; /* Phase 3 启用 */
+    /* 存储 callback（Phase 3：逐步从 signal 迁移到 callback） */
+    if (cb != NULL && request->type < KOSMO_REQ_NUM) {
+        g_pendingCallbacks[request->type] = cb;
+    }
 
     switch (request->type) {
     /* ── 助记词 / 钱包创建 ─────────────────────────── */

@@ -403,13 +403,23 @@ void GuiLockScreenErrorCount(void *param)
     }
 }
 
+/* Phase 3 PoC callback：验证 callback 机制可行 */
+static bool g_lockTimePoCDone = false;
+static void PoC_WriteLockTimeCallback(const KosmoResult *result)
+{
+    g_lockTimePoCDone = true;
+    printf("[PoC] WriteLockTime callback fired! errorCode=%d\n", result->errorCode);
+}
+
 static void GuiPassowrdToLockTimePage(uint16_t leftErrorCount)
 {
     static uint16_t staticLeftErrorCount;
     if (leftErrorCount < 5 && leftErrorCount > 0) {
         staticLeftErrorCount = leftErrorCount;
         GuiFrameOpenViewWithParam(&g_lockDeviceView, &staticLeftErrorCount, sizeof(staticLeftErrorCount));
-        { KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = GetCurrentStampTime() } }; KosmoApi_Request(&req, NULL); }
+        /* Phase 3 PoC：通过 callback 接收后端完成通知 */
+        KosmoRequest req = { .type = KOSMO_REQ_WRITE_LOCK_TIME, .uint32_param = { .value = GetCurrentStampTime() } };
+        KosmoApi_Request(&req, PoC_WriteLockTimeCallback);
     }
 }
 

@@ -33,6 +33,17 @@ void KosmoApi_Init(void);
  */
 int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb);
 
+/*
+ * 后端结果通知。Model* 函数完成后调用，触发 UI 注册的 callback。
+ * 替代 GuiApiEmitSignal() 全局广播。
+ *
+ * @param type      请求类型（用于查找对应 callback）
+ * @param errorCode 结果码（KOSMO_OK 或错误码）
+ * @param data      结果数据（可为 NULL）
+ * @param dataLen   数据长度
+ */
+void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen);
+
 /* ── 同步查询（状态读取）────────────────────────────── */
 
 /*

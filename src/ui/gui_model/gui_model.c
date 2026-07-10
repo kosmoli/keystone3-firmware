@@ -13,6 +13,7 @@
 #include "bip39.h"
 #include "slip39.h"
 #include "gui_setting_widgets.h"
+#include "kosmo_api.h"
 #include "account_public_info.h"
 #include "user_utils.h"
 #include "gui_chain.h"
@@ -1347,6 +1348,10 @@ static int32_t ModelWriteLastLockDeviceTime(const void *inData, uint32_t inDataL
     SetLastLockDeviceTime(time);
 
     SetLockScreen(enable);
+
+    /* Phase 3 PoC：通过 callback 通知 UI 层完成 */
+    KosmoApi_NotifyResult(KOSMO_REQ_WRITE_LOCK_TIME, KOSMO_OK, NULL, 0);
+
     return SUCCESS_CODE;
 }
 

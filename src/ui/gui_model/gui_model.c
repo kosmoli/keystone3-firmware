@@ -1171,11 +1171,6 @@ static void ModelVerifyPassSuccess(uint16_t *param)
             GuiApiEmitSignal(SIG_VERIFY_PASSWORD_PASS, param, sizeof(*param));
         }
         break;
-    case SIG_INIT_SD_CARD_OTA_COPY:
-        GuiApiEmitSignal(SIG_VERIFY_PASSWORD_PASS, param, sizeof(*param));
-        GuiApiEmitSignal(SIG_INIT_SD_CARD_OTA_COPY, param, sizeof(*param));
-        ModelCopySdCardOta(NULL, 0);
-        break;
     case SIG_SETTING_WRITE_PASSPHRASE:
         GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS, param, sizeof(*param));
         SetPageLockScreen(false);
@@ -1229,8 +1224,6 @@ static void ModelVerifyPassFailed(uint16_t *param)
             UnlimitedVibrate(LONG);
         }
         break;
-    case SIG_INIT_SD_CARD_OTA_COPY:
-        signal = SIG_FIRMWARE_VERIFY_PASSWORD_FAIL;
     default:
         g_passwordVerifyResult.errorCount = GetCurrentPasswordErrorCount();
         printf("gui model get current error count %d \n", g_passwordVerifyResult.errorCount);

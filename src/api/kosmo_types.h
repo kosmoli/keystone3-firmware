@@ -127,6 +127,7 @@ typedef enum {
 
 typedef struct {
     KosmoRequestType type;
+    bool persistent; /* true = callback 保持注册（如 UR 流式），false = 一次性 */
     union {
         /* BIP39 */
         struct { uint8_t wordCnt; } bip39_generate;

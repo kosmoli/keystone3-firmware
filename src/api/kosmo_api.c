@@ -75,12 +75,14 @@ uint32_t KosmoChainToXPubType(KosmoChainType chain)
 /* ── 内部状态 ───────────────────────────────────────── */
 
 static KosmoCallback g_pendingCallbacks[KOSMO_REQ_NUM];
+static bool g_persistentCallbacks[KOSMO_REQ_NUM];
 
 /* ── 初始化 ─────────────────────────────────────────── */
 
 void KosmoApi_Init(void)
 {
     memset(g_pendingCallbacks, 0, sizeof(g_pendingCallbacks));
+    memset(g_persistentCallbacks, 0, sizeof(g_persistentCallbacks));
 }
 
 /* ── 异步请求 ───────────────────────────────────────── */
@@ -98,7 +100,9 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
     if (type >= KOSMO_REQ_NUM) return;
 
     KosmoCallback cb = g_pendingCallbacks[type];
-    /* callback 保持注册，由调用方负责清除（如 UR_CLEAR 清除 UR callback） */
+    if (!g_persistentCallbacks[type]) {
+        g_pendingCallbacks[type] = NULL; /* 一次性：非持久 callback 清除 */
+    }
 
     if (cb != NULL) {
         KosmoResult result = {
@@ -308,9 +312,16 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 {
     if (request == NULL) return KOSMO_ERR_INVALID;
 
-    /* 存储 callback（Phase 3：逐步从 signal 迁移到 callback） */
-    if (cb != NULL && request->type < KOSMO_REQ_NUM) {
-        g_pendingCallbacks[request->type] = cb;
+    /* 存储/清除 callback */
+    if (request->type < KOSMO_REQ_NUM) {
+        if (cb != NULL) {
+            g_pendingCallbacks[request->type] = cb;
+            g_persistentCallbacks[request->type] = request->persistent;
+        } else {
+            /* cb=NULL 时清除 callback 和 persistent 标志（如 UR_CLEAR） */
+            g_pendingCallbacks[request->type] = NULL;
+            g_persistentCallbacks[request->type] = false;
+        }
     }
 
     switch (request->type) {

@@ -15,7 +15,7 @@ static URFailCallback g_onFail = NULL;
 
 static void TimerHandler(lv_timer_t *timer)
 {
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_UPDATE}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_UPDATE, .persistent = true}; KosmoApi_Request(&r, g_onSuccess);};
 }
 
 void GuiAnimatingQRCodeControl(bool pause)
@@ -59,7 +59,7 @@ void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFu
         GuiPendingHintBoxOpen(title, subtitle);
     }
 
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
 
 }
 
@@ -89,7 +89,7 @@ void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc,
         GuiPendingHintBoxOpen(loadingTitle, NULL);
     }
 
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
 }
 
 void GuiAnimantingQRCodeFirstUpdate(char* data, uint16_t len)

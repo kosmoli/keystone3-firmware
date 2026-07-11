@@ -197,6 +197,32 @@ int32_t KosmoApi_GetAccountEntropy(uint8_t accountIndex, uint8_t *entropy, uint8
  */
 char *KosmoApi_GetPassphrase(uint8_t accountIndex);
 
+/* ── SecretCache 包装 ─────────────────────────────────── */
+
+const char *KosmoApi_CacheGetPassword(void);
+void KosmoApi_CacheSetPassword(const char *password);
+const char *KosmoApi_CacheGetMnemonic(void);
+void KosmoApi_CacheSetPassphrase(const char *passphrase);
+void KosmoApi_CacheGetChecksum(char *hash);
+void KosmoApi_CacheSetWalletIndex(uint8_t index);
+void KosmoApi_CacheSetWalletName(const char *name);
+const char *KosmoApi_CacheGetNewPassword(void);
+void KosmoApi_CacheSetNewPassword(const char *password);
+uint32_t KosmoApi_CacheGetDiceRollsLen(void);
+void KosmoApi_CacheSetMnemonic(const char *mnemonic);
+
+/* ── 账户管理小函数 ───────────────────────────────────── */
+
+void KosmoApi_GetExistAccountNum(uint8_t *count);
+bool KosmoApi_GetPassphraseQuickAccess(void);
+
+/* ── 账户状态小函数 ───────────────────────────────────── */
+
+bool KosmoApi_GetIsTempAccount(void);
+bool KosmoApi_GetFirstReceive(const char *chainName);
+void KosmoApi_SetFirstReceive(const char *chainName, bool isFirst);
+void KosmoApi_AccountPublicHomeCoinGet(void *walletList, uint8_t count);
+
 /*
  * 检查 Solana 派生路径是否支持。
  * @param path  HD 路径字符串

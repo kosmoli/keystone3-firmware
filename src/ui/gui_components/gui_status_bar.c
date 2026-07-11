@@ -323,7 +323,7 @@ void GuiStatusBarSetSdCard(bool connected, bool onlyImg)
         lv_obj_clear_flag(g_guiStatusBar.sdCardImg, LV_OBJ_FLAG_HIDDEN);
         if (!onlyImg) {
             uint8_t accountCnt = 0;
-            GetExistAccountNum(&accountCnt);
+            KosmoApi_GetExistAccountNum(&accountCnt);
             if (!GuiLockScreenIsTop() && accountCnt > 0 && FatfsFileExist(SD_CARD_OTA_BIN_PATH) && !GuiCheckIfTopView(&g_forgetPassView)) {
                 GuiCreateSdCardUpdateHintbox(false);
             }

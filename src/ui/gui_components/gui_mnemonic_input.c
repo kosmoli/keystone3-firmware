@@ -208,7 +208,7 @@ void ImportSinglePhraseWords(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
     memset_s(mnemonic, bufferSize, 0, bufferSize);
 
     CollectMnemonicWords(mkb, mnemonic, bufferSize);
-    SecretCacheSetMnemonic(mnemonic);
+    KosmoApi_CacheSetMnemonic(mnemonic);
 
     HandleInputType(mkb);
     lv_obj_add_flag(letterKb->cont, LV_OBJ_FLAG_HIDDEN);

@@ -150,7 +150,7 @@ UREncodeResult *GuiGetEthBatchTxSignQrCodeData()
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
     int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+    KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, KosmoApi_CacheGetPassword());
     encodeResult = eth_sign_batch_tx(data, seed, len);
     ClearSecretCache();
     return encodeResult;

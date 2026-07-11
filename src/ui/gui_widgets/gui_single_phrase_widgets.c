@@ -64,7 +64,7 @@ static void SelectPhraseCntHandler(lv_event_t *e);
 
 static bool DiceRollsNotEnoughForWordCnt(uint8_t wordCnt)
 {
-    return g_isDiceRolls && wordCnt == 24 && SecretCacheGetDiceRollsLen() < DICE_ROLLS_256_BIT_MIN_LEN;
+    return g_isDiceRolls && wordCnt == 24 && KosmoApi_CacheGetDiceRollsLen() < DICE_ROLLS_256_BIT_MIN_LEN;
 }
 
 static void ReturnToDiceRollsHandler(lv_event_t *e)
@@ -204,7 +204,7 @@ static void MnemonicConfirmHandler(lv_event_t *e)
                     strcat(confirmMnemonic, " ");
                 }
             }
-            if (strcmp(confirmMnemonic, SecretCacheGetMnemonic()) == 0) {
+            if (strcmp(confirmMnemonic, KosmoApi_CacheGetMnemonic()) == 0) {
                 GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
             } else {
                 g_noticeHintBox = GuiCreateErrorCodeWindow(ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET, &g_noticeHintBox, NULL);
@@ -286,7 +286,7 @@ void GuiSinglePhraseInit(uint8_t entropyMethod)
 void GuiSinglePhraseUpdateMnemonic(void *signalParam, uint16_t paramLen)
 {
     g_randomPhraseKb->wordCnt = g_phraseCnt;
-    GuiUpdateMnemonicKeyBoard(g_randomPhraseKb, SecretCacheGetMnemonic(), false);
+    GuiUpdateMnemonicKeyBoard(g_randomPhraseKb, KosmoApi_CacheGetMnemonic(), false);
     lv_obj_set_size(g_randomPhraseKb->cont, 408, 360);
 }
 
@@ -379,7 +379,7 @@ static void ResetBtnHandler(lv_event_t *e)
 int8_t GuiSinglePhraseNextTile(const char *passphrase)
 {
     if (passphrase != NULL) {
-        SecretCacheSetPassphrase(passphrase);
+        KosmoApi_CacheSetPassphrase(passphrase);
     }
     switch (g_singlePhraseTileView.currentTile) {
     case SINGLE_PHRASE_CONNECT:
@@ -390,10 +390,10 @@ int8_t GuiSinglePhraseNextTile(const char *passphrase)
         SetRightBtnCb(g_pageWidget->navBarWidget, ResetBtnHandler, NULL);
         g_confirmPhraseKb->wordCnt = g_phraseCnt;
         lv_obj_add_flag(g_changeCont, LV_OBJ_FLAG_HIDDEN);
-        while (!SecretCacheGetMnemonic()) {
+        while (!KosmoApi_CacheGetMnemonic()) {
             UserDelay(10);
         }
-        ArrayRandom(SecretCacheGetMnemonic(), g_randomBuff, g_phraseCnt);
+        ArrayRandom(KosmoApi_CacheGetMnemonic(), g_randomBuff, g_phraseCnt);
         GuiUpdateMnemonicKeyBoard(g_confirmPhraseKb, g_randomBuff, true);
         break;
     case SINGLE_PHRASE_CONFIRM_PHRASE:

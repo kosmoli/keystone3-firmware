@@ -359,7 +359,7 @@ void GuiKeyDerivationRequestPrevTile()
 void UpdateAndParseHardwareCall(void)
 {
     {KosmoRequest r = {.type = KOSMO_REQ_UR_CLEAR}; KosmoApi_Request(&r, NULL);};
-    if (strnlen_s(SecretCacheGetPassword(), PASSWORD_MAX_LEN) != 0 && g_isUsbPassWordCheck) {
+    if (strnlen_s(KosmoApi_CacheGetPassword(), PASSWORD_MAX_LEN) != 0 && g_isUsbPassWordCheck) {
         if (g_response != NULL) {
             free_Response_QRHardwareCallData(g_response);
             g_response = NULL;
@@ -518,7 +518,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     GetSoftWareVersionNumber(firmwareVersion);
     if (strcmp("1", g_callData->version) == 0) {
         uint8_t seed[64];
-        char *password = SecretCacheGetPassword();
+        char *password = KosmoApi_CacheGetPassword();
         KosmoMnemonicType mnemonicType = KosmoApi_GetMnemonicType();
         bool isSlip39 = mnemonicType == KOSMO_MNEMONIC_SLIP39;
         int seedLen = isSlip39 ? KosmoApi_GetEntropyLen() : sizeof(seed) ;

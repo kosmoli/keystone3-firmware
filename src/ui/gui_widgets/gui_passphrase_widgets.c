@@ -255,7 +255,7 @@ static void UpdatePassPhraseHandler(lv_event_t *e)
                         GuiFrameOpenView(&g_homeView);
                     }
                 } else {
-                    SecretCacheSetPassphrase(repeat);
+                    KosmoApi_CacheSetPassphrase(repeat);
                     g_waitAnimWidget.cont = GuiCreateAnimHintBox(480, 278, 82);
                     g_waitAnimWidget.label = GuiCreateTextLabel(g_waitAnimWidget.cont, _("seed_check_wait_verify"));
                     lv_obj_align(g_waitAnimWidget.label, LV_ALIGN_BOTTOM_MID, 0, -76);

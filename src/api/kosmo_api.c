@@ -214,6 +214,97 @@ char *KosmoApi_GetPassphrase(uint8_t accountIndex)
     return GetPassphrase(accountIndex);
 }
 
+/* ── SecretCache 包装 ─────────────────────────────────── */
+
+const char *KosmoApi_CacheGetPassword(void)
+{
+    return SecretCacheGetPassword();
+}
+
+void KosmoApi_CacheSetPassword(const char *password)
+{
+    SecretCacheSetPassword((char *)password);
+}
+
+const char *KosmoApi_CacheGetMnemonic(void)
+{
+    return SecretCacheGetMnemonic();
+}
+
+void KosmoApi_CacheSetPassphrase(const char *passphrase)
+{
+    SecretCacheSetPassphrase(passphrase);
+}
+
+void KosmoApi_CacheGetChecksum(char *checksum)
+{
+    SecretCacheGetChecksum(checksum);
+}
+
+void KosmoApi_CacheSetWalletIndex(uint8_t index)
+{
+    SecretCacheSetWalletIndex(index);
+}
+
+void KosmoApi_CacheSetWalletName(const char *name)
+{
+    SecretCacheSetWalletName(name);
+}
+
+const char *KosmoApi_CacheGetNewPassword(void)
+{
+    return SecretCacheGetNewPassword();
+}
+
+void KosmoApi_CacheSetNewPassword(const char *password)
+{
+    SecretCacheSetNewPassword((char *)password);
+}
+
+uint32_t KosmoApi_CacheGetDiceRollsLen(void)
+{
+    return SecretCacheGetDiceRollsLen();
+}
+
+void KosmoApi_CacheSetMnemonic(const char *mnemonic)
+{
+    SecretCacheSetMnemonic((char *)mnemonic);
+}
+
+/* ── 账户管理小函数 ───────────────────────────────────── */
+
+void KosmoApi_GetExistAccountNum(uint8_t *count)
+{
+    GetExistAccountNum(count);
+}
+
+bool KosmoApi_GetPassphraseQuickAccess(void)
+{
+    return GetPassphraseQuickAccess();
+}
+
+/* ── 账户状态小函数 ───────────────────────────────────── */
+
+bool KosmoApi_GetIsTempAccount(void)
+{
+    return GetIsTempAccount();
+}
+
+bool KosmoApi_GetFirstReceive(const char *chainName)
+{
+    return GetFirstReceive(chainName);
+}
+
+void KosmoApi_SetFirstReceive(const char *chainName, bool isFirst)
+{
+    SetFirstReceive(chainName, isFirst);
+}
+
+void KosmoApi_AccountPublicHomeCoinGet(void *walletList, uint8_t count)
+{
+    AccountPublicHomeCoinGet(walletList, count);
+}
+
 /* ── 同步查询：链信息 ───────────────────────────────── */
 
 const char *KosmoApi_GetPublicKey(KosmoChainType chain)
@@ -385,11 +476,6 @@ int32_t KosmoApi_ValidateWord(const char *word, int *index)
 
     *index = (int)idx;
     return KOSMO_OK;
-}
-
-bool KosmoApi_GetPassphraseQuickAccess(void)
-{
-    return GetPassphraseQuickAccess();
 }
 
 KosmoChainType KosmoApi_CheckSolPathSupport(const char *path)

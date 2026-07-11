@@ -162,7 +162,7 @@ void GuiForgetPassSetPinPass(const char* buf)
 void GuiForgetPassRepeatPinPass(const char* buf)
 {
     if (!strcmp(buf, g_pinBuf)) {
-        SecretCacheSetNewPassword((char *)buf);
+        KosmoApi_CacheSetNewPassword((char *)buf);
         memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
         GuiForgetAnimContDel(true);
         if (g_forgetMkb->wordCnt == 33 || g_forgetMkb->wordCnt == 20) {

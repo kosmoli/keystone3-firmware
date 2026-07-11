@@ -57,7 +57,7 @@ static void KeyboardConfirmHandler(lv_event_t *e)
     if (code == LV_EVENT_READY) {
         const char *currText = GuiGetKeyboardInput(keyboardWidget);
         if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
-            SecretCacheSetPassword((char *)currText);
+            KosmoApi_CacheSetPassword((char *)currText);
             GuiClearKeyboardInput(keyboardWidget);
             {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, NULL);};
         }
@@ -159,7 +159,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 }
             }
             if (keyboardWidget->currentNum == CREATE_PIN_NUM) {
-                SecretCacheSetPassword((char *)g_pinBuf);
+                KosmoApi_CacheSetPassword((char *)g_pinBuf);
                 memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
                 keyboardWidget->currentNum = 0;
                 GuiClearKeyboardInput(keyboardWidget);

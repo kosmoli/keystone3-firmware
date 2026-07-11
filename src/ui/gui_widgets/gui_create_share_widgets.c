@@ -90,7 +90,7 @@ static bool DiceRollsNotEnoughForWordCnt(uint8_t wordCnt)
 {
     return (g_entropyMethod & ENTROPY_TYPE_MASK) &&
            wordCnt == SLIP39_MNEMONIC_33_WORDS &&
-           SecretCacheGetDiceRollsLen() < DICE_ROLLS_256_BIT_MIN_LEN;
+           KosmoApi_CacheGetDiceRollsLen() < DICE_ROLLS_256_BIT_MIN_LEN;
 }
 
 static void ReturnToDiceRollsHandler(lv_event_t *e)
@@ -485,7 +485,7 @@ int8_t GuiCreateShareNextTile(const char *passphrase)
         .wordCnt = g_selectCnt,
     };
     if (passphrase != NULL) {
-        SecretCacheSetPassphrase(passphrase);
+        KosmoApi_CacheSetPassphrase(passphrase);
     }
     switch (g_createShareTileView.currentTile) {
     case CREATE_SHARE_SELECT_SLICE:

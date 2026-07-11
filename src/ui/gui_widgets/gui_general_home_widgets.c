@@ -152,7 +152,7 @@ static uint8_t GetSelectedWalletCount(void)
 {
     uint8_t selectCnt = 0;
     for (int i = 0; i < HOME_WALLET_CARD_BUTT; i++) {
-        if (GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE) {
+        if (KosmoApi_GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE) {
             continue;
         }
 
@@ -191,7 +191,7 @@ static void UpdateManageWalletState(bool needUpdate)
     g_isManageOpen = false;
     int total = 0;
     for (int i = 0; i < HOME_WALLET_CARD_BUTT; i++) {
-        if (GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE) {
+        if (KosmoApi_GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE) {
             continue;
         }
 
@@ -278,7 +278,7 @@ static void UpdateHomeConnectWalletCard(HomeGesture_t gesture)
     GuiDrawPageSelectLed(pageSelectCont, (totalCoinAmount % CARDS_PER_PAGE == 0) ? (totalCoinAmount / CARDS_PER_PAGE) : (totalCoinAmount / CARDS_PER_PAGE + 1), g_currentPage);
 
     for (int i = 0, j = 0; i < HOME_WALLET_CARD_BUTT; i++) {
-        if ((g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE && GetIsTempAccount()) ||
+        if ((g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE && KosmoApi_GetIsTempAccount()) ||
                 g_walletState[i].state == false ||
                 g_walletState[i].enable == false) {
             j++;
@@ -397,7 +397,7 @@ void RecalculateManageWalletState(void)
 {
     WalletState_t walletState[HOME_WALLET_CARD_BUTT];
     memcpy(walletState, g_walletState, sizeof(g_walletState));
-    AccountPublicHomeCoinGet(g_walletState, NUMBER_OF_ARRAYS(g_walletState));
+    KosmoApi_AccountPublicHomeCoinGet(g_walletState, NUMBER_OF_ARRAYS(g_walletState));
     AccountPublicHomeCoinSet(walletState, NUMBER_OF_ARRAYS(walletState));
 }
 
@@ -472,7 +472,7 @@ static void GuiUpdateCoinListWidget(HomeGesture_t gesture)
     lv_obj_align(pageSelectCont, LV_ALIGN_BOTTOM_MID, 0, 0);
     GuiDrawPageSelectLed(pageSelectCont, (totalCoinAmount % COIN_PER_PAGE == 0) ? (totalCoinAmount / COIN_PER_PAGE) : (totalCoinAmount / COIN_PER_PAGE + 1), g_coinCurrentPage);
     for (int i = startIndex, j = startIndex; i < endIndex; i++) {
-        if (GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE || !g_walletState[i].enable) {
+        if (KosmoApi_GetIsTempAccount() && g_walletState[i].index == HOME_WALLET_CARD_ARWEAVE || !g_walletState[i].enable) {
             j++;
             continue;
         }
@@ -766,7 +766,7 @@ void GuiHomeRefresh(void)
         lv_obj_clear_flag(g_scanImg, LV_OBJ_FLAG_HIDDEN);
     }
     GUI_DEL_OBJ(g_moreHintbox)
-    AccountPublicHomeCoinGet(g_walletState, NUMBER_OF_ARRAYS(g_walletState));
+    KosmoApi_AccountPublicHomeCoinGet(g_walletState, NUMBER_OF_ARRAYS(g_walletState));
     UpdateHomeConnectWalletCard(GestureNone);
     if (isFirstBeta && SOFTWARE_VERSION_BUILD % 2) {
         CreateBetaNotice();

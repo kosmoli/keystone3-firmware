@@ -79,100 +79,52 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 
 ## 三、执行计划
 
-### Phase 6：清理死 include（低风险，快速收益）
+### Phase 6：清理死 include ✅
 
-**目标**：删除所有未使用的后端 include，缩小泄漏范围。
-
-**6.1 Widget 层死 include 清理**
-
-以下 widget 文件 include 了 `account_public_info.h` 但未使用任何符号：
-- gui_general_home_widgets.c
-- gui_export_pubkey_widgets.c
-- gui_derive_context_hash_request_widgets.c
-- gui_multi_path_coin_receive_widgets.c
-- gui_standard_receive_widgets.c
-- gui_key_derivation_request_widgets.c
-- gui_change_path_type_widgets.c
-- gui_multi_accounts_receive_widgets.c
-- gui_select_address_widgets.c
-- gui_utxo_receive_widgets.c
-- gui_connect_wallet_widgets.c（需确认，可能有间接依赖）
-
-以下 widget 文件 include 了 `gui_model.h` 但仅用类型定义（应改为 include kosmo_types.h 或在 kosmo_api.h 中暴露类型）：
-- 需逐个确认，约 8-12 个文件
-
-**6.2 View 层死 include 清理**
-
-直接删除：
-- gui_lock_view.c: 删除 `#include "keystore.h"` + `#include "account_manager.h"`
-- gui_init_view.c: 删除 `#include "account_manager.h"`
-- gui_transaction_detail_view.c: 删除 `#include "gui_chain.h"`
-
-**6.3 验证**：编译零 error，模拟器启动。
+**已完成**：
+- gui_lock_view.c：删除 `keystore.h` + `account_manager.h`（死 include）
+- 3 个文件添加 `kosmo_api.h`（gui_seed_check_widgets.c、gui_fingerprint_widgets.c、gui_init_view.c）
 
 ---
 
-### Phase 7：KosmoApi 扩展 — Account + Wallet 层包装
+### Phase 7：KosmoApi 扩展 — Account + Wallet 层包装 ✅
 
-**目标**：将 account_manager.h / keystore.h / account_public_info.h 中 widget 需要的函数收编到 KosmoApi。
+**已完成**：
 
-这是**最大的面泄漏**——`GetCurrentAccountIndex()` 有 118 个引用分布在 19 个 widget 文件中。
+**7.1 新增 KosmoApi getter（8 个）**
+- `KosmoApi_GetAccountReceiveIndex/SetAccountReceiveIndex`
+- `KosmoApi_GetAccountReceivePath/SetAccountReceivePath`
+- `KosmoApi_GetAccountIndex/SetAccountIndex`（链名参数版本）
+- `KosmoApi_GetAccountSeed/GetAccountEntropy/GetPassphrase`
 
-**7.1 新增 KosmoApi getter 函数**
+**7.2 GetCurrentAccountIndex 迁移**
+- 94 处替换，19 个 widget 文件 + 1 个 view 文件
+- 添加 `kosmo_api.h` 到 3 个缺少的文件
 
-```c
-// kosmo_api.h 新增
+**7.3 GetMnemonicType 迁移**
+- `GetMnemonicType()` → `KosmoApi_GetMnemonicType()`（9 文件）
+- `MNEMONIC_TYPE_*` → `KOSMO_MNEMONIC_*`（全局替换）
+- `MnemonicType` → `KosmoMnemonicType`（3 文件）
+- `GetCurrentAccountEntropyLen()` → `KosmoApi_GetEntropyLen()`（3 文件）
 
-// === 账户索引（最高优先级，118 个引用）===
-uint32_t KosmoApi_GetCurrentAccountIndex(void);
+**7.4 后端函数迁移**
+- `GetAccountSeed` → `KosmoApi_GetAccountSeed`（3 文件）
+- `GetAccountEntropy` → `KosmoApi_GetAccountEntropy`（1 文件）
+- `GetPassphrase` → `KosmoApi_GetPassphrase`（1 文件）
+- `GetAccountIndex/SetAccountIndex` → `KosmoApi_*`（1 文件）
+- `GetAccountReceiveIndex/Path` → `KosmoApi_*`（4 文件）
 
-// === 链卡片数据（~30 个引用）===
-const CoinCard_t *KosmoApi_GetCoinCardByIndex(uint32_t index);
+**剩余后端 include（widget 层）**：
 
-// === 账户接收路径（多文件使用）===
-const char *KosmoApi_GetAccountReceivePath(KosmoChainType chain);
-uint32_t KosmoApi_GetAccountReceiveIndex(KosmoChainType chain);
-void KosmoApi_SetAccountReceivePath(KosmoChainType chain, const char *path);
-void KosmoApi_SetAccountReceiveIndex(KosmoChainType chain, uint32_t index);
-
-// === 种子/熵/密码（gui_key_derivation + gui_derive_context_hash）===
-const uint8_t *KosmoApi_GetAccountSeed(void);
-const uint8_t *KosmoApi_GetAccountEntropy(void);
-uint32_t KosmoApi_GetAccountEntropyLen(void);
-const char *KosmoApi_GetPassphrase(void);
-
-// === 助记词类型===
-MnemonicType KosmoApi_GetMnemonicType(void);
-bool KosmoApi_IsSlip39(void);
-bool KosmoApi_IsTonMnemonic(void);
-
-// === 账户信息===
-uint32_t KosmoApi_GetAccountIndex(KosmoChainType chain);
-uint32_t KosmoApi_GetAccountCount(void);
-
-// === 钱包状态===
-bool KosmoApi_IsWalletCreated(void);
-
-// === Zcash 特定===
-const char *KosmoApi_GetZcashUFVK(void);
-```
-
-实现：在 `kosmo_api.c` 中包装对应的 keystore/account_manager/account_public_info 函数。
-
-**7.2 Widget 迁移（按引用数排序）**
-
-| 优先级 | 函数 | 引用数 | 文件数 | 迁移方式 |
-|---|---|---|---|---|
-| P0 | `GetCurrentAccountIndex()` | 118 | 19 | 全局替换为 `KosmoApi_GetCurrentAccountIndex()` |
-| P1 | `GetCoinCardByIndex()` | ~30 | 8 | 全局替换为 `KosmoApi_GetCoinCardByIndex()` |
-| P2 | `GetMnemonicType()` | 15+ | 10 | 全局替换为 `KosmoApi_GetMnemonicType()` |
-| P3 | `GetAccountSeed/Entropy/Passphrase` | ~10 | 2 | 逐个替换 |
-| P4 | `GetCurrentAccountEntropyLen()` | 3 | 3 | 逐个替换 |
-| P5 | `GetAccountIndex/SetAccountIndex` | 3 | 1 | 逐个替换 |
-
-移除这些文件对 `keystore.h`、`account_manager.h`、`account_public_info.h` 的 include。
-
-**7.3 验证**：编译零 error，模拟器启动。
+| Header | 文件数 | 主要残留符号 | 处理方案 |
+|---|---|---|---|
+| `keystore.h` | 26 | `SecretCache*`（~40 处） | Phase 14：SecretCache 包装 |
+| `gui_model.h` | 22 | 类型定义 + `AsyncExecute`（1 处） | Phase 15：类型迁移 + AsyncExecute 清理 |
+| `account_manager.h` | 21 | `GetExistAccountNum`（3）、`GetPassphraseQuickAccess`（1） | Phase 14：包装 |
+| `gui_chain.h` | 16 | ConnectWallet 状态、地址生成 | Phase 8：ConnectWallet 重构 |
+| `account_public_info.h` | 11 | `GetIsTempAccount`（6）、`GetFirstReceive`（4）、`AccountPublicHomeCoinGet`（2） | Phase 14：包装 |
+| `bip39.h` | 6 | `bip39_mnemonic_from_bytes`（1 处） | Phase 14：包装 |
+| `rust.h` | 5 | Rust FFI 直接调用 | Phase 10：包装 |
 
 ---
 
@@ -186,7 +138,6 @@ const char *KosmoApi_GetZcashUFVK(void);
 - `GetConnectWalletNetwork()` / `SetConnectWalletNetwork()`
 - `GetWalletNameByIndex()`
 - `GetAdaXPubTypeByIndexAndDerivationType()`
-- `GetConnectWalletAccountIndex()`
 - `GuiGetXrpAddressByIndex()`
 - `GuiGetADABaseAddressByXPub()`
 - `GuiGetKeplrDataByIndex()`
@@ -198,8 +149,6 @@ const char *KosmoApi_GetZcashUFVK(void);
 **8.1 新增 KosmoApi ConnectWallet 接口**
 
 ```c
-// kosmo_api.h 新增
-
 // ConnectWallet 状态（读写）
 uint8_t KosmoApi_GetConnectWalletPathIndex(const char *walletName);
 void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint8_t index);
@@ -207,28 +156,13 @@ uint8_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName);
 void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint8_t index);
 uint8_t KosmoApi_GetConnectWalletNetwork(const char *walletName);
 void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint8_t network);
-
-// 钱包名称
 const char *KosmoApi_GetWalletName(void);
 const char *KosmoApi_GetWalletNameByIndex(uint8_t index);
-
-// 链特定地址生成（同步，用于显示）
-const char *KosmoApi_GetXrpAddressByIndex(uint8_t index);
-const char *KosmoApi_GetAdaBaseAddressByXPub(const char *xpub);
-
-// UR 编码（同步，用于 QR 码显示）
-UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint8_t accountIndex);
-UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
-UREncodeResult *KosmoApi_GetTonkeeperWalletUr(...);
-
-// ADA 特定
-AdaXPubType KosmoApi_GetAdaXPubTypeByIndexAndDerivationType(uint8_t pathIndex, uint8_t derivationType);
 ```
 
 **8.2 Widget 迁移**
 
 `gui_connect_wallet_widgets.c`：将所有后端调用替换为 `KosmoApi_*` 调用。
-移除对 `gui_chain.h`、`account_public_info.h`、`gui_wallet.h` 的 include。
 
 **8.3 验证**：编译零 error，模拟器启动。
 
@@ -241,58 +175,30 @@ AdaXPubType KosmoApi_GetAdaXPubTypeByIndexAndDerivationType(uint8_t pathIndex, u
 **9.1 地址生成包装**
 
 ```c
-// kosmo_api.h 新增
-
-// 通用地址生成
-bool KosmoApi_GetAddress(KosmoChainType chain, uint32_t index, char *out, size_t outLen);
-
-// 链特定（保留，因为不同链的地址格式差异大）
 const char *KosmoApi_GetXrpAddressByIndex(uint8_t index);
 const char *KosmoApi_GetAdaBaseAddressByXPub(const char *xpub);
-const char *KosmoApi_GetUtxoAddress(uint32_t pathType, uint32_t index);
+UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint8_t accountIndex);
+UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 ```
 
 **9.2 Widget 迁移**
 
-3 个文件的地址生成调用 → `KosmoApi_*` 调用：
-- gui_select_address_widgets.c
-- gui_connect_wallet_widgets.c（Phase 8 已处理部分）
-- gui_export_pubkey_widgets.c
+3 个文件的地址生成调用 → `KosmoApi_*` 调用。
 
 **9.3 验证**：编译零 error，模拟器启动。
 
 ---
 
-### Phase 10：BIP39 词表 + AsyncExecute + Rust FFI 清理
+### Phase 10：BIP39 + AsyncExecute + Rust FFI 清理
 
-**10.1 BIP39 词表包装**
-
-6 个 widget 文件直接调用 `bip39_mnemonic_validate()`：
-- gui_import_phrase_widgets.c
-- gui_forget_pass_widgets.c
-- gui_single_phrase_widgets.c（13 处引用）
-- gui_namewallet_widgets.c
-- gui_passphrase_setting_widgets.c
-- gui_key_derivation_request_widgets.c（`bip39_mnemonic_from_bytes()`）
-
-方案：在 `kosmo_api.h` 中新增：
-```c
-bool KosmoApi_ValidateBip39Mnemonic(const char *mnemonic);
-int KosmoApi_Bip39MnemonicFromBytes(const uint8_t *bytes, int bytesLen, char *mnemonic, int mnemonicLen);
-```
+**10.1 BIP39 包装**
+- `bip39_mnemonic_from_bytes`（1 处）→ KosmoApi 包装
 
 **10.2 AsyncExecute 清理**
-
-`gui_lock_widgets.c` 中 1 处直接 `AsyncExecute()` 调用 → 改为 `KosmoApi_Request()`。
+- `gui_lock_widgets.c` 中 1 处直接 `AsyncExecute()` → `KosmoApi_Request()`
 
 **10.3 Rust FFI 清理**
-
-4 个 widget 文件直接 include `rust.h`：
-- gui_scan_widgets.h
-- gui_eth_batch_tx_widgets.h/.c
-- gui_connect_wallet_widgets.c
-
-方案：将这些 widget 需要的 Rust 函数包装到 KosmoApi 中，移除对 `rust.h` 的直接 include。
+- 4 个 widget 文件直接 include `rust.h` → 包装到 KosmoApi
 
 **10.4 验证**：编译零 error，模拟器启动。
 
@@ -398,34 +304,88 @@ int KosmoApi_Bip39MnemonicFromBytes(const uint8_t *bytes, int bytesLen, char *mn
 
 | Phase | 预估 | 备注 |
 |---|---|---|
-| 6 | 0.5h | 机械删除 + 编译验证 |
-| 7 | **2-3h** | ~20 个新 getter + 迁移 19 个文件（118 处 GetCurrentAccountIndex） |
-| 8 | 2-3h | 最复杂，gui_connect_wallet_widgets.c 重构 |
-| 9 | 1-2h | 地址生成包装 + 3 个文件迁移 |
-| 10 | 1h | BIP39(6 文件) + AsyncExecute + Rust FFI(4 文件) |
+| 6 | ✅ 0.5h | 已完成 |
+| 7 | ✅ 2h | 已完成（130+ 处迁移） |
+| 8 | 2-3h | ConnectWallet 重构 |
+| 9 | 1-2h | 地址生成包装 |
+| 10 | 1h | BIP39 + AsyncExecute + Rust FFI |
 | 11 | 0.5h | 2 个信号迁移 |
 | 12 | 0h | 全部保留 |
 | 13 | 0.5h | 验证 + 文档 |
-| **总计** | **8-11h** | |
+| 14 | 2-3h | SecretCache + 小函数包装（新增） |
+| 15 | 1h | gui_model.h 类型迁移（新增） |
+| **总计** | **10-14h** | 已完成 ~2.5h |
 
 ## 七、执行顺序建议
 
 ```
-Phase 6（死 include 清理）
-  ↓ 快速收益，缩小泄漏范围
-Phase 7（Wallet 层包装）
-  ↓ 解决最大面泄漏（GetMnemonicType 10 文件）
+Phase 6 ✅（死 include 清理）
+  ↓
+Phase 7 ✅（Account/Wallet 层包装 — 最大面泄漏已解决）
+  ↓
+Phase 14（SecretCache + 小函数包装）
+  ↓ 解决 keystore.h(26) + account_manager.h(21) + account_public_info.h(11)
 Phase 8（ConnectWallet 重构）
-  ↓ 最难的单点，集中精力攻克
+  ↓ 最难的单点
 Phase 9（链操作包装）
-  ↓ 收尾地址生成
-Phase 10（BIP39 + AsyncExecute）
+  ↓ 收尾 gui_chain.h(16)
+Phase 10（BIP39 + AsyncExecute + Rust FFI）
   ↓ 小修补
+Phase 15（gui_model.h 类型迁移）
+  ↓ 解决 gui_model.h(22)
 Phase 11（信号残留）
-  ↓ 最后 2 个信号
 Phase 13（验证 + 文档）
   ↓ 收官
 ```
 
-Phase 6 和 Phase 7 可以合并执行（都是低风险的清理 + 包装工作）。
-Phase 8 是最大的风险点，建议单独执行，每步编译验证。
+## 八、新增 Phase 14：SecretCache + 小函数包装
+
+**目标**：将 `keystore.h`、`account_manager.h`、`account_public_info.h` 中剩余的小函数收编到 KosmoApi。
+
+**14.1 SecretCache 包装**
+
+`SecretCache*` 是最大的剩余泄漏（~40 处，26 个 widget 文件）。需要包装：
+```c
+const char *KosmoApi_CacheGetPassword(void);
+void KosmoApi_CacheSetPassword(const char *password);
+const char *KosmoApi_CacheGetMnemonic(void);
+void KosmoApi_CacheSetPassphrase(const char *passphrase);
+void KosmoApi_CacheGetChecksum(uint8_t *hash);
+void KosmoApi_CacheSetWalletIndex(uint8_t index);
+void KosmoApi_CacheSetWalletName(const char *name);
+const char *KosmoApi_CacheGetNewPassword(void);
+void KosmoApi_CacheSetNewPassword(const char *password);
+bool KosmoApi_CacheGetDiceRollsLen(void);
+```
+
+**14.2 小函数包装**
+```c
+// account_manager.h
+void KosmoApi_GetExistAccountNum(uint8_t *count);
+bool KosmoApi_GetPassphraseQuickAccess(void);
+
+// account_public_info.h
+bool KosmoApi_GetIsTempAccount(void);
+bool KosmoApi_GetFirstReceive(const char *chainName);
+void KosmoApi_SetFirstReceive(const char *chainName, bool isFirst);
+void KosmoApi_AccountPublicHomeCoinGet(void *walletList, uint8_t count);
+```
+
+**14.3 Widget 迁移**
+
+批量替换 26+21+11 = 58 个文件中的后端调用。
+
+**14.4 验证**：编译零 error，模拟器启动。
+
+## 九、新增 Phase 15：gui_model.h 类型迁移
+
+**目标**：将 widget 层对 `gui_model.h` 的 include 替换为 `kosmo_api.h`。
+
+22 个 widget 文件 include `gui_model.h`，主要用于：
+- 类型定义（`WalletDesc_t`、`Entropy_t` 等）
+- `AsyncExecute` 宏（1 处）
+
+方案：
+1. 将 widget 需要的类型定义迁移到 `kosmo_types.h`
+2. 将 `AsyncExecute` 调用改为 `KosmoApi_Request()`
+3. 移除 widget 对 `gui_model.h` 的 include

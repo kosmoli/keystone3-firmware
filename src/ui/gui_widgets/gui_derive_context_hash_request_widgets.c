@@ -330,7 +330,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     bool enable = IsPreviousLockScreenEnable();
     SetLockScreen(false);
     uint8_t seed[64] = {0};
-    char *password = SecretCacheGetPassword();
+    char *password = KosmoApi_CacheGetPassword();
     KosmoMnemonicType mnemonicType = KosmoApi_GetMnemonicType();
     int seedLen = (mnemonicType == KOSMO_MNEMONIC_SLIP39) ? KosmoApi_GetEntropyLen() : sizeof(seed);
     KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);

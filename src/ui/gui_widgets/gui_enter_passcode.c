@@ -128,7 +128,7 @@ static void SetPinEventHandler(lv_event_t *e)
 
                 switch (item->mode) {
                 case ENTER_PASSCODE_VERIFY_PIN:
-                    SecretCacheSetPassword(g_pinBuf);
+                    KosmoApi_CacheSetPassword(g_pinBuf);
                     GuiLockScreenShowVerifyLoading(g_userParam);
                     { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, NULL); }
                     break;
@@ -200,7 +200,7 @@ static void SetPassWordHandler(lv_event_t *e)
             } else if (item->mode == ENTER_PASSCODE_VERIFY_PASSWORD) {
                 g_userParam = g_passParam.userParam;
                 if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
-                    SecretCacheSetPassword((char *)currText);
+                    KosmoApi_CacheSetPassword((char *)currText);
                     GuiLockScreenShowVerifyLoading(g_userParam);
                     { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, NULL); }
                 }

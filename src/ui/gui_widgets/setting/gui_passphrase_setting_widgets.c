@@ -72,7 +72,7 @@ void GuiWalletPassphrase(lv_obj_t *parent)
     lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, ORANGE_COLOR, LV_STATE_CHECKED | LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, WHITE_COLOR, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(g_passphraseQuickAccessSwitch, LV_OPA_30, LV_PART_MAIN);
-    if (GetPassphraseQuickAccess()) {
+    if (KosmoApi_GetPassphraseQuickAccess()) {
         lv_obj_add_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
     } else {
         lv_obj_clear_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
@@ -262,11 +262,11 @@ static void UpdatePassPhraseHandler(lv_event_t *e)
             const char *repeat = lv_textarea_get_text(g_passphraseWidget.repeatTa);
             if (!strcmp(input, repeat)) {
                 if (g_needVerify) {
-                    SecretCacheSetPassphrase(repeat);
+                    KosmoApi_CacheSetPassphrase(repeat);
                     static uint16_t signal = SIG_SETTING_WRITE_PASSPHRASE;
                     GuiShowKeyboard(&signal, true, NULL);
                 } else {
-                    SecretCacheSetPassphrase(repeat);
+                    KosmoApi_CacheSetPassphrase(repeat);
                     GuiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE, (char *)repeat, strnlen_s(repeat, PASSWORD_MAX_LEN));
                 }
             } else {

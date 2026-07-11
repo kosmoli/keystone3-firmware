@@ -475,12 +475,12 @@ static void GuiCreateQrCodeWidget(lv_obj_t *parent)
     g_goToAddressIcon = tempObj;
     const char* coin = GetCoinCardByIndex(g_chainCard)->coin;
 
-    if (!GetFirstReceive(coin)) {
+    if (!KosmoApi_GetFirstReceive(coin)) {
         char attentionText[BUFFER_SIZE_256];
         GetHint(attentionText);
         g_multiPathCoinReceiveWidgets.attentionCont = GuiCreateConfirmHintBox(&imgInformation, _("Attention"), attentionText, NULL, _("got_it"), WHITE_COLOR_OPA20);
         lv_obj_add_event_cb(GuiGetHintBoxRightBtn(g_multiPathCoinReceiveWidgets.attentionCont), CloseAttentionHandler, LV_EVENT_CLICKED, NULL);
-        SetFirstReceive(coin, true);
+        KosmoApi_SetFirstReceive(coin, true);
     }
 }
 

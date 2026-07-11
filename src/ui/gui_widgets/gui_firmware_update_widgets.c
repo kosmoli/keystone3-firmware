@@ -100,7 +100,7 @@ void GuiCreateSdCardUpdateHintbox(bool checkSumDone)
     if (checkSumDone) {
         char hash[128] = {0};
         char tempBuf[128] = {0};
-        SecretCacheGetChecksum(hash);
+        KosmoApi_CacheGetChecksum(hash);
         ConvertToLowerCase(hash);
         snprintf(tempBuf, sizeof(tempBuf), "#F5870A %.8s#%.24s\n%.24s#F5870A %.8s#", hash, &hash[8], &hash[32], &hash[56]);
         lv_label_set_text_fmt(g_calCheckSumLabel, "%s:\n%s", _("about_info_verify_checksum_text"), tempBuf);
@@ -401,7 +401,7 @@ static void ConfirmSdCardUpdate(void)
 {
     static uint16_t walletSetIndex = SIG_INIT_SD_CARD_OTA_COPY;
     uint8_t accountCnt = 0;
-    GetExistAccountNum(&accountCnt);
+    KosmoApi_GetExistAccountNum(&accountCnt);
     if (accountCnt == 0) {
         GuiFirmwareSdCardCopy();
         { KosmoRequest req = { .type = KOSMO_REQ_COPY_SD_CARD_OTA }; KosmoApi_Request(&req, SdCardOtaCopyCallback); }
@@ -686,7 +686,7 @@ static void GuiFirmwareUpdateViewSha256(uint8_t percent)
         GuiDeleteAnimHintBox();
         char hash[128] = {0};
         char tempBuf[128] = {0};
-        SecretCacheGetChecksum(hash);
+        KosmoApi_CacheGetChecksum(hash);
         ConvertToLowerCase(hash);
         snprintf(tempBuf, sizeof(tempBuf), "#F5870A %.8s#%.24s\n%.24s#F5870A %.8s#", hash, &hash[8], &hash[32], &hash[56]);
 

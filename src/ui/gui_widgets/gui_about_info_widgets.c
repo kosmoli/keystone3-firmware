@@ -64,7 +64,7 @@ void GuiUpdateCheckSumPercent(uint8_t percent)
 
         char hash[128] = {0};
         char tempBuf[128] = {0};
-        SecretCacheGetChecksum(hash);
+        KosmoApi_CacheGetChecksum(hash);
         ConvertToLowerCase(hash);
         snprintf(tempBuf, sizeof(tempBuf), "#F5870A %.8s#%.24s\n%.24s#F5870A %.8s#", hash, &hash[8], &hash[32], &hash[56]);
         label = GuiCreateIllustrateLabel(cont, tempBuf);

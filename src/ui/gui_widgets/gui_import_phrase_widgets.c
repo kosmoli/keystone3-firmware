@@ -153,7 +153,7 @@ int8_t GuiImportPhraseNextTile(const char *passphrase)
         .forget = false,
     };
     if (passphrase != NULL) {
-        SecretCacheSetPassphrase(passphrase);
+        KosmoApi_CacheSetPassphrase(passphrase);
     }
     switch (g_importSinglePhraseTileView.currentTile) {
     case SINGLE_PHRASE_INPUT_PHRASE:

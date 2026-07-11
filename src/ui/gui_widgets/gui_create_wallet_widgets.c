@@ -373,8 +373,8 @@ int8_t GuiCreateWalletNextTile(void)
         }
         break;
     case CREATE_WALLET_NAMEWALLET:
-        SecretCacheSetWalletIndex(GuiGetEmojiIconIndex());
-        SecretCacheSetWalletName(GetCurrentKbWalletName());
+        KosmoApi_CacheSetWalletIndex(GuiGetEmojiIconIndex());
+        KosmoApi_CacheSetWalletName(GetCurrentKbWalletName());
         break;
     case CREATE_WALLET_SETPIN:
         if (g_repeatPassCode == NULL) {
@@ -431,7 +431,7 @@ void GuiCreateWalletSetPinPass(const char *buf)
 void GuiCreateWalletRepeatPinPass(const char *buf)
 {
     if (!strcmp(buf, g_pinBuf)) {
-        SecretCacheSetNewPassword((char *)buf);
+        KosmoApi_CacheSetNewPassword((char *)buf);
         memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
         GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
     } else {

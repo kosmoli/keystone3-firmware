@@ -350,7 +350,7 @@ static void GuiInitWalletListArray()
     bool isRussian = false;
 
     isSLIP39 = (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39);
-    isTempAccount = GetIsTempAccount();
+    isTempAccount = KosmoApi_GetIsTempAccount();
     isRussian = (LanguageGetIndex() == LANG_RU);
 
     for (size_t i = 0; i < NUMBER_OF_ARRAYS(g_walletListArray); i++) {

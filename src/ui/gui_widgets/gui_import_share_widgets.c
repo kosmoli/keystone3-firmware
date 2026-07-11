@@ -174,7 +174,7 @@ int8_t GuiImportShareNextTile(const char *passphrase)
         .forget = false,
     };
     if (passphrase != NULL) {
-        SecretCacheSetPassphrase(passphrase);
+        KosmoApi_CacheSetPassphrase(passphrase);
     }
     switch (g_importShareTileView.currentTile) {
     case IMPORT_SHARE_SSB_INPUT:

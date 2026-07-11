@@ -120,7 +120,7 @@ void GuiScanResult(bool result, void *param)
             return;
         }
         uint8_t accountNum = 0;
-        GetExistAccountNum(&accountNum);
+        KosmoApi_GetExistAccountNum(&accountNum);
         if (accountNum <= 0) {
             ThrowError(ERR_INVALID_QRCODE);
             return;
@@ -142,7 +142,7 @@ void GuiTransactionCheckPass(void)
     SetPageLockScreen(true);
     GuiCloseCurrentWorkingView();
     if (g_chainType == CHAIN_ARWEAVE) {
-        if (GetIsTempAccount()) {
+        if (KosmoApi_GetIsTempAccount()) {
             ThrowError(ERR_INVALID_QRCODE);
             return;
         }

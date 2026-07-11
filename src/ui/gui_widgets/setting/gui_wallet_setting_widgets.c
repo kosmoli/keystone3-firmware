@@ -312,7 +312,7 @@ void GuiSettingRepeatPinPass(const char *buf)
 {
     if (!strcmp(buf, g_passCode)) {
         GuiResettingWriteSe();
-        SecretCacheSetNewPassword((char *)buf);
+        KosmoApi_CacheSetNewPassword((char *)buf);
         {KosmoRequest r = {.type = KOSMO_REQ_CHANGE_PASSWORD}; KosmoApi_Request(&r, ChangePasswordCallback);};
     } else {
         GuiEnterPassCodeStatus(g_repeatPassCode, false);

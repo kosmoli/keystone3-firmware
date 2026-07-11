@@ -11,7 +11,6 @@
 #include "assert.h"
 #include "user_memory.h"
 #include "motor_manager.h"
-#include "secret_cache.h"
 #include "gui_views.h"
 #include "gui_lock_widgets.h"
 #include "fingerprint_process.h"

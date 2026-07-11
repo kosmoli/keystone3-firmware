@@ -7,7 +7,6 @@
 #include "slip39.h"
 #include "user_memory.h"
 #include "kosmo_api.h"
-#include "secret_cache.h"
 #include "gui_lock_widgets.h"
 #include "gui_single_phrase_widgets.h"
 #include "gui_mnemonic_input.h"

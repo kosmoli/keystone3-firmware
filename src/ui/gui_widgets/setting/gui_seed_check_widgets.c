@@ -16,7 +16,6 @@
 #include "kosmo_api.h"
 #include "user_memory.h"
 #include "kosmo_api.h"
-#include "secret_cache.h"
 #include "kosmo_api.h"
 #include "kosmo_api.h"
 #include "gui_setting_widgets.h"

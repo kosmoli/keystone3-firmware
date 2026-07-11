@@ -8,7 +8,6 @@
 #include "user_memory.h"
 #include "bip39_english.h"
 #include "kosmo_api.h"
-#include "secret_cache.h"
 #include "background_task.h"
 #include "gui_import_phrase_widgets.h"
 #include "gui_single_phrase_widgets.h"

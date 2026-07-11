@@ -13,7 +13,6 @@
 #include "gui_page.h"
 #include "account_manager.h"
 #include "gui_about_info_widgets.h"
-#include "secret_cache.h"
 #include "version.h"
 #include "user_memory.h"
 #include "user_fatfs.h"

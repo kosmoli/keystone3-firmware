@@ -8,7 +8,6 @@
 #include "gui_single_phrase_widgets.h"
 #include "gui_create_wallet_widgets.h"
 #include "user_memory.h"
-#include "secret_cache.h"
 #include "background_task.h"
 #include "gui_lock_widgets.h"
 #include "gui_web_auth_widgets.h"

@@ -11,7 +11,6 @@
 #include "gui_web_auth_widgets.h"
 #include "gui_setting_widgets.h"
 #include "gui_enter_passcode.h"
-#include "secret_cache.h"
 #include "device_setting.h"
 #include "motor_manager.h"
 #include "gui_lock_widgets.h"

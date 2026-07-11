@@ -10,7 +10,6 @@
 #include "kosmo_api.h"
 #include "user_memory.h"
 #include "bip39.h"
-#include "secret_cache.h"
 #include "background_task.h"
 #include "gui_lock_widgets.h"
 #include "motor_manager.h"

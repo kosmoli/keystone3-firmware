@@ -10,7 +10,6 @@
 #include "gui_analyze.h"
 #include "gui_button.h"
 #include "gui_qr_code.h"
-#include "secret_cache.h"
 #include "qrdecode_task.h"
 #include "gui_chain.h"
 #include "assert.h"

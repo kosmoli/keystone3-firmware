@@ -4,7 +4,6 @@
 #include "gui_views.h"
 #include "gui_button.h"
 #include "user_memory.h"
-#include "secret_cache.h"
 #include "kosmo_api.h"
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"

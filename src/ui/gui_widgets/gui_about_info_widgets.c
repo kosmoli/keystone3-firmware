@@ -12,7 +12,6 @@
 #include "presetting.h"
 #include "version.h"
 #include "err_code.h"
-#include "secret_cache.h"
 #include "fingerprint_process.h"
 #include "log.h"
 #ifndef COMPILE_SIMULATOR

@@ -1193,7 +1193,7 @@ void GuiPrepareArConnectWalletView(void)
 
 void GuiSetupArConnectWallet(void)
 {
-    RsaGenerateKeyPair(false);
+    RsaGenerateKeyPair(false, 0);
 }
 
 void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)

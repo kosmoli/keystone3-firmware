@@ -83,7 +83,7 @@ void GuiModelURGenerateQRCode(GenerateUR func);
 void GuiModelURUpdate(void);
 void GuiModelURClear(void);
 void GuiModelCheckTransaction(ViewType ViewType);
-int32_t RsaGenerateKeyPair(bool needEmitSignal);
+int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 void GuiModelRsaGenerateKeyPair(void);
 void GuiModelTransactionCheckResultClear(void);
 void GuiModelParseTransaction(ReturnVoidPointerFunc func);

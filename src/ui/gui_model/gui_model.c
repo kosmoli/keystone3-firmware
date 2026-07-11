@@ -1629,10 +1629,10 @@ static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen)
 {
     UNUSED(inData);
     UNUSED(inDataLen);
-    return RsaGenerateKeyPair(true);
+    return RsaGenerateKeyPair(true, KOSMO_REQ_RSA_GENERATE_KEYPAIR);
 }
 
-int32_t RsaGenerateKeyPair(bool needEmitSignal)
+int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
 {
     bool lockState = IsPreviousLockScreenEnable();
     SetLockScreen(false);
@@ -1667,8 +1667,10 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal)
     if (needEmitSignal) {
         if (ret == SUCCESS_CODE) {
             GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_PASS, NULL, 0);
+            KosmoApi_NotifyResult(requestType, SUCCESS_CODE, NULL, 0);
         } else {
             GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_WRITE_FAIL, &ret, sizeof(ret));
+            KosmoApi_NotifyResult(requestType, ret, NULL, 0);
         }
         GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING, NULL, 0);
     }

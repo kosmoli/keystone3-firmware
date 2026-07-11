@@ -1,0 +1,6 @@
+/home/komo/works/keystone3-firmware/build_sim/CMakeFiles/simulator.dir
+/home/komo/works/keystone3-firmware/build_sim/CMakeFiles/edit_cache.dir
+/home/komo/works/keystone3-firmware/build_sim/CMakeFiles/rebuild_cache.dir
+/home/komo/works/keystone3-firmware/build_sim/rust/CMakeFiles/rust_c.dir
+/home/komo/works/keystone3-firmware/build_sim/rust/CMakeFiles/edit_cache.dir
+/home/komo/works/keystone3-firmware/build_sim/rust/CMakeFiles/rebuild_cache.dir

@@ -3,7 +3,6 @@
 #include "gui_chain.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "librust_c.h"
 #include "assert.h"
@@ -17,7 +16,6 @@
 #include "gui_page.h"
 #include "gui.h"
 #include "gui_tutorial_widgets.h"
-#include "account_manager.h"
 #include "gui_button.h"
 #ifdef COMPILE_SIMULATOR
 #include "simulator_mock_define.h"
@@ -944,7 +942,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         break;
     case HOME_WALLET_CARD_ZEC: {
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
-        if (GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
+        if (KosmoApi_GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
             result = generate_zcash_default_address(ufvk);
         }
         snprintf_s(hdPath, BUFFER_SIZE_128, "UFVK");

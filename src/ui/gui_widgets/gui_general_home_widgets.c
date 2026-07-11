@@ -10,7 +10,6 @@
 #include "gui_obj.h"
 #include "gui_analyze.h"
 #include "gui_chain.h"
-#include "account_public_info.h"
 #include "gui_keyboard.h"
 #include "kosmo_api.h"
 #include "gui_web_auth_widgets.h"

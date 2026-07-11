@@ -1,5 +1,4 @@
 #include "gui_change_path_type_widgets.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 
 typedef struct {

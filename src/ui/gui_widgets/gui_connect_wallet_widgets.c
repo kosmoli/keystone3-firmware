@@ -16,7 +16,6 @@
 #include "gui_connect_ada_widgets.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_pending_hintbox.h"
-#include "account_manager.h"
 #include "gui_animating_qrcode.h"
 #include "gui_global_resources.h"
 #include "gui_page.h"
@@ -1178,8 +1177,8 @@ UREncodeResult *GuiGetZecData(void)
     keys->size = 1;
     char ufvk[384] = {'\0'};
     uint8_t sfp[32];
-    GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
-    GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
+    KosmoApi_GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
+    KosmoApi_GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
     data[0].key_text = ufvk;
     data[0].key_name = GetWalletName();
     data[0].index = 0;

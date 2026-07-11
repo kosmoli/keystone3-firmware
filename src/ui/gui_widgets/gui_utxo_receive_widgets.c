@@ -4,7 +4,6 @@
 #include "gui_chain.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "librust_c.h"
 #include "assert.h"

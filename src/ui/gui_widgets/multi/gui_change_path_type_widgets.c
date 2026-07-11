@@ -1,5 +1,6 @@
 #include "gui_change_path_type_widgets.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 
 typedef struct {
     char title[PATH_ITEM_MAX_LEN];
@@ -408,7 +409,7 @@ static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t 
 {
     char *xPub = NULL, hdPath[BUFFER_SIZE_128] = {0};
     SimpleResponse_c_char *result = NULL;
-    xPub = GetCurrentAccountPublicKey(GetAdaXPubTypeByIndexAndDerivationType(g_selectType, index));
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index, g_selectType);
     snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'", index);
     switch (type) {
     case 1:

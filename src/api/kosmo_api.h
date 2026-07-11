@@ -97,6 +97,25 @@ bool KosmoApi_GetPassphraseQuickAccess(void);
 const char *KosmoApi_GetPublicKey(KosmoChainType chain);
 
 /*
+ * 获取当前账户的多路径公钥。
+ * @param chain         链类型
+ * @param pathIndex     路径索引（0=标准路径，1+=Ledger Live 等）
+ * @param derivationType ADA 专用：0=STANDARD_ADA, 1=LEDGER_ADA。其他链忽略。
+ * @return 公钥字符串（只读），失败返回 NULL
+ *
+ * 路径索引映射：
+ *   ETH: 0=BIP44, 1=Ledger Legacy, 2-11=Ledger Live 0-9
+ *   SOL: 0-49=BIP44, 50=Root, 51-100=Change 0-49
+ *   AVAX: 0=BIP44, 1-10=X/P 0-9
+ *   ADA: 0-23=账户索引（base 由 derivationType 决定）
+ *   其他链：忽略 pathIndex，等同于 KosmoApi_GetPublicKey
+ */
+const char *KosmoApi_GetPublicKeyByPath(KosmoChainType chain, int pathIndex, int derivationType);
+
+/* 原始 ChainType 版本，Phase 4 过渡用 */
+const char *KosmoApi_GetPublicKeyRaw(uint32_t xpubType);
+
+/*
  * 获取当前账户的派生路径。
  * @param chain  链类型
  * @return 路径字符串（只读），失败返回 NULL

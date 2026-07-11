@@ -294,7 +294,7 @@ static void *GuiParseEthBatchTxData(void)
     uint8_t mfp[4] = {0};
     GetMasterFingerPrint(mfp);
 
-    char *ethXpub = GetCurrentAccountPublicKey(XPUB_TYPE_ETH_BIP44_STANDARD);
+    char *ethXpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_ETH);
     PtrT_TransactionParseResult_DisplayETHBatchTx result = eth_check_then_parse_batch_tx(data, mfp, sizeof(mfp), ethXpub);
     g_parseResult = result;
     return g_parseResult;

@@ -4,6 +4,7 @@
 #include "gui_views.h"
 #include "gui_hintbox.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "librust_c.h"
 #include "assert.h"
 #include "gui_keyboard.h"
@@ -1287,11 +1288,11 @@ static char *GetSolXpub(int index)
     }
     switch (i) {
     case 0:
-        return GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_0 + index);
+        return KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, index, 0);
     case 1:
-        return GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_ROOT);
+        return KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 50, 0);
     case 2:
-        return GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_CHANGE_0 + index);
+        return KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 51 + index, 0);
     default:
         break;
     }
@@ -1308,11 +1309,11 @@ static char *GetEthXpub(int index)
     }
     switch (i) {
     case 0:
-        return (char *)GetCurrentAccountPublicKey(XPUB_TYPE_ETH_BIP44_STANDARD);
+        return (char *)KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 0, 0);
     case 1:
-        return (char *)GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LIVE_0 + index);
+        return (char *)KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 2 + index, 0);
     case 2:
-        return (char *)GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LEGACY);
+        return (char *)KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 1, 0);
     default:
         break;
     }
@@ -1346,7 +1347,7 @@ static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t 
 {
     char *xPub = NULL, hdPath[BUFFER_SIZE_128] = {0};
     SimpleResponse_c_char *result = NULL;
-    xPub = GetCurrentAccountPublicKey(GetAdaXPubTypeByIndex(index));
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index, GetAdaXPubType());
     snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'", index);
     switch (type) {
     case 1:
@@ -1420,7 +1421,7 @@ static void ModelGetAvaxAddress(uint32_t index, AddressDataItem_t *item)
         free_simple_response_c_char(result);
     } else {
         // x p chain address
-        xPub = GetCurrentAccountPublicKey(XPUB_TYPE_AVAX_X_P_0 + index);
+        xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_AVAX, 1 + index, 0);
         ASSERT(xPub);
         snprintf_s(hdPath, sizeof(hdPath), "m/44'/9000'/%u'/0/0", index);
         snprintf_s(rootPath, sizeof(rootPath), "m/44'/9000'/%u'", index);

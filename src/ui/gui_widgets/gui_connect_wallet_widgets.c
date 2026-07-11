@@ -1,5 +1,6 @@
 #include "gui_connect_wallet_widgets.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "gui.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
@@ -22,6 +23,7 @@
 #include "keystore.h"
 #include "gui_select_address_widgets.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "gui_wallet_tutorial_widgets.h"
 
 #define DERIVATION_PATH_EG_LEN 2
@@ -977,9 +979,9 @@ static void AddChainAddress(void)
         lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 58);
     } else if (IsAda(g_connectWalletTileView.walletIndex)) {
         char addr[BUFFER_SIZE_256] = {0};
-        char *xpub = GetCurrentAccountPublicKey(GetAdaXPubTypeByIndexAndDerivationType(
-                GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
-                GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex))));
+        char *xpub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA,
+                GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
         CutAndFormatString(addr, sizeof(addr), GuiGetADABaseAddressByXPub(xpub), 20);
         label = GuiCreateNoticeLabel(g_bottomCont, addr);
         lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 58);
@@ -1139,7 +1141,7 @@ UREncodeResult *GuiGetTonData(void)
     uint8_t mfp[4] = {0};
     char* path = NULL;
     GetMasterFingerPrint(mfp);
-    char* xpub = GetCurrentAccountPublicKey(XPUB_TYPE_TON_BIP39);
+    char* xpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TON);
     path = GetXPubPath(XPUB_TYPE_TON_BIP39);
     return get_tonkeeper_wallet_ur(xpub, GetWalletName(), mfp, sizeof(mfp), path);
 }
@@ -1502,41 +1504,41 @@ static void GetEthEgAddress(void)
     SimpleResponse_c_char *result;
     result = eth_get_address(
                  "44'/60'/0'/0/0",
-                 GetCurrentAccountPublicKey(XPUB_TYPE_ETH_BIP44_STANDARD), "44'/60'/0'");
+                 KosmoApi_GetPublicKey(KOSMO_CHAIN_ETH), "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[Bip44Standard][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = eth_get_address(
                  "44'/60'/0'/0/1",
-                 GetCurrentAccountPublicKey(XPUB_TYPE_ETH_BIP44_STANDARD), "44'/60'/0'");
+                 KosmoApi_GetPublicKey(KOSMO_CHAIN_ETH), "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[Bip44Standard][1], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = eth_get_address(
-                 "44'/60'/0'/0/0", GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LIVE_0),
+                 "44'/60'/0'/0/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 2, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLive][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = eth_get_address(
-                 "44'/60'/1'/0/0", GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LIVE_1),
+                 "44'/60'/1'/0/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 3, 0),
                  "44'/60'/1'");
     CutAndFormatString(g_derivationPathAddr[LedgerLive][1], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = eth_get_address(
-                 "44'/60'/0'/0", GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LEGACY),
+                 "44'/60'/0'/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 1, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLegacy][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = eth_get_address(
-                 "44'/60'/0'/1", GetCurrentAccountPublicKey(XPUB_TYPE_ETH_LEDGER_LEGACY),
+                 "44'/60'/0'/1", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 1, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLegacy][1], BUFFER_SIZE_64,
                        result->data, 24);
@@ -1547,31 +1549,31 @@ static void GetSolEgAddress(void)
 {
     SimpleResponse_c_char *result;
     result =
-        solana_get_address(GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_0));
+        solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 0, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result =
-        solana_get_address(GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_1));
+        solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 1, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44][1], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result =
-        solana_get_address(GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_ROOT));
+        solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 50, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44ROOT][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = solana_get_address(
-                 GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_CHANGE_0));
+                 KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 51, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44Change][0], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result = solana_get_address(
-                 GetCurrentAccountPublicKey(XPUB_TYPE_SOL_BIP44_CHANGE_1));
+                 KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 52, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44Change][1], BUFFER_SIZE_64,
                        result->data, 24);
     free_simple_response_c_char(result);
@@ -1579,17 +1581,16 @@ static void GetSolEgAddress(void)
 
 static void GetAdaEgAddress(void)
 {
-    ChainType chainType1 = GetCurrentSelectedIndex() == STANDARD_ADA ? XPUB_TYPE_ADA_0 : XPUB_TYPE_LEDGER_ADA_0;
-    ChainType chainType2 = GetCurrentSelectedIndex() == STANDARD_ADA ? XPUB_TYPE_ADA_1 : XPUB_TYPE_LEDGER_ADA_1;
+    int adaDerivType = GetCurrentSelectedIndex();
     SimpleResponse_c_char *result;
     result =
-        cardano_get_base_address(GetCurrentAccountPublicKey(chainType1), 0, 1);
+        cardano_get_base_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 0, adaDerivType), 0, 1);
     CutAndFormatString(g_adaDerivationPathAddr[GetCurrentSelectedIndex()][0], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);
 
     result =
-        cardano_get_base_address(GetCurrentAccountPublicKey(chainType2), 0, 1);
+        cardano_get_base_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, adaDerivType), 0, 1);
     CutAndFormatString(g_adaDerivationPathAddr[GetCurrentSelectedIndex()][1], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);

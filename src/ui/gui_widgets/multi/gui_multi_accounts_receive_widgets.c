@@ -7,6 +7,7 @@
 #include "gui_views.h"
 #include "gui_hintbox.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "librust_c.h"
 #include "assert.h"
 #include "gui_keyboard.h"
@@ -1197,7 +1198,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
     switch (g_chainCard) {
     case HOME_WALLET_CARD_ADA: {
         uint32_t currentAccount = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
-        xPub = GetCurrentAccountPublicKey(GetReceivePageAdaXPubTypeByIndex(currentAccount));
+        xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, currentAccount, GetReceivePageAdaXPubType());
         snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'/0/%u", currentAccount, index);
         // cardano mainnet;
         switch (type) {
@@ -1217,15 +1218,15 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
     case HOME_WALLET_CARD_MONERO:
         switch (type) {
         case 1:
-            xPub = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_0);
-            pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+            xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 0, 0);
+            pvk = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 1, 0);
             snprintf_s(hdPath, BUFFER_SIZE_16, "");
             bool isPrimaryAccount = index == 0;
             result = monero_get_address(xPub, pvk, index, 0, !isPrimaryAccount);
             break;
         default:
-            xPub = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_0);
-            pvk = GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0);
+            xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 0, 0);
+            pvk = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 1, 0);
             uint32_t accountIndex = g_selectedAccount[GetCurrentAccountIndex()];
             bool isSubAddress = index != 0 || accountIndex != 0;
             snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/128'/0'/0/%u", index);

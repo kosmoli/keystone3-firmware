@@ -1,6 +1,7 @@
 #include "gui_select_address_widgets.h"
 #include "gui_home_widgets.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "gui_page.h"
 #include "gui_obj.h"
 #include "gui_button.h"
@@ -89,9 +90,8 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         break;
     case CHAIN_ADA:
         item->index = index;
-        char *xpub = GetCurrentAccountPublicKey(GetAdaXPubTypeByIndexAndDerivationType(
-                GetConnectWalletPathIndex(GetWalletNameByIndex(GuiConnectWalletGetWalletIndex())),
-                index));
+        char *xpub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index,
+                GetConnectWalletPathIndex(GetWalletNameByIndex(GuiConnectWalletGetWalletIndex())));
         strcpy(item->address, GuiGetADABaseAddressByXPub(xpub));
         break;
     case CHAIN_ATOM:

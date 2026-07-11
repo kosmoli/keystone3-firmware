@@ -5,6 +5,7 @@
 #include "gui_views.h"
 #include "gui_hintbox.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "librust_c.h"
 #include "assert.h"
 #include "gui_keyboard.h"
@@ -1472,7 +1473,7 @@ static void ModelGetUtxoAddress(uint32_t index, AddressDataItem_t *item)
         addrType = g_selectType;
     }
     chainType = GetChainTypeByIndex(addrType);
-    xPub = GetCurrentAccountPublicKey(chainType);
+    xPub = KosmoApi_GetPublicKeyRaw(chainType);
     ASSERT(xPub);
     SimpleResponse_c_char *result;
     do {

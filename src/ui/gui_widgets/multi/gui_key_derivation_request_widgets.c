@@ -592,7 +592,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     ExtendedPublicKey xpubs[24];
     for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {
         KeyDerivationSchema schema = g_callData->key_derivation->schemas->data[i];
-        char* xpub = GetCurrentAccountPublicKey(GetXPubIndexByPath(schema.key_path));
+        char* xpub = KosmoApi_GetPublicKeyRaw(GetXPubIndexByPath(schema.key_path));
         xpubs[i].path = schema.key_path;
         xpubs[i].xpub = xpub;
     }
@@ -961,25 +961,25 @@ static void CloseDerivationHandler(lv_event_t *e)
 static void GetCardanoEgAddress(void)
 {
     char *xPub = NULL;
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ADA_0);
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 0, 0);
     SimpleResponse_c_char *result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[STANDARD_ADA][0], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);
 
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_ADA_1);
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, 0);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[STANDARD_ADA][1], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);
 
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_LEDGER_ADA_0);
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 0, 1);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[LEDGER_ADA][0], BUFFER_SIZE_128,
                        result->data, 24);
     free_simple_response_c_char(result);
 
-    xPub = GetCurrentAccountPublicKey(XPUB_TYPE_LEDGER_ADA_1);
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, 1);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[LEDGER_ADA][1], BUFFER_SIZE_128,
                        result->data, 24);

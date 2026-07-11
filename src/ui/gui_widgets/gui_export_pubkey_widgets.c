@@ -5,6 +5,7 @@
 #include "gui_page.h"
 #include "gui_fullscreen_mode.h"
 #include "account_public_info.h"
+#include "kosmo_api.h"
 #include "assert.h"
 #include "gui_hintbox.h"
 #include "sdcard_manager.h"
@@ -310,7 +311,7 @@ static void GetBtcPubkey(char *dest, uint8_t pathType, uint32_t maxLen)
 {
     SimpleResponse_c_char *result;
     ChainType chainType = g_pathTypeList[pathType].pubkeyType;
-    char *xpub = GetCurrentAccountPublicKey(chainType);
+    char *xpub = KosmoApi_GetPublicKeyRaw(chainType);
     char head[] = "ypub";
     switch (chainType) {
     case XPUB_TYPE_BTC_LEGACY:
@@ -411,7 +412,7 @@ static void SetPathType(uint8_t pathType)
 static void ModelGetUtxoAddress(char *dest, uint8_t pathType, uint32_t index, uint32_t maxLen)
 {
     char *xPub, hdPath[BUFFER_SIZE_128];
-    xPub = GetCurrentAccountPublicKey(g_pathTypeList[pathType].pubkeyType);
+    xPub = KosmoApi_GetPublicKeyRaw(g_pathTypeList[pathType].pubkeyType);
     ASSERT(xPub);
     SimpleResponse_c_char *result;
     snprintf_s(hdPath, sizeof(hdPath), "%s/0/%u", g_pathTypeList[pathType].path, index);

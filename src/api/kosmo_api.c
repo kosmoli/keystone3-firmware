@@ -174,6 +174,81 @@ const char *KosmoApi_GetPublicKey(KosmoChainType chain)
     return GetCurrentAccountPublicKey((ChainType)xpubType);
 }
 
+/*
+ * 获取公钥（原始 ChainType 版本）。
+ * 用于调用方已知内部 ChainType/XPUB_TYPE 的场景（如 UTXO 多地址、
+ * GetXPubIndexByPath 等）。Phase 4 完成后应逐步迁移到 KosmoApi_GetPublicKeyByPath。
+ */
+const char *KosmoApi_GetPublicKeyRaw(uint32_t xpubType)
+{
+    return GetCurrentAccountPublicKey((ChainType)xpubType);
+}
+
+const char *KosmoApi_GetPublicKeyByPath(KosmoChainType chain, int pathIndex, int derivationType)
+{
+    uint32_t xpubType;
+
+    switch (chain) {
+    case KOSMO_CHAIN_ETH:
+        if (pathIndex == 0)      xpubType = XPUB_TYPE_ETH_BIP44_STANDARD;
+        else if (pathIndex == 1) xpubType = XPUB_TYPE_ETH_LEDGER_LEGACY;
+        else if (pathIndex >= 2 && pathIndex <= 11)
+            xpubType = XPUB_TYPE_ETH_LEDGER_LIVE_0 + (pathIndex - 2);
+        else return NULL;
+        break;
+
+    case KOSMO_CHAIN_SOL:
+        if (pathIndex >= 0 && pathIndex <= 49)
+            xpubType = XPUB_TYPE_SOL_BIP44_0 + pathIndex;
+        else if (pathIndex == 50)
+            xpubType = XPUB_TYPE_SOL_BIP44_ROOT;
+        else if (pathIndex >= 51 && pathIndex <= 100)
+            xpubType = XPUB_TYPE_SOL_BIP44_CHANGE_0 + (pathIndex - 51);
+        else return NULL;
+        break;
+
+    case KOSMO_CHAIN_AVAX:
+        if (pathIndex == 0)      xpubType = XPUB_TYPE_AVAX_BIP44_STANDARD;
+        else if (pathIndex >= 1 && pathIndex <= 10)
+            xpubType = XPUB_TYPE_AVAX_X_P_0 + (pathIndex - 1);
+        else return NULL;
+        break;
+
+    case KOSMO_CHAIN_ADA: {
+        ChainType base = (derivationType == 0) ? XPUB_TYPE_ADA_0 : XPUB_TYPE_LEDGER_ADA_0;
+        if (pathIndex < 0 || pathIndex > 23) pathIndex = 0;
+        return GetCurrentAccountPublicKey((ChainType)(base + pathIndex));
+    }
+
+    case KOSMO_CHAIN_SUI:
+        if (pathIndex < 0 || pathIndex > 9) return NULL;
+        return GetCurrentAccountPublicKey((ChainType)(XPUB_TYPE_SUI_0 + pathIndex));
+
+    case KOSMO_CHAIN_IOTA:
+        if (pathIndex < 0 || pathIndex > 9) return NULL;
+        return GetCurrentAccountPublicKey((ChainType)(XPUB_TYPE_IOTA_0 + pathIndex));
+
+    case KOSMO_CHAIN_APT:
+        if (pathIndex < 0 || pathIndex > 9) return NULL;
+        return GetCurrentAccountPublicKey((ChainType)(XPUB_TYPE_APT_0 + pathIndex));
+
+    case KOSMO_CHAIN_STELLAR:
+        if (pathIndex < 0 || pathIndex > 9) return NULL;
+        return GetCurrentAccountPublicKey((ChainType)(XPUB_TYPE_STELLAR_0 + pathIndex));
+
+    case KOSMO_CHAIN_XMR:
+        if (pathIndex == 0) return GetCurrentAccountPublicKey((ChainType)XPUB_TYPE_MONERO_0);
+        if (pathIndex == 1) return GetCurrentAccountPublicKey((ChainType)XPUB_TYPE_MONERO_PVK_0);
+        return NULL;
+
+    default:
+        /* 单路径链：忽略 pathIndex，退化为 GetPublicKey */
+        return KosmoApi_GetPublicKey(chain);
+    }
+
+    return GetCurrentAccountPublicKey((ChainType)xpubType);
+}
+
 const char *KosmoApi_GetPath(KosmoChainType chain)
 {
     uint32_t xpubType = KosmoChainToXPubType(chain);

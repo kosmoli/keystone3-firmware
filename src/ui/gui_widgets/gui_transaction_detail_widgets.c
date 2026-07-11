@@ -311,7 +311,7 @@ static void CheckSliderProcessHandler(lv_event_t *e)
     if (code == LV_EVENT_RELEASED) {
         int32_t value = lv_slider_get_value(lv_event_get_target(e));
         if (value >= QRCODE_CONFIRM_SIGN_PROCESS) {
-            if ((GetCurrentAccountIndex() < 3) && GetFingerSignFlag() && g_fingerSignCount < 3) {
+            if ((KosmoApi_GetCurrentAccountIndex() < 3) && GetFingerSignFlag() && g_fingerSignCount < 3) {
                 SignByFinger();
             } else {
                 SignByPasswordCb(false);

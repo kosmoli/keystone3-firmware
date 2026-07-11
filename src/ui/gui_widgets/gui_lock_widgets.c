@@ -285,12 +285,12 @@ void GuiLockScreenTurnOff(void)
     GuiEnterPassCodeStatus(g_verifyLock, true);
 
     if (g_oldWalletIndex == 0xFF) {
-        g_oldWalletIndex = GetCurrentAccountIndex();
+        g_oldWalletIndex = KosmoApi_GetCurrentAccountIndex();
     }
 
-    if ((GetCurrentAccountIndex() != g_oldWalletIndex) ||
+    if ((KosmoApi_GetCurrentAccountIndex() != g_oldWalletIndex) ||
             GuiIsForgetPass()) {
-        g_oldWalletIndex = GetCurrentAccountIndex();
+        g_oldWalletIndex = KosmoApi_GetCurrentAccountIndex();
         if (!NeedUpdateBoot()) {
             GuiCloseToTargetView(&g_homeView);
         }
@@ -303,7 +303,7 @@ void GuiLockScreenTurnOff(void)
 
 void GuiUpdateOldAccountIndex(void)
 {
-    g_oldWalletIndex = GetCurrentAccountIndex();
+    g_oldWalletIndex = KosmoApi_GetCurrentAccountIndex();
 }
 
 void GuiLockScreenToHome(void)
@@ -329,7 +329,7 @@ void GuiLockScreenPassCode(bool en)
         g_fpErrorCount = 0;
         FpCancelCurOperate();
         if (g_oldWalletIndex == 0xFF) {
-            g_oldWalletIndex = GetCurrentAccountIndex();
+            g_oldWalletIndex = KosmoApi_GetCurrentAccountIndex();
         }
 
         if (IsUpdateSuccess()) {
@@ -341,11 +341,11 @@ void GuiLockScreenPassCode(bool en)
             if (NeedUpdateBoot()) {
                 GuiFrameOpenView(&g_bootUpdateView);
             }
-        } else if (GetMnemonicType() == MNEMONIC_TYPE_TON) {
+        } else if (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_TON) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
             GuiEnterPassCodeStatus(g_verifyLock, true);
             GuiFrameOpenView(&g_checkDeleteWalletView);
-        } else if (GetMnemonicType() != MNEMONIC_TYPE_TON && g_checkDeleteWalletView.isActive) {
+        } else if (KosmoApi_GetMnemonicType() != KOSMO_MNEMONIC_TON && g_checkDeleteWalletView.isActive) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
             GuiFrameCLoseView(&g_checkDeleteWalletView);
         } else if (KosmoApi_GetPassphraseQuickAccess()) {

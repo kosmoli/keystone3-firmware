@@ -1,28 +1,51 @@
 #include "gui.h"
+#include "kosmo_api.h"
 #include "gui_views.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
+#include "kosmo_api.h"
 #include "gui_keyboard.h"
+#include "kosmo_api.h"
 #include "gui_button.h"
+#include "kosmo_api.h"
 #include "gui_hintbox.h"
+#include "kosmo_api.h"
 #include "gui_enter_passcode.h"
+#include "kosmo_api.h"
 #include "gui_model.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
+#include "kosmo_api.h"
 #include "secret_cache.h"
+#include "kosmo_api.h"
 #include "keystore.h"
+#include "kosmo_api.h"
 #include "gui_setting_widgets.h"
+#include "kosmo_api.h"
 #include "gui_lock_widgets.h"
+#include "kosmo_api.h"
 #include "presetting.h"
+#include "kosmo_api.h"
 #include "assert.h"
+#include "kosmo_api.h"
 #include "gui_qr_hintbox.h"
+#include "kosmo_api.h"
 #include "motor_manager.h"
+#include "kosmo_api.h"
 #include "fingerprint_process.h"
+#include "kosmo_api.h"
 #include "gui_mnemonic_input.h"
+#include "kosmo_api.h"
 #include "account_manager.h"
+#include "kosmo_api.h"
 #ifndef COMPILE_SIMULATOR
 #include "sha256.h"
+#include "kosmo_api.h"
 #include "keystore.h"
+#include "kosmo_api.h"
 #else
 #include "simulator_model.h"
+#include "kosmo_api.h"
 #endif
 
 void RebootHandler(lv_event_t *e);
@@ -72,7 +95,7 @@ void GuiWalletRecoveryMethodCheck(lv_obj_t *parent)
     lv_obj_set_style_bg_opa(parent, LV_OPA_0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
     lv_obj_t *button;
 
-    if (PassphraseExist(GetCurrentAccountIndex()) == true) {
+    if (PassphraseExist(KosmoApi_GetCurrentAccountIndex()) == true) {
         uint16_t height = 72 + 32 + 12 + 146;
         lv_obj_t *cont = GuiCreateContainerWithParent(parent, 408, 514);
         lv_obj_set_style_bg_color(cont, WHITE_COLOR, LV_PART_MAIN);

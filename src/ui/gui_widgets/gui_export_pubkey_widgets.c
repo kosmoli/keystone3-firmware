@@ -381,7 +381,7 @@ static void RefreshQrcode()
 
 static uint8_t GetPathType()
 {
-    int index = GetCurrentAccountIndex();
+    int index = KosmoApi_GetCurrentAccountIndex();
     int shift = g_isMultisig ? 4 : 0;
     uint8_t type = 0;
     switch (g_chain) {
@@ -396,7 +396,7 @@ static uint8_t GetPathType()
 
 static void SetPathType(uint8_t pathType)
 {
-    int index = GetCurrentAccountIndex();
+    int index = KosmoApi_GetCurrentAccountIndex();
     int shift = g_isMultisig ? 4 : 0;
     switch (g_chain) {
     case CHAIN_BTC:

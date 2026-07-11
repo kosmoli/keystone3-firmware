@@ -167,9 +167,9 @@ void GuiMultiAccountsReceiveInit(uint8_t chain)
     g_multiAccountsReceiveWidgets.cont = g_pageWidget->contentZone;
     g_multiAccountsReceiveWidgets.tileView = lv_tileview_create(g_multiAccountsReceiveWidgets.cont);
     g_showAccountIndex = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
-    g_selectedAccount[GetCurrentAccountIndex()] = g_showAccountIndex;
+    g_selectedAccount[KosmoApi_GetCurrentAccountIndex()] = g_showAccountIndex;
     g_showIndex = GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
-    g_selectedIndex[GetCurrentAccountIndex()] = g_showIndex;
+    g_selectedIndex[KosmoApi_GetCurrentAccountIndex()] = g_showIndex;
     lv_obj_set_style_bg_opa(g_multiAccountsReceiveWidgets.tileView, LV_OPA_0, LV_PART_SCROLLBAR & LV_STATE_SCROLLED);
     lv_obj_set_style_bg_opa(g_multiAccountsReceiveWidgets.tileView, LV_OPA_0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
     g_multiAccountsReceiveWidgets.tileQrCode = lv_tileview_add_tile(g_multiAccountsReceiveWidgets.tileView, RECEIVE_TILE_QRCODE, 0, LV_DIR_HOR);
@@ -220,7 +220,7 @@ void GuiMultiAccountsReceiveRefresh(void)
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, ReturnHandler, NULL);
         SetMidBtnLabel(g_pageWidget->navBarWidget, NVS_BAR_MID_LABEL, _("switch_address"));
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_SKIP, JumpToAccountHandler, NULL);
-        g_tmpIndex = g_selectedIndex[GetCurrentAccountIndex()];
+        g_tmpIndex = g_selectedIndex[KosmoApi_GetCurrentAccountIndex()];
         g_showIndex = g_tmpIndex / 5 * 5;
         if (g_showIndex < 5) {
             lv_obj_set_style_img_opa(g_multiAccountsReceiveWidgets.leftBtnImg, LV_OPA_30, LV_PART_MAIN);
@@ -300,7 +300,7 @@ static void GuiCreateMoreWidgets(lv_obj_t *parent)
     label = GuiCreateTextLabel(btn, _("switch_account"));
     lv_obj_align(label, LV_ALIGN_LEFT_MID, 60, 4);
 
-    if (g_chainCard == HOME_WALLET_CARD_ADA && GetMnemonicType() != MNEMONIC_TYPE_SLIP39) {
+    if (g_chainCard == HOME_WALLET_CARD_ADA && KosmoApi_GetMnemonicType() != KOSMO_MNEMONIC_SLIP39) {
         btn = lv_btn_create(cont);
         lv_obj_set_size(btn, 456, 84);
         lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 24 + 476);
@@ -466,13 +466,13 @@ static void GuiCreateSwitchAddressWidget(lv_obj_t *parent)
 
 static void SetCurrentSelectIndex(uint32_t index)
 {
-    g_selectedIndex[GetCurrentAccountIndex()] = index;
+    g_selectedIndex[KosmoApi_GetCurrentAccountIndex()] = index;
     SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, index);
 }
 
 static bool IsIndexSelectChanged()
 {
-    return g_tmpIndex != g_selectedIndex[GetCurrentAccountIndex()];
+    return g_tmpIndex != g_selectedIndex[KosmoApi_GetCurrentAccountIndex()];
 }
 
 static void UpdateConfirmIndexBtn(void)
@@ -488,7 +488,7 @@ static void UpdateConfirmIndexBtn(void)
 
 static bool IsAccountSelectChanged()
 {
-    return g_tmpAccount != g_selectedAccount[GetCurrentAccountIndex()];
+    return g_tmpAccount != g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
 }
 
 static void UpdateConfirmAccountBtn(void)
@@ -513,7 +513,7 @@ static void ConfirmIndexHandler(lv_event_t *e)
 static void ConfirmAccountHandler(lv_event_t *e)
 {
     if (IsAccountSelectChanged()) {
-        g_selectedAccount[GetCurrentAccountIndex()] = g_tmpAccount;
+        g_selectedAccount[KosmoApi_GetCurrentAccountIndex()] = g_tmpAccount;
         SetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin, g_tmpAccount);
         g_tmpIndex = 0;
         SetCurrentSelectIndex(g_tmpIndex);
@@ -547,7 +547,7 @@ static void GuiCreateSwitchAccountButtons(lv_obj_t *parent)
     lv_obj_add_event_cb(btn, ConfirmAccountHandler, LV_EVENT_CLICKED, NULL);
     g_multiAccountsReceiveWidgets.confirmAccountBtn = btn;
 
-    g_tmpAccount = g_selectedAccount[GetCurrentAccountIndex()];
+    g_tmpAccount = g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
     g_showAccountIndex = g_tmpAccount / 5 * 5;
 }
 
@@ -596,7 +596,7 @@ static void RefreshQrCode(void)
     if (g_chainCard == HOME_WALLET_CARD_MONERO) {
         addressPrefix = _("Sub_Address");
         snprintf_s(string, sizeof(string), "%s", addressDataItem.address);
-        bool isPrimaryAddress = g_selectedIndex[GetCurrentAccountIndex()] == 0 && g_selectedAccount[GetCurrentAccountIndex()] == 0;
+        bool isPrimaryAddress = g_selectedIndex[KosmoApi_GetCurrentAccountIndex()] == 0 && g_selectedAccount[KosmoApi_GetCurrentAccountIndex()] == 0;
         if (isPrimaryAddress) {
             addressPrefix = _("Primary_Address");
         }
@@ -618,7 +618,7 @@ static void RefreshSwitchAddress(void)
         char *addressPrefix = _("Address");
         if (g_chainCard == HOME_WALLET_CARD_MONERO) {
             addressPrefix = _("Sub_Address");
-            uint32_t accountIndex = g_selectedAccount[GetCurrentAccountIndex()];
+            uint32_t accountIndex = g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
             bool isPrimaryAddress = index == 0 && accountIndex == 0;
             if (isPrimaryAddress) {
                 addressPrefix = _("Primary_Address");
@@ -702,7 +702,7 @@ static void GuiCreateAddressDetailWidgets(lv_obj_t *parent)
         last = label;
 
         AddressDataItem_t addressDataItem;
-        ModelGetAddress(g_selectedIndex[GetCurrentAccountIndex()], &addressDataItem, 0);
+        ModelGetAddress(g_selectedIndex[KosmoApi_GetCurrentAccountIndex()], &addressDataItem, 0);
 
         label = GuiCreateIllustrateLabel(cont, addressDataItem.path);
         lv_obj_align_to(label, last, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 12);
@@ -720,7 +720,7 @@ static void GuiCreateAddressDetailWidgets(lv_obj_t *parent)
         lv_obj_align_to(label, last, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 12);
         last = label;
 
-        ModelGetAddress(g_selectedIndex[GetCurrentAccountIndex()], &addressDataItem, 1);
+        ModelGetAddress(g_selectedIndex[KosmoApi_GetCurrentAccountIndex()], &addressDataItem, 1);
         label = GuiCreateIllustrateLabel(cont, addressDataItem.address);
         lv_obj_align_to(label, last, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 12);
         last = label;
@@ -988,7 +988,7 @@ static bool IsPathTypeSwitchable()
 {
     switch (g_chainCard) {
     case HOME_WALLET_CARD_ADA:
-        return (GetMnemonicType() == MNEMONIC_TYPE_SLIP39) ? false : true;
+        return (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39) ? false : true;
     default:
         return false;
     }
@@ -1050,7 +1050,7 @@ static void OpenSwitchAddressHandler(lv_event_t *e)
 
 static void OpenSwitchAccountHandler(lv_event_t *e)
 {
-    // g_tmpAccount = g_selectedAccount[GetCurrentAccountIndex()];
+    // g_tmpAccount = g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
     g_tmpAccount = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
     GuiCreateSwitchAccountWidget();
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
@@ -1227,7 +1227,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
         default:
             xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 0, 0);
             pvk = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_XMR, 1, 0);
-            uint32_t accountIndex = g_selectedAccount[GetCurrentAccountIndex()];
+            uint32_t accountIndex = g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
             bool isSubAddress = index != 0 || accountIndex != 0;
             snprintf_s(hdPath, BUFFER_SIZE_128, "m/44'/128'/0'/0/%u", index);
             result = monero_get_address(xPub, pvk, accountIndex, index, isSubAddress);

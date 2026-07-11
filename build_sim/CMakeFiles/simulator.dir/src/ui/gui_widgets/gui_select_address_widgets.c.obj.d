@@ -356,6 +356,8 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_select_address_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_avax.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_iota.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_monero.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_page.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_status_bar.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_connect_wallet_widgets.h \

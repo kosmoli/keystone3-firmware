@@ -123,7 +123,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 g_userParam = g_passParam.userParam;
                 uint8_t index = 0xff;
                 if (g_userParam != NULL && *(uint16_t *)g_userParam == DEVICE_SETTING_RESET_PASSCODE_VERIFY) {
-                    index = GetCurrentAccountIndex();
+                    index = KosmoApi_GetCurrentAccountIndex();
                 }
 
                 switch (item->mode) {
@@ -186,7 +186,7 @@ static void SetPassWordHandler(lv_event_t *e)
                 uint8_t index = 0xff;
 
                 if (g_userParam != NULL && *(uint16_t *)g_userParam == DEVICE_SETTING_RESET_PASSCODE_VERIFY) {
-                    index = GetCurrentAccountIndex();
+                    index = KosmoApi_GetCurrentAccountIndex();
                 }
                 if (CheckPasswordExisted(currText, index)) {
                     UnlimitedVibrate(LONG);

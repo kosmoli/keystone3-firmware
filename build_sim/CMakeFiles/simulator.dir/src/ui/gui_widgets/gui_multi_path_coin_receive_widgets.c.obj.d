@@ -360,6 +360,8 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_multi_path_coin_receive_widgets.
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_connect_wallet_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_ar.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_hintbox.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/draw/lv_draw_mask.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_tutorial_widgets.h \

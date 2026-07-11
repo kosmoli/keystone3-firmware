@@ -218,7 +218,7 @@ void GuiReceiveInit(uint8_t chain)
     g_chainCard = chain;
     g_btcShowAsTestAddress = false;
     g_btcPreviewShowAsTestAddress = false;
-    g_currentAccountIndex = GetCurrentAccountIndex();
+    g_currentAccountIndex = KosmoApi_GetCurrentAccountIndex();
     g_selectIndex = GetCurrentSelectIndex();
     g_selectType = GetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin);
     g_addressType[g_currentAccountIndex] = g_selectType;

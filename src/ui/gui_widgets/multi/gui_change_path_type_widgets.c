@@ -63,7 +63,7 @@ void GuiCreateSwitchPathTypeWidget(lv_obj_t *parent, HOME_WALLET_CARD_ENUM chain
 {
     g_changed_cb = changed_cb;
     g_currentChain = chain;
-    g_currentAccountIndex = GetCurrentAccountIndex();
+    g_currentAccountIndex = KosmoApi_GetCurrentAccountIndex();
     if (chain == HOME_WALLET_CARD_ADA) {
         SetPathIndex(GetReceivePageAdaXPubType());
     }

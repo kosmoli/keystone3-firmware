@@ -1,31 +1,59 @@
 #include "gui_obj.h"
+#include "kosmo_api.h"
 #include "gui_views.h"
+#include "kosmo_api.h"
 #include "gui_style.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
+#include "kosmo_api.h"
 #include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_enter_passcode.h"
+#include "kosmo_api.h"
 #include "gui_pop_message_box.h"
+#include "kosmo_api.h"
 #include "gui_power_option_widgets.h"
+#include "kosmo_api.h"
 #include "gui_init_widgets.h"
+#include "kosmo_api.h"
 #include "gui_firmware_process_widgets.h"
+#include "kosmo_api.h"
 #include "gui_usb_connection_widgets.h"
+#include "kosmo_api.h"
 #include "gui_low_battery_widgets.h"
+#include "kosmo_api.h"
 #include "gui_nft_screen_widgets.h"
+#include "kosmo_api.h"
 #include "gui_firmware_update_deny_widgets.h"
+#include "kosmo_api.h"
 #include "gui_trans_nft_process_widgets.h"
+#include "kosmo_api.h"
 #include "gui_firmware_update_widgets.h"
+#include "kosmo_api.h"
 #include "gui_lock_widgets.h"
+#include "kosmo_api.h"
 #include "presetting.h"
+#include "kosmo_api.h"
 #include "anti_tamper.h"
+#include "kosmo_api.h"
 #include "gui_global_resources.h"
+#include "kosmo_api.h"
 #include "gui_about_info_widgets.h"
+#include "kosmo_api.h"
 #include "account_manager.h"
+#include "kosmo_api.h"
 #include "gui_setup_widgets.h"
+#include "kosmo_api.h"
 #include "device_setting.h"
+#include "kosmo_api.h"
 #include "drv_aw32001.h"
+#include "kosmo_api.h"
 #include "usb_task.h"
+#include "kosmo_api.h"
 #include "ui_display_task.h"
+#include "kosmo_api.h"
 #include "version.h"
+#include "kosmo_api.h"
 
 static int32_t GuiInitViewInit(void *param)
 {
@@ -116,7 +144,7 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
         break;
     case SIG_INIT_USB_CONNECTION:
         rcvValue = *(uint32_t *)param;
-        if (rcvValue != 0 && !GuiLockScreenIsTop() && GetUsbDetectState() && ((GetCurrentAccountIndex() != 0xFF) || GuiIsSetup())) {
+        if (rcvValue != 0 && !GuiLockScreenIsTop() && GetUsbDetectState() && ((KosmoApi_GetCurrentAccountIndex() != 0xFF) || GuiIsSetup())) {
             if (GetUsbState() == false) {
                 OpenMsgBox(&g_guiMsgBoxUsbConnection);
             }

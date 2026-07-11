@@ -362,5 +362,7 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_export_pubkey_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_connect_wallet_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_ar.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_fullscreen_mode.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_hintbox.h \
  /home/komo/works/keystone3-firmware/src/managers/sdcard_manager.h

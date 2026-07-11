@@ -84,7 +84,7 @@ void GuiScanResult(bool result, void *param)
         g_qrcodeViewType = urViewType.viewType;
         g_chainType = ViewTypeToChainTypeSwitch(g_qrcodeViewType);
         // Not a chain based transaction, e.g. WebAuth
-        if (GetMnemonicType() == MNEMONIC_TYPE_SLIP39) {
+        if (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39) {
             //we don't support ADA & XMR in Slip39 Wallet;
             if (IsSlip39WalletNotSupported(g_chainType)) {
                 ThrowError(ERR_INVALID_QRCODE);

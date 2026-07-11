@@ -357,6 +357,8 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_connect_wallet_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_monero.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_widgets.h \
  /home/komo/works/keystone3-firmware/src/managers/screen_manager.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_button.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \

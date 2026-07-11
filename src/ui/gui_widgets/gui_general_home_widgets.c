@@ -86,9 +86,9 @@ static void GuiInitWalletState(void)
         g_walletState[i].enable = false;
         g_walletState[i].state = false;
     }
-    MnemonicType mnemonicType = GetMnemonicType();
+    KosmoMnemonicType mnemonicType = KosmoApi_GetMnemonicType();
     switch (mnemonicType) {
-    case MNEMONIC_TYPE_SLIP39:
+    case KOSMO_MNEMONIC_SLIP39:
         for (size_t i = 0; i < HOME_WALLET_CARD_BUTT; i++) {
             g_walletState[i].enable = true;
         }
@@ -99,7 +99,7 @@ static void GuiInitWalletState(void)
         g_walletState[HOME_WALLET_CARD_MONERO].enable = false;
         g_coinFilterNum = 2;
         break;
-    case MNEMONIC_TYPE_BIP39:
+    case KOSMO_MNEMONIC_BIP39:
         for (size_t i = 0; i < HOME_WALLET_CARD_BUTT; i++) {
             g_walletState[i].enable = true;
         }
@@ -746,7 +746,7 @@ void GuiHomeRefresh(void)
 #ifdef RUST_MEMORY_DEBUG
     PrintRustMemoryStatus();
 #endif
-    if (GetCurrentAccountIndex() > 2) {
+    if (KosmoApi_GetCurrentAccountIndex() > 2) {
         return;
     }
     GuiInitWalletState();

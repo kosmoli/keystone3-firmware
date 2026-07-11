@@ -418,7 +418,7 @@ void GuiVerifyCurrentPasswordErrorCount(void *param)
 
 void GuiSettingStructureCb(void *obj, void *param)
 {
-    if (GetMnemonicType() != MNEMONIC_TYPE_TON) {
+    if (KosmoApi_GetMnemonicType() != KOSMO_MNEMONIC_TON) {
         char tempBuf[BUFFER_SIZE_16] = "MFP: ";
         uint8_t mfp[4];
         GetMasterFingerPrint(mfp);

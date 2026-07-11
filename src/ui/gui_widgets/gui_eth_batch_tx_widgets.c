@@ -149,8 +149,8 @@ UREncodeResult *GuiGetEthBatchTxSignQrCodeData()
     UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     uint8_t seed[64];
-    int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
-    GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
     encodeResult = eth_sign_batch_tx(data, seed, len);
     ClearSecretCache();
     return encodeResult;
@@ -335,7 +335,7 @@ static void CheckSliderProcessHandler(lv_event_t *e)
     if (code == LV_EVENT_RELEASED) {
         int32_t value = lv_slider_get_value(lv_event_get_target(e));
         if (value >= QRCODE_CONFIRM_SIGN_PROCESS) {
-            if ((GetCurrentAccountIndex() < 3) && GetFingerSignFlag() && g_fingerSignCount < 3) {
+            if ((KosmoApi_GetCurrentAccountIndex() < 3) && GetFingerSignFlag() && g_fingerSignCount < 3) {
                 SignByFinger();
             } else {
                 SignByPasswordCb(false);

@@ -299,9 +299,6 @@ CMakeFiles/simulator.dir/src/ui/gui_views/gui_lock_view.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_views/gui_views.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_framework.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_widgets.h \
- /home/komo/works/keystone3-firmware/src/managers/keystore.h \
- /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/managers/fingerprint_process.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_firmware_update_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_wallet/gui_qr_code.h \
@@ -330,6 +327,9 @@ CMakeFiles/simulator.dir/src/ui/gui_views/gui_lock_view.c.obj: \
  /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
  /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
  /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
+ /home/komo/works/keystone3-firmware/src/managers/keystore.h \
+ /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
+ /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/utils/assert.h \
  /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \

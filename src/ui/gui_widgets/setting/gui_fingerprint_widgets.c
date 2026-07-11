@@ -1,30 +1,54 @@
 /* INCLUDES */
 #include "gui.h"
+#include "kosmo_api.h"
 #include "gui_views.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
+#include "kosmo_api.h"
 #include "gui_keyboard.h"
+#include "kosmo_api.h"
 #include "gui_button.h"
+#include "kosmo_api.h"
 #include "gui_hintbox.h"
+#include "kosmo_api.h"
 #include "gui_enter_passcode.h"
+#include "kosmo_api.h"
 #include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_setting_widgets.h"
+#include "kosmo_api.h"
 #include "gui_transaction_detail_widgets.h"
+#include "kosmo_api.h"
 #include "gui_lock_widgets.h"
+#include "kosmo_api.h"
 #include "gui_qr_hintbox.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
+#include "kosmo_api.h"
 #include "secret_cache.h"
+#include "kosmo_api.h"
 #include "keystore.h"
+#include "kosmo_api.h"
 #include "presetting.h"
+#include "kosmo_api.h"
 #include "assert.h"
+#include "kosmo_api.h"
 #include "motor_manager.h"
+#include "kosmo_api.h"
 #include "fingerprint_process.h"
+#include "kosmo_api.h"
 #include "account_manager.h"
+#include "kosmo_api.h"
 #include "screen_manager.h"
+#include "kosmo_api.h"
 #ifndef COMPILE_SIMULATOR
 #include "sha256.h"
+#include "kosmo_api.h"
 #include "keystore.h"
+#include "kosmo_api.h"
 #else
 #include "simulator_model.h"
+#include "kosmo_api.h"
 #define FP_SUCCESS_CODE                                                             (0)
 #define RECOGNIZE_UNLOCK                                                            (0)
 #define RECOGNIZE_OPEN_SIGN                                                         (1)
@@ -147,7 +171,7 @@ void FingerSignHandler(lv_event_t *e)
     bool en = lv_obj_has_state(g_fpSingerSwitch, LV_STATE_CHECKED);
     if (en) {
         lv_obj_clear_state(g_fpSingerSwitch, LV_STATE_CHECKED);
-        UpdateFingerSignFlag(GetCurrentAccountIndex(), !en);
+        UpdateFingerSignFlag(KosmoApi_GetCurrentAccountIndex(), !en);
         SetFingerManagerInfoToSE();
         lv_event_send(g_fpSingerSwitch, LV_EVENT_VALUE_CHANGED, NULL);
     } else {
@@ -166,7 +190,7 @@ void GuiSettingDealFingerRecognize(void *param)
         GuiClearQrcodeSignCnt();
         lv_img_set_src(g_imgSignFinger, &imgGreenFinger);
         lv_obj_add_flag(g_labelSignFailed, LV_OBJ_FLAG_HIDDEN);
-        UpdateFingerSignFlag(GetCurrentAccountIndex(), true);
+        UpdateFingerSignFlag(KosmoApi_GetCurrentAccountIndex(), true);
         g_fpRecognizeTimer = lv_timer_create(RecognizeSuccussHandler, 500, NULL);
     } else {
         g_fpEnSignCnt++;

@@ -358,4 +358,6 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/multi/gui_change_path_type_widgets.c
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_iota.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_monero.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_global_resources.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h
+ /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h

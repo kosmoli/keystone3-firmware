@@ -206,7 +206,7 @@ void GuiMultiPathCoinReceiveInit(uint8_t chain)
         SetPathIndex(GetAccountReceivePath("ADA"));
     }
     g_chainCard = chain;
-    g_currentAccountIndex = GetCurrentAccountIndex();
+    g_currentAccountIndex = KosmoApi_GetCurrentAccountIndex();
     g_selectIndex = GetCurrentSelectIndex();
     g_selectType = GetPathIndex();
     g_pageWidget = CreatePageWidget();

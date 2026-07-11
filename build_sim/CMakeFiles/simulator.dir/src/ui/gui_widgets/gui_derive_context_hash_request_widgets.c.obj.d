@@ -362,5 +362,7 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_derive_context_hash_request_widg
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_ar.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_button.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_hintbox.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_derive_context_hash_request_widgets.h

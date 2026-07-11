@@ -945,7 +945,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         break;
     case HOME_WALLET_CARD_ZEC: {
         char ufvk[ZCASH_UFVK_MAX_LEN] = {'\0'};
-        if (GetZcashUFVK(GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
+        if (GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk) == SUCCESS_CODE) {
             result = generate_zcash_default_address(ufvk);
         }
         snprintf_s(hdPath, BUFFER_SIZE_128, "UFVK");
@@ -1078,19 +1078,19 @@ static void SetCurrentSelectIndex(uint32_t selectIndex)
 {
     switch (g_chainCard) {
     case HOME_WALLET_CARD_SUI:
-        g_suiSelectIndex[GetCurrentAccountIndex()] = selectIndex;
+        g_suiSelectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
         break;
     case HOME_WALLET_CARD_IOTA:
-        g_iotaSelectIndex[GetCurrentAccountIndex()] = selectIndex;
+        g_iotaSelectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
         break;
     case HOME_WALLET_CARD_XLM:
-        g_stellarSelectIndex[GetCurrentAccountIndex()] = selectIndex;
+        g_stellarSelectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
         break;
     case HOME_WALLET_CARD_APT:
-        g_aptosSelectIndex[GetCurrentAccountIndex()] = selectIndex;
+        g_aptosSelectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
         break;
     case HOME_WALLET_CARD_XRP:
-        g_xrpSelectIndex[GetCurrentAccountIndex()] = selectIndex;
+        g_xrpSelectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
         break;
     default:
         if (IsCosmosChain(g_chainCard)) {
@@ -1098,7 +1098,7 @@ static void SetCurrentSelectIndex(uint32_t selectIndex)
             *ptr = selectIndex;
             break;
         } else {
-            g_selectIndex[GetCurrentAccountIndex()] = selectIndex;
+            g_selectIndex[KosmoApi_GetCurrentAccountIndex()] = selectIndex;
             break;
         }
     }
@@ -1117,77 +1117,77 @@ static uint32_t* GetCosmosChainCurrentSelectIndex()
 {
     switch (g_chainCard) {
     case HOME_WALLET_CARD_BABYLON:
-        return &g_babylonChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_babylonChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_NEUTARO:
-        return &g_neutaroChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_neutaroChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_TIA:
-        return &g_tiaChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_tiaChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_NTRN:
-        return &g_ntrnChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_ntrnChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_DYM:
-        return &g_dymChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_dymChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_OSMO:
-        return &g_osmoChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_osmoChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_INJ:
-        return &g_injChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_injChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_ATOM:
-        return &g_atomChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_atomChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_CRO:
-        return &g_croChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_croChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_KAVA:
-        return &g_kavaChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_kavaChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_LUNC:
-        return &g_lunaChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_lunaChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_AXL:
-        return &g_axlChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_axlChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_LUNA:
-        return &g_lunaChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_lunaChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_AKT:
-        return &g_aktChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_aktChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_STRD:
-        return &g_strdChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_strdChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_SCRT:
-        return &g_scrtChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_scrtChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_BLD:
-        return &g_bldChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_bldChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_CTK:
-        return &g_ctkChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_ctkChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_EVMOS:
-        return &g_evmosChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_evmosChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_STARS:
-        return &g_starsChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_starsChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_XPRT:
-        return &g_xprtChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_xprtChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_SOMM:
-        return &g_sommChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_sommChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_JUNO:
-        return &g_junoChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_junoChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_IRIS:
-        return &g_irisChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_irisChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_DVPN:
-        return &g_dvpnChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_dvpnChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_ROWAN:
-        return &g_rowanChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_rowanChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_REGEN:
-        return &g_regenChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_regenChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_BOOT:
-        return &g_bootChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_bootChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_GRAV:
-        return &g_gravChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_gravChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_IXO:
-        return &g_ixoChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_ixoChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_NGM:
-        return &g_ngmChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_ngmChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_IOV:
-        return &g_iovChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_iovChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_UMEE:
-        return &g_umeeChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_umeeChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_QCK:
-        return &g_qckChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_qckChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_TGD:
-        return &g_tgdChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_tgdChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     case HOME_WALLET_CARD_RUNE:
-        return &g_thorChainSelectIndex[GetCurrentAccountIndex()];
+        return &g_thorChainSelectIndex[KosmoApi_GetCurrentAccountIndex()];
     default:
         return NULL;
     }

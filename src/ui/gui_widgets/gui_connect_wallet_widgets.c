@@ -349,7 +349,7 @@ static void GuiInitWalletListArray()
     bool isTempAccount = false;
     bool isRussian = false;
 
-    isSLIP39 = (GetMnemonicType() == MNEMONIC_TYPE_SLIP39);
+    isSLIP39 = (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39);
     isTempAccount = GetIsTempAccount();
     isRussian = (LanguageGetIndex() == LANG_RU);
 
@@ -365,7 +365,7 @@ static void GuiInitWalletListArray()
 
         switch (index) {
         case WALLET_LIST_FEATHER:
-            enable = GetMnemonicType() != MNEMONIC_TYPE_SLIP39;
+            enable = KosmoApi_GetMnemonicType() != KOSMO_MNEMONIC_SLIP39;
             break;
         case WALLET_LIST_ZODL:
         case WALLET_LIST_VIZOR:
@@ -414,7 +414,7 @@ static bool IsSOL(int walletIndex)
 
 static bool IsAda(int walletIndex)
 {
-    if (GetMnemonicType() == MNEMONIC_TYPE_SLIP39) {
+    if (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39) {
         return false;
     }
     switch (walletIndex) {
@@ -774,7 +774,7 @@ static void GuiCreateSelectWalletWidget(lv_obj_t *parent)
 {
     lv_obj_clear_flag(parent, LV_OBJ_FLAG_SCROLL_ELASTIC);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_OFF);
-    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    bool isSlip39 = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39;
     lv_obj_t *filterBar = GuiCreateContainerWithParent(parent, 408, 64);
     lv_obj_align(filterBar, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_flex_flow(filterBar, LV_FLEX_FLOW_ROW);
@@ -1179,8 +1179,8 @@ UREncodeResult *GuiGetZecData(void)
     keys->size = 1;
     char ufvk[384] = {'\0'};
     uint8_t sfp[32];
-    GetZcashUFVK(GetCurrentAccountIndex(), ufvk);
-    GetZcashSFP(GetCurrentAccountIndex(), sfp);
+    GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
+    GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
     data[0].key_text = ufvk;
     data[0].key_name = GetWalletName();
     data[0].index = 0;
@@ -1206,7 +1206,7 @@ void GuiConnectWalletSetQrdata(WALLET_LIST_INDEX_ENUM index)
     lv_label_set_text(g_coinTitleLabel, _("connect_wallet_supported_networks"));
     lv_obj_clear_flag(g_bottomCont, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(g_manageImg, LV_OBJ_FLAG_HIDDEN);
-    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    bool isSlip39 = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39;
     switch (index) {
     case WALLET_LIST_METAMASK:
         func = GuiGetMetamaskData;
@@ -1420,16 +1420,16 @@ static void SetAccountType(uint8_t index)
 {
     switch (g_connectWalletTileView.walletIndex) {
     case WALLET_LIST_SOLFARE:
-        g_currentSOLPathIndex[GetCurrentAccountIndex()] = index;
+        g_currentSOLPathIndex[KosmoApi_GetCurrentAccountIndex()] = index;
         break;
     case WALLET_LIST_HELIUM:
-        g_currentHeliumPathIndex[GetCurrentAccountIndex()] = index;
+        g_currentHeliumPathIndex[KosmoApi_GetCurrentAccountIndex()] = index;
         break;
     case WALLET_LIST_VESPR:
-        g_currentAdaPathIndex[GetCurrentAccountIndex()] = index;
+        g_currentAdaPathIndex[KosmoApi_GetCurrentAccountIndex()] = index;
         break;
     default:
-        g_currentEthPathIndex[GetCurrentAccountIndex()] = index;
+        g_currentEthPathIndex[KosmoApi_GetCurrentAccountIndex()] = index;
         break;
     }
 
@@ -1658,12 +1658,12 @@ static void UpdategAddress(void)
 
 static void SetCurrentSelectedIndex(uint8_t index)
 {
-    g_currentSelectedPathIndex[GetCurrentAccountIndex()] = index;
+    g_currentSelectedPathIndex[KosmoApi_GetCurrentAccountIndex()] = index;
 }
 
 static uint32_t GetCurrentSelectedIndex()
 {
-    return g_currentSelectedPathIndex[GetCurrentAccountIndex()];
+    return g_currentSelectedPathIndex[KosmoApi_GetCurrentAccountIndex()];
 }
 
 static void SelectDerivationHandler(lv_event_t *e)
@@ -1742,7 +1742,7 @@ static const char *GetChangeDerivationPath(int i)
 static char *GetChangeDerivationPathDesc(void)
 {
     return g_derivationPathDescs
-           [g_currentSelectedPathIndex[GetCurrentAccountIndex()]];
+           [g_currentSelectedPathIndex[KosmoApi_GetCurrentAccountIndex()]];
 }
 
 static void ShowEgAddressCont(lv_obj_t *egCont)

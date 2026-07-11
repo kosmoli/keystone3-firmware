@@ -62,7 +62,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
     static uint16_t lockParam = SIG_LOCK_VIEW_VERIFY_PIN;
     uint16_t battState;
     uint32_t rcvValue;
-    uint8_t percent = 0;
 
     switch (usEvent) {
     case GUI_EVENT_OBJ_INIT:
@@ -167,22 +166,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
         break;
     case SIG_FIRMWARE_VERIFY_PASSWORD_FAIL:
         GuiFirmwareUpdateVerifyPasswordErrorCount(param);
-        break;
-    case SIG_SETTING_CHECKSUM_PERCENT:
-        if (param != NULL) {
-            percent = *(uint8_t *)param;
-        } else {
-            return ERR_GUI_ERROR;
-        }
-        GuiUpdateCheckSumPercent(percent);
-        break;
-    case SIG_SETTING_SHA256_PERCENT:
-        if (param != NULL) {
-            percent = *(uint8_t *)param;
-        } else {
-            return ERR_GUI_ERROR;
-        }
-        GuiFirmwareUpdateSha256Percent(percent);
         break;
     case SIG_STATUS_BAR_REFRESH:
         GuiStatusBarSetUsb();

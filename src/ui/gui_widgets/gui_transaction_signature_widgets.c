@@ -3,7 +3,6 @@
 #include "gui_views.h"
 #include "gui_enter_passcode.h"
 #include "gui_status_bar.h"
-#include "gui_model.h"
 #include "gui_transaction_detail_widgets.h"
 #include "gui_status_bar.h"
 #include "gui_hintbox.h"

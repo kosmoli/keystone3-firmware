@@ -5,7 +5,6 @@
 #include "gui_firmware_update_widgets.h"
 #include "gui_home_widgets.h"
 #include "gui_lock_widgets.h"
-#include "gui_model.h"
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "usb_task.h"

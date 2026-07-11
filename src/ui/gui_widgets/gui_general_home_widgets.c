@@ -586,7 +586,7 @@ static void OpenManageAssetsHandler(lv_event_t *e)
     SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
 }
 
-void GuiHomeSetWalletDesc(WalletDesc_t *wallet)
+void GuiHomeSetWalletDesc(KosmoWalletDesc_t *wallet)
 {
     GuiNvsBarSetWalletName((const char *)wallet->name);
     GuiSetEmojiIconIndex(wallet->iconIndex);

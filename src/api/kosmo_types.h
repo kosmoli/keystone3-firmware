@@ -14,6 +14,24 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+/* ── 常量 ──────────────────────────────────────────────── */
+
+#define KOSMO_WALLET_NAME_MAX_LEN  16
+
+/* ── 钱包描述 ─────────────────────────────────────────── */
+
+typedef struct {
+    uint8_t iconIndex;
+    char name[KOSMO_WALLET_NAME_MAX_LEN + 1];
+} KosmoWalletDesc_t;
+
+/* ── 密码验证结果 ─────────────────────────────────────── */
+
+typedef struct {
+    void *signal;
+    uint16_t errorCount;
+} KosmoPasswordVerifyResult_t;
+
 /* ── 错误码 ─────────────────────────────────────────── */
 
 #define KOSMO_OK              0

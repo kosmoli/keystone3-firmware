@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
@@ -15,7 +15,7 @@ static void UpdateSuccessNextStepHandler(lv_event_t *e)
     GUI_DEL_OBJ(g_updateSuccessCont)
     GuiCloseCurrentWorkingView();
 
-    if (ModelGetPassphraseQuickAccess()) {
+    if (KosmoApi_GetPassphraseQuickAccess()) {
         GuiFrameOpenView(&g_passphraseView);
     } else if (GuiIsSetup()) {
     } else {

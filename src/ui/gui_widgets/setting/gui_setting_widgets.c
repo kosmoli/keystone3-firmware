@@ -5,7 +5,6 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_enter_passcode.h"
-#include "gui_model.h"
 #include "gui_lock_widgets.h"
 #include "gui_setting_widgets.h"
 #include "gui_qr_hintbox.h"

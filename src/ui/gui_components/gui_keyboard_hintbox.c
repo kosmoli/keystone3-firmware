@@ -14,7 +14,7 @@
 #include "gui_views.h"
 #include "gui_lock_widgets.h"
 #include "fingerprint_process.h"
-#include "kosmo_api.h"
+#include "gui_model.h"
 #include "usb_task.h"
 
 #ifndef COMPILE_SIMULATOR
@@ -423,7 +423,7 @@ void GuiHideErrorLabel(KeyboardWidget_t *keyboardWidget)
     }
 }
 
-void GuiShowErrorNumber(KeyboardWidget_t *keyboardWidget, PasswordVerifyResult_t *passwordVerifyResult)
+void GuiShowErrorNumber(KeyboardWidget_t *keyboardWidget, KosmoPasswordVerifyResult_t *passwordVerifyResult)
 {
     memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
     keyboardWidget->currentNum = 0;

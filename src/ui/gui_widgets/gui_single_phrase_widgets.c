@@ -4,7 +4,6 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"          /* TODO: 骰子路径迁移后移除 */
 #include "gui_single_phrase_widgets.h"
 #include "gui_create_wallet_widgets.h"
 #include "kosmo_api.h"

@@ -4,7 +4,6 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
 #include "user_memory.h"
 #include "presetting.h"
 #include "gui_display_widgets.h"

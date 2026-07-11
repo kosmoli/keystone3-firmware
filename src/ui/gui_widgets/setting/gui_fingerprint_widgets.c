@@ -13,7 +13,6 @@
 #include "kosmo_api.h"
 #include "gui_enter_passcode.h"
 #include "kosmo_api.h"
-#include "gui_model.h"
 #include "kosmo_api.h"
 #include "gui_setting_widgets.h"
 #include "kosmo_api.h"

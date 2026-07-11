@@ -5,7 +5,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_create_wallet_widgets.h"
-#include "gui_model.h"
+#include "secret_cache.h"
 #include "user_memory.h"
 #include "gui_enter_passcode.h"
 #include "motor_manager.h"

@@ -1,9 +1,10 @@
+#include "kosmo_api.h"
+#include "gui_model.h"
 #ifndef _GUI_KEYBOARD_HINTBOX_H
 #define _GUI_KEYBOARD_HINTBOX_H
 
 #include "gui.h"
 #include "gui_keyboard.h"
-#include "gui_model.h"
 
 enum {
     KEYBOARD_HINTBOX_PIN = 0,
@@ -41,6 +42,6 @@ void GuiClearKeyboardInput(KeyboardWidget_t *keyboardWidget);
 void GuiSetErrorLabel(KeyboardWidget_t *keyboardWidget, char *errorMessage);
 void GuiShowErrorLabel(KeyboardWidget_t *keyboardWidget);
 void GuiHideErrorLabel(KeyboardWidget_t *keyboardWidget);
-void GuiShowErrorNumber(KeyboardWidget_t *keyboardWidget, PasswordVerifyResult_t *passwordVerifyResult);
+void GuiShowErrorNumber(KeyboardWidget_t *keyboardWidget, KosmoPasswordVerifyResult_t *passwordVerifyResult);
 
 #endif

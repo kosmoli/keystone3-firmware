@@ -1,7 +1,7 @@
 #ifndef _GUI_HOME_WIDGETS_H
 #define _GUI_HOME_WIDGETS_H
 
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "lvgl.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_attention_hintbox.h"
@@ -35,7 +35,7 @@ typedef struct {
 void GuiHomeRefresh(void);
 void GuiHomeAreaInit(void);
 void GuiHomeDisActive(void);
-void GuiHomeSetWalletDesc(WalletDesc_t *wallet);
+void GuiHomeSetWalletDesc(KosmoWalletDesc_t *wallet);
 void GuiHomeRestart(void);
 bool GuiHomePageIsTop(void);
 void GuiHomePasswordErrorCount(void *param);

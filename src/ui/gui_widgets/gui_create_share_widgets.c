@@ -5,7 +5,6 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "gui_model.h"
 #include "kosmo_api.h"
 #include "gui_create_wallet_widgets.h"
 #include "slip39.h"

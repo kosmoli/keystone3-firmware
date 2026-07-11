@@ -1,6 +1,5 @@
 #include "gui_select_address_widgets.h"
 #include "gui_home_widgets.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "gui_page.h"
 #include "gui_obj.h"

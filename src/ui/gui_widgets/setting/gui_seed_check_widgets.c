@@ -18,7 +18,6 @@
 #include "kosmo_api.h"
 #include "secret_cache.h"
 #include "kosmo_api.h"
-#include "keystore.h"
 #include "kosmo_api.h"
 #include "gui_setting_widgets.h"
 #include "kosmo_api.h"
@@ -41,7 +40,6 @@
 #ifndef COMPILE_SIMULATOR
 #include "sha256.h"
 #include "kosmo_api.h"
-#include "keystore.h"
 #include "kosmo_api.h"
 #else
 #include "simulator_model.h"

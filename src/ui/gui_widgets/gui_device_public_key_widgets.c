@@ -9,10 +9,8 @@
 #include "presetting.h"
 #include "gui_device_public_key_widgets.h"
 #include "device_setting.h"
-#include "keystore.h"
 #include "user_utils.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "se_manager.h"
 
 static lv_obj_t *g_cont;

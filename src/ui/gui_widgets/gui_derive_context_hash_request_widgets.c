@@ -10,7 +10,6 @@
 #include "gui_chain.h"
 #include "secret_cache.h"
 #include "account_manager.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_lock_widgets.h"

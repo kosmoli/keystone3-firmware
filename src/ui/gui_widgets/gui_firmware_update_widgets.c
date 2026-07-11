@@ -16,7 +16,6 @@
 #include "secret_cache.h"
 #include "version.h"
 #include "user_memory.h"
-#include "keystore.h"
 #include "user_fatfs.h"
 
 static void Sha256ProgressCallback(const KosmoResult *result);

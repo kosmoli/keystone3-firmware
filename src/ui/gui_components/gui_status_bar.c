@@ -9,7 +9,6 @@
 #include "gui_model.h"
 #include "gui_obj.h"
 #include "gui_views.h"
-#include "keystore.h"
 #include "usb_task.h"
 #include "user_memory.h"
 #include "version.h"

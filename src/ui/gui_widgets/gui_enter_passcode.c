@@ -6,7 +6,6 @@
 #include "user_memory.h"
 #include "secret_cache.h"
 #include "kosmo_api.h"
-#include "keystore.h"
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"
 #include "motor_manager.h"

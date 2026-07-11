@@ -14,7 +14,6 @@
 #include "version.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_lock_widgets.h"
-#include "account_public_info.h"
 #include "gui_key_derivation_request_widgets.h"
 
 typedef struct KeyDerivationWidget {

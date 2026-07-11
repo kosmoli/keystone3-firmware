@@ -28,7 +28,6 @@
 #include "general/eapdu_services/service_resolve_ur.h"
 #include "gui_eth.h"
 #ifndef COMPILE_SIMULATOR
-#include "keystore.h"
 
 #else
 #define FP_SUCCESS_CODE 0

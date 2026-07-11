@@ -5,11 +5,9 @@
 #include "gui_status_bar.h"
 #include "gui_lock_device_widgets.h"
 #include "kosmo_api.h"
-#include "keystore.h"
 #include "gui_lock_widgets.h"
 #include "screen_manager.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "gui_hintbox.h"
 #include "user_memory.h"
 

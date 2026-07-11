@@ -8,7 +8,6 @@
 #include "gui_model.h"
 #include "user_memory.h"
 #include "secret_cache.h"
-#include "keystore.h"
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"
 #include "bip39_english.h"

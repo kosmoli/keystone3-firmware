@@ -254,6 +254,32 @@ int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK);
  */
 uint32_t KosmoChainToXPubType(KosmoChainType chain);
 
+/* ── 链操作工具函数 ──────────────────────────────────────── */
+
+/*
+ * viewType → GuiChainCoinType 映射。
+ */
+GuiChainCoinType KosmoApi_ViewTypeToChainTypeSwitch(uint8_t viewType);
+
+/*
+ * 获取 UR 生成器函数指针。
+ */
+void *KosmoApi_GetUrGenerator(uint8_t viewType);
+void *KosmoApi_GetSingleUrGenerator(uint8_t viewType);
+
+/*
+ * 消息类型判断。
+ */
+bool KosmoApi_IsMessageType(uint8_t type);
+bool KosmoApi_IsTonSignProof(uint8_t type);
+bool KosmoApi_IsCatalystVotingRegistration(uint8_t type);
+
+/*
+ * ADA XPub 类型。
+ */
+uint32_t KosmoApi_GetAdaXPubType(void);
+
+
 /* ── ConnectWallet 状态管理 ────────────────────────────── */
 
 /*

@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "stdbool.h"
 #include "gui.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 
 typedef void (*SetSelectAddressIndexFunc)(uint32_t index);
 

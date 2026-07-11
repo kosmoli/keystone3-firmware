@@ -1,6 +1,6 @@
 #include "gui_status_bar.h"
 #include "gui_button.h"
-#include "gui_chain.h"
+#include "kosmo_types.h"
 #include "gui_connect_wallet_widgets.h"
 #include "gui_firmware_update_widgets.h"
 #include "gui_home_widgets.h"

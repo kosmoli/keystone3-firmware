@@ -11,7 +11,7 @@
 #include "gui_button.h"
 #include "gui_qr_code.h"
 #include "qrdecode_task.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 #include "assert.h"
 #include "gui_web_auth_widgets.h"
 #include "gui_qr_hintbox.h"
@@ -153,7 +153,7 @@ void GuiTransactionDetailInit(uint8_t viewType)
     //btc multisig will change g_transactionType when parsing transaction;
     g_transactionType = TRANSACTION_TYPE_NORMAL;
     g_viewType = viewType;
-    g_chainType = ViewTypeToChainTypeSwitch(g_viewType);
+    g_chainType = KosmoApi_ViewTypeToChainTypeSwitch(g_viewType);
     g_pageWidget = CreatePageWidget();
     g_needSign = true;
     GuiTransactionDetailNavBarInit();
@@ -214,7 +214,7 @@ void GuiTransactionDetailVerifyPasswordSuccess(void)
     GUI_DEL_OBJ(g_fingerSingContainer)
     GuiDeleteKeyboardWidget(g_keyboardWidget);
     if (GetCurrentTransactionMode() == TRANSACTION_MODE_USB) {
-        GenerateUR func = GetSingleUrGenerator(g_viewType);
+        GenerateUR func = KosmoApi_GetSingleUrGenerator(g_viewType);
         if (func == NULL) {
             return;
         }
@@ -285,11 +285,11 @@ void GuiClearQrcodeSignCnt(void)
 static void GuiTransactionDetailNavBarInit()
 {
     SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, TransactionGoToHomeViewHandler, NULL);
-    if (IsMessageType(g_viewType)) {
+    if (KosmoApi_IsMessageType(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("transaction_parse_confirm_message"));
-    } else if (isTonSignProof(g_viewType)) {
+    } else if (KosmoApi_IsTonSignProof(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("ton_sign_proof_title"));
-    } else if (isCatalystVotingRegistration(g_viewType)) {
+    } else if (KosmoApi_IsCatalystVotingRegistration(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("catalyst_voting_registration"));
     } else if (g_viewType == SuiSignMessageHash) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("confirm_transaction_hash"));

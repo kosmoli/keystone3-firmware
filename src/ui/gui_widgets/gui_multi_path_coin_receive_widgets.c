@@ -1,6 +1,6 @@
 #include "gui_multi_path_coin_receive_widgets.h"
 #include "gui_status_bar.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
 #include "kosmo_api.h"
@@ -1344,7 +1344,7 @@ static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t 
 {
     char *xPub = NULL, hdPath[BUFFER_SIZE_128] = {0};
     SimpleResponse_c_char *result = NULL;
-    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index, GetAdaXPubType());
+    xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index, KosmoApi_GetAdaXPubType());
     snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'", index);
     switch (type) {
     case 1:

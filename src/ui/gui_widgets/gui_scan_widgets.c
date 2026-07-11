@@ -11,7 +11,7 @@
 #include "gui_button.h"
 #include "gui_qr_code.h"
 #include "qrdecode_task.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 #include "assert.h"
 #include "gui_web_auth_widgets.h"
 #include "gui_qr_hintbox.h"
@@ -80,7 +80,7 @@ void GuiScanResult(bool result, void *param)
     if (result) {
         UrViewType_t urViewType = *(UrViewType_t *)param;
         g_qrcodeViewType = urViewType.viewType;
-        g_chainType = ViewTypeToChainTypeSwitch(g_qrcodeViewType);
+        g_chainType = KosmoApi_ViewTypeToChainTypeSwitch(g_qrcodeViewType);
         // Not a chain based transaction, e.g. WebAuth
         if (KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_SLIP39) {
             //we don't support ADA & XMR in Slip39 Wallet;

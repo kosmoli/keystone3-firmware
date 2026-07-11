@@ -10,7 +10,7 @@
 #include "gui_button.h"
 #include "gui_qr_code.h"
 #include "qrdecode_task.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 #include "assert.h"
 #include "gui_web_auth_widgets.h"
 #include "gui_qr_hintbox.h"
@@ -33,7 +33,7 @@ static PageWidget_t *g_pageWidget;
 void GuiTransactionSignatureInit(uint8_t viewType)
 {
     g_viewType = viewType;
-    g_chainType = ViewTypeToChainTypeSwitch(g_viewType);
+    g_chainType = KosmoApi_ViewTypeToChainTypeSwitch(g_viewType);
     g_pageWidget = CreatePageWidget();
     GuiTransactionSignatureNVSBarInit();
     GuiCreateSignatureQRCode(g_pageWidget->contentZone);
@@ -66,9 +66,9 @@ void GuiTransactionSignatureHandleURUpdate(char *data, uint16_t len)
 static void GuiTransactionSignatureNVSBarInit()
 {
     SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, GoToHomeViewHandler, NULL);
-    if (IsMessageType(g_viewType)) {
+    if (KosmoApi_IsMessageType(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("transaction_parse_broadcast_message"));
-    } else if (isTonSignProof(g_viewType)) {
+    } else if (KosmoApi_IsTonSignProof(g_viewType)) {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, _("ton_sign_proof_title"));
     } else {
         SetCoinWallet(g_pageWidget->navBarWidget, g_chainType, NULL);
@@ -95,7 +95,7 @@ static void GuiCreateSignatureQRCode(lv_obj_t *parent)
     lv_obj_set_size(btn, 408, 66);
     lv_obj_add_event_cb(btn, GoToHomeViewHandler, LV_EVENT_CLICKED, NULL);
 
-    GenerateUR func = GetUrGenerator(g_viewType);
+    GenerateUR func = KosmoApi_GetUrGenerator(g_viewType);
 
     if (func) {
         bool showPending = true;

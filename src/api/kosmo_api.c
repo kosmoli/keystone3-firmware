@@ -809,3 +809,35 @@ UREncodeResult *KosmoApi_GetTonkeeperWalletUr(const char *xpub, const char *wall
 UREncodeResult *KosmoApi_GetFewchaData(bool isSui) {
     return GuiGetFewchaDataByCoin(isSui ? CHAIN_SUI : CHAIN_APT);
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 9: 链操作工具函数包装
+ * ═══════════════════════════════════════════════════════════ */
+
+GuiChainCoinType KosmoApi_ViewTypeToChainTypeSwitch(uint8_t viewType) {
+    return ViewTypeToChainTypeSwitch(viewType);
+}
+
+void *KosmoApi_GetUrGenerator(uint8_t viewType) {
+    return (void *)GetUrGenerator(viewType);
+}
+
+void *KosmoApi_GetSingleUrGenerator(uint8_t viewType) {
+    return (void *)GetSingleUrGenerator(viewType);
+}
+
+bool KosmoApi_IsMessageType(uint8_t type) {
+    return IsMessageType(type);
+}
+
+bool KosmoApi_IsTonSignProof(uint8_t type) {
+    return isTonSignProof(type);
+}
+
+bool KosmoApi_IsCatalystVotingRegistration(uint8_t type) {
+    return isCatalystVotingRegistration(type);
+}
+
+uint32_t KosmoApi_GetAdaXPubType(void) {
+    return (uint32_t)GetAdaXPubType();
+}

@@ -3,7 +3,7 @@
 #define _GUI_STATUS_BAR_H
 
 #include "gui.h"
-#include "gui_chain.h"
+#include "kosmo_types.h"
 #include "gui_connect_wallet_widgets.h"
 
 typedef enum {

@@ -19,77 +19,10 @@
 #include "gui_avax.h"
 #include "gui_iota.h"
 #include "gui_monero.h"
+#include "kosmo_types.h"
 
 typedef void (*SetChainDataFunc)(void *resultData, void *multiResultData, bool multi);
 
-// Enumeration for displaying in the middle of the status bar
-typedef enum {
-    CHAIN_BTC,
-    CHAIN_ETH,
-    CHAIN_SOL,
-    CHAIN_BNB,
-    CHAIN_HNT,
-    CHAIN_XRP,
-    CHAIN_ADA,
-    CHAIN_TON,
-    CHAIN_ZEC,
-    CHAIN_DOT,
-    CHAIN_TRX,
-    CHAIN_LTC,
-    CHAIN_DOGE,
-    CHAIN_AVAX,
-    CHAIN_BCH,
-    CHAIN_APT,
-    CHAIN_SUI,
-    CHAIN_IOTA,
-    CHAIN_DASH,
-    CHAIN_ARWEAVE,
-    CHAIN_STELLAR,
-
-    // cosmos start
-    CHAIN_BABYLON,
-    CHAIN_NEUTARO,
-    CHAIN_TIA,
-    CHAIN_NTRN,
-    CHAIN_DYM,
-    CHAIN_OSMO,
-    CHAIN_INJ,
-    CHAIN_ATOM,
-    CHAIN_CRO,
-    CHAIN_RUNE,
-    CHAIN_KAVA,
-    CHAIN_LUNC,
-    CHAIN_AXL,
-    CHAIN_LUNA,
-    CHAIN_AKT,
-    CHAIN_STRD,
-    CHAIN_SCRT,
-    CHAIN_BLD,
-    CHAIN_CTK,
-    CHAIN_EVMOS,
-    CHAIN_STARS,
-    CHAIN_XPRT,
-    CHAIN_SOMM,
-    CHAIN_JUNO,
-    CHAIN_IRIS,
-    CHAIN_DVPN,
-    CHAIN_ROWAN,
-    CHAIN_REGEN,
-    CHAIN_BOOT,
-    CHAIN_GRAV,
-    CHAIN_IXO,
-    CHAIN_NGM,
-    CHAIN_IOV,
-    CHAIN_UMEE,
-    CHAIN_QCK,
-    CHAIN_TGD,
-    // cosmos end
-
-    CHAIN_ZCASH,
-
-    CHAIN_XMR,
-    CHAIN_BUTT,
-} GuiChainCoinType;
 
 // Enumeration of pages used for transaction resolution
 typedef enum {

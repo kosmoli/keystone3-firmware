@@ -1,7 +1,6 @@
 #ifndef _GUI_CHANGE_PATH_TYPE_H
 #define _GUI_CHANGE_PATH_TYPE_H
 
-#include "gui_chain.h"
 #include "gui_obj.h"
 #include "gui_framework.h"
 #include "assert.h"

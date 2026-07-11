@@ -48,10 +48,7 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_eth_batch_tx_widgets.c.obj: \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /home/komo/works/keystone3-firmware/src/managers/keystore.h \
- /home/komo/works/keystone3-firmware/src/error_codes/err_code.h \
- /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui.h \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
@@ -59,13 +56,12 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_eth_batch_tx_widgets.c.obj: \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
- /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui.h \
- /usr/include/string.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
  /usr/include/strings.h \
  /home/komo/works/keystone3-firmware/src/utils/define.h \
+ /home/komo/works/keystone3-firmware/src/error_codes/err_code.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_resource.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/lvgl.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/misc/lv_log.h \
@@ -314,6 +310,9 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_eth_batch_tx_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_cosmos.h \
  /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
@@ -325,11 +324,13 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_eth_batch_tx_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
  /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
  /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
+ /home/komo/works/keystone3-firmware/src/managers/keystore.h \
+ /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
+ /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/utils/assert.h \
  /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_attention_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_obj.h \
@@ -361,8 +362,6 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_eth_batch_tx_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_monero.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_connect_wallet_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_ar.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_chain_components.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_eth.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_qr_hintbox.h \

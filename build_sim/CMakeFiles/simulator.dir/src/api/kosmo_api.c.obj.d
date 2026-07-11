@@ -26,8 +26,9 @@ CMakeFiles/simulator.dir/src/api/kosmo_api.c.obj: \
  /usr/include/strings.h \
  /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
- /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/external/lvgl/src/lvgl.h \
+ /home/komo/works/keystone3-firmware/external/lvgl/src/misc/lv_log.h \
  /usr/include/stdio.h /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
@@ -38,54 +39,7 @@ CMakeFiles/simulator.dir/src/api/kosmo_api.c.obj: \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
- /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/stdlib.h \
- /usr/include/x86_64-linux-gnu/bits/waitflags.h \
- /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
- /usr/include/x86_64-linux-gnu/sys/types.h \
- /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/timer_t.h \
- /home/komo/works/keystone3-firmware/external/ccan/endian.h \
- /usr/include/x86_64-linux-gnu/sys/select.h \
- /usr/include/x86_64-linux-gnu/bits/select.h \
- /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
- /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/endian.h \
- /usr/include/x86_64-linux-gnu/bits/endianness.h \
- /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
- /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
- /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
- /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
- /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
- /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /home/komo/works/keystone3-firmware/src/error_codes/err_code.h \
- /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
- /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_device_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
- /home/komo/works/keystone3-firmware/src/crypto/rsa.h \
- /home/komo/works/keystone3-firmware/src/config/flash_address.h \
- /home/komo/works/keystone3-firmware/src/utils/define.h \
- /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_gd25qxx.h \
- /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
- /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
- /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
- /home/komo/works/keystone3-firmware/src/managers/keystore.h \
- /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
- /home/komo/works/keystone3-firmware/src/utils/assert.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
- /home/komo/works/keystone3-firmware/external/lvgl/src/lvgl.h \
- /home/komo/works/keystone3-firmware/external/lvgl/src/misc/lv_log.h \
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/misc/../lv_conf_internal.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/misc/../lv_conf_kconfig.h \
  /home/komo/works/keystone3-firmware/external/lvgl/lv_conf.h \
@@ -309,6 +263,53 @@ CMakeFiles/simulator.dir/src/api/kosmo_api.c.obj: \
  /home/komo/works/keystone3-firmware/external/lvgl/src/extra/widgets/span/lv_span.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/extra/widgets/span/../../../lvgl.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
+ /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
+ /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
+ /usr/include/x86_64-linux-gnu/sys/types.h \
+ /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/timer_t.h \
+ /home/komo/works/keystone3-firmware/external/ccan/endian.h \
+ /usr/include/x86_64-linux-gnu/sys/select.h \
+ /usr/include/x86_64-linux-gnu/bits/select.h \
+ /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+ /usr/include/x86_64-linux-gnu/bits/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/endianness.h \
+ /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
+ /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
+ /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
+ /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
+ /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
+ /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+ /home/komo/works/keystone3-firmware/src/error_codes/err_code.h \
+ /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
+ /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_device_widgets.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
+ /home/komo/works/keystone3-firmware/src/crypto/rsa.h \
+ /home/komo/works/keystone3-firmware/src/config/flash_address.h \
+ /home/komo/works/keystone3-firmware/src/utils/define.h \
+ /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_gd25qxx.h \
+ /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
+ /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
+ /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
+ /home/komo/works/keystone3-firmware/src/managers/keystore.h \
+ /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
+ /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
+ /home/komo/works/keystone3-firmware/src/utils/assert.h \
+ /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_resource.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_style.h \

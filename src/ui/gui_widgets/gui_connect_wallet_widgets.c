@@ -9,7 +9,7 @@
 #include "gui_views.h"
 #include "gui_wallet.h"
 #include "rust.h"
-#include "gui_chain.h"
+#include "kosmo_api.h"
 #include "user_memory.h"
 #include "gui_qr_hintbox.h"
 #include "gui_multi_path_coin_receive_widgets.h"
@@ -538,7 +538,7 @@ static void UpdateFewchaCoinStateHandler(lv_event_t *e)
         g_tempFewchaCoinState[i].state =
             checkBox == g_defaultFewchaState[i].checkBox;
         if (g_tempFewchaCoinState[i].state) {
-            SetConnectWalletNetwork(GetWalletNameByIndex(g_connectWalletTileView.walletIndex), i);
+            KosmoApi_SetConnectWalletNetwork(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex), i);
             lv_obj_add_flag(g_defaultFewchaState[i].uncheckedImg, LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(g_defaultFewchaState[i].checkedImg, LV_OBJ_FLAG_HIDDEN);
         } else {
@@ -566,8 +566,8 @@ static void ConfirmSelectFewchaCoinsHandler(lv_event_t *e)
 
 static void RefreshAddressIndex(uint32_t index)
 {
-    if (GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)) != index) {
-        SetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex), index);
+    if (KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)) != index) {
+        KosmoApi_SetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex), index);
         GuiAnimatingQRCodeDestroyTimer();
         GuiConnectWalletSetQrdata(g_connectWalletTileView.walletIndex);
     } else {
@@ -589,17 +589,17 @@ static void JumpSelectCoinPageHandler(lv_event_t *e)
     } else if (HasSelectAddressWidget()) {
         if (g_connectWalletTileView.walletIndex == WALLET_LIST_XRP_TOOLKIT) {
             g_coinListCont = GuiCreateSelectAddressWidget(
-                                 CHAIN_XRP, GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                                 CHAIN_XRP, KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
                                  RefreshAddressIndex);
         } else if (g_connectWalletTileView.walletIndex == WALLET_LIST_VESPR) {
             g_coinListCont = GuiCreateSelectAddressWidget(
-                                 CHAIN_ADA, GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                                 CHAIN_ADA, KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
                                  RefreshAddressIndex);
         }
     }
     if (g_connectWalletTileView.walletIndex == WALLET_LIST_KEPLR || g_connectWalletTileView.walletIndex == WALLET_LIST_MINT_SCAN) {
         g_coinListCont = GuiCreateSelectAddressWidget(
-                             CHAIN_ATOM, GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                             CHAIN_ATOM, KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
                              RefreshAddressIndex);
     }
 }
@@ -963,7 +963,7 @@ static void AddChainAddress(void)
 
     char name[BUFFER_SIZE_32] = {0};
     snprintf_s(name, sizeof(name), "%s-%d", _("account_head"),
-               GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
+               KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
     lv_obj_t *label = GuiCreateIllustrateLabel(g_bottomCont, name);
     lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 24);
 
@@ -971,16 +971,16 @@ static void AddChainAddress(void)
         char addr[BUFFER_SIZE_256] = {0};
         CutAndFormatString(
             addr, sizeof(addr),
-            GuiGetXrpAddressByIndex(GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex))),
+            KosmoApi_GetXrpAddressByIndex(KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex))),
             20);
         label = GuiCreateNoticeLabel(g_bottomCont, addr);
         lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 58);
     } else if (IsAda(g_connectWalletTileView.walletIndex)) {
         char addr[BUFFER_SIZE_256] = {0};
         char *xpub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA,
-                GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
-                GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
-        CutAndFormatString(addr, sizeof(addr), GuiGetADABaseAddressByXPub(xpub), 20);
+                KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                KosmoApi_GetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
+        CutAndFormatString(addr, sizeof(addr), KosmoApi_GetAdaBaseAddressByXPub(xpub), 20);
         label = GuiCreateNoticeLabel(g_bottomCont, addr);
         lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 58);
     }
@@ -1018,7 +1018,7 @@ static void AddKeplrCoinsAndAddressUI(void)
     lv_obj_add_flag(g_bottomCont, LV_OBJ_FLAG_CLICKABLE);
     char name[BUFFER_SIZE_32] = {0};
     snprintf_s(name, sizeof(name), "%s-%d", _("account_head"),
-               GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
+               KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
     lv_obj_t *label = GuiCreateIllustrateLabel(g_bottomCont, name);
     lv_obj_align(label, LV_ALIGN_TOP_LEFT, 36, 70);
 
@@ -1102,11 +1102,11 @@ void GuiConnectWalletInit(void)
 
 UREncodeResult *GuiGetFewchaData(void)
 {
-    GuiChainCoinType coin = CHAIN_APT;
+    bool isSui = false;
     if (g_fewchaCoinState[1].state) {
-        coin = CHAIN_SUI;
+        isSui = true;
     }
-    return GuiGetFewchaDataByCoin(coin);
+    return KosmoApi_GetFewchaData(isSui);
 }
 
 UREncodeResult *GuiGetNightlyData(void)
@@ -1121,17 +1121,17 @@ UREncodeResult *GuiGetSuiWalletData(void)
 
 UREncodeResult *GuiGetXrpToolkitData(void)
 {
-    return GuiGetXrpToolkitDataByIndex(
-               GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
+    return KosmoApi_GetXrpToolkitDataByIndex(
+               KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
 }
 UREncodeResult *GuiGetKeplrData(void)
 {
-    return GuiGetKeplrDataByIndex(GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
+    return KosmoApi_GetKeplrDataByIndex(KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)));
 }
 
 UREncodeResult *GuiGetADAData(void)
 {
-    return GuiGetADADataByIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    return KosmoApi_GetAdaDataByIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
 }
 
 UREncodeResult *GuiGetTonData(void)
@@ -1141,7 +1141,7 @@ UREncodeResult *GuiGetTonData(void)
     GetMasterFingerPrint(mfp);
     char* xpub = KosmoApi_GetPublicKey(KOSMO_CHAIN_TON);
     path = GetXPubPath(XPUB_TYPE_TON_BIP39);
-    return get_tonkeeper_wallet_ur(xpub, GetWalletName(), mfp, sizeof(mfp), path);
+    return KosmoApi_GetTonkeeperWalletUr(xpub, KosmoApi_GetWalletName(), mfp, sizeof(mfp), path);
 }
 
 static void AddZecCoins(void)
@@ -1180,7 +1180,7 @@ UREncodeResult *GuiGetZecData(void)
     KosmoApi_GetZcashUFVK(KosmoApi_GetCurrentAccountIndex(), ufvk);
     KosmoApi_GetZcashSFP(KosmoApi_GetCurrentAccountIndex(), sfp);
     data[0].key_text = ufvk;
-    data[0].key_name = GetWalletName();
+    data[0].key_name = KosmoApi_GetWalletName();
     data[0].index = 0;
     return get_connect_zcash_wallet_ur(sfp, 32, keys);
 }
@@ -1381,7 +1381,7 @@ void ConnectWalletReturnHandler(lv_event_t *e)
 
 static void initFewchaCoinsConfig(void)
 {
-    uint8_t index = GetConnectWalletNetwork(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    uint8_t index = KosmoApi_GetConnectWalletNetwork(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
     for (int i = 0; i < NUMBER_OF_ARRAYS(g_defaultFewchaState); i++) {
         if (i == index) {
             g_defaultFewchaState[index].state = true;
@@ -1396,22 +1396,22 @@ static void initFewchaCoinsConfig(void)
 
 ETHAccountType GetMetamaskAccountType(void)
 {
-    return GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    return KosmoApi_GetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
 }
 
 SOLAccountType GetSolflareAccountType(void)
 {
-    return GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    return KosmoApi_GetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
 }
 
 SOLAccountType GetHeliumAccountType(void)
 {
-    return GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    return KosmoApi_GetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
 }
 
 static int GetAccountType(void)
 {
-    return GetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
+    return KosmoApi_GetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex));
 }
 
 static void SetAccountType(uint8_t index)
@@ -1431,7 +1431,7 @@ static void SetAccountType(uint8_t index)
         break;
     }
 
-    SetConnectWalletPathIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex), index);
+    KosmoApi_SetConnectWalletPathIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex), index);
 }
 
 static bool IsSelectChanged(void)
@@ -2047,13 +2047,13 @@ void GuiConnectWalletRefresh(void)
                 GuiDestroySelectAddressWidget();
                 if (g_connectWalletTileView.walletIndex == WALLET_LIST_XRP_TOOLKIT) {
                     g_coinListCont = GuiCreateSelectAddressWidget(
-                                         CHAIN_XRP, GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                                         CHAIN_XRP, KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
                                          RefreshAddressIndex);
                 }
 
                 if (g_connectWalletTileView.walletIndex == WALLET_LIST_KEPLR || g_connectWalletTileView.walletIndex == WALLET_LIST_MINT_SCAN) {
                     g_coinListCont = GuiCreateSelectAddressWidget(
-                                         CHAIN_ATOM, GetConnectWalletAccountIndex(GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
+                                         CHAIN_ATOM, KosmoApi_GetConnectWalletAccountIndex(KosmoApi_GetWalletNameByIndex(g_connectWalletTileView.walletIndex)),
                                          RefreshAddressIndex);
                 }
             }

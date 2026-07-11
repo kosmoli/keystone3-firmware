@@ -318,9 +318,6 @@ CMakeFiles/simulator.dir/src/ui/gui_components/gui_mnemonic_input.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/setting/gui_setting_widgets.h \
  /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_forget_pass_widgets.h \
- /home/komo/works/keystone3-firmware/src/managers/keystore.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
  /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \

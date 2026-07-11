@@ -66,27 +66,8 @@ CMakeFiles/simulator.dir/src/managers/account_manager.c.obj: \
  /home/komo/works/keystone3-firmware/external/cjson/cJSON.h \
  /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
- /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
- /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
- /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_device_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
- /home/komo/works/keystone3-firmware/src/crypto/rsa.h \
- /home/komo/works/keystone3-firmware/src/config/flash_address.h \
- /home/komo/works/keystone3-firmware/src/utils/define.h \
- /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_gd25qxx.h \
- /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
- /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
- /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
- /home/komo/works/keystone3-firmware/src/managers/keystore.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
- /home/komo/works/keystone3-firmware/src/utils/assert.h \
- /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
- /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/lvgl.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/misc/lv_log.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/misc/../lv_conf_internal.h \
@@ -312,6 +293,27 @@ CMakeFiles/simulator.dir/src/managers/account_manager.c.obj: \
  /home/komo/works/keystone3-firmware/external/lvgl/src/extra/widgets/span/lv_span.h \
  /home/komo/works/keystone3-firmware/external/lvgl/src/extra/widgets/span/../../../lvgl.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
+ /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
+ /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
+ /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_device_widgets.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
+ /home/komo/works/keystone3-firmware/src/crypto/rsa.h \
+ /home/komo/works/keystone3-firmware/src/config/flash_address.h \
+ /home/komo/works/keystone3-firmware/src/utils/define.h \
+ /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_gd25qxx.h \
+ /home/komo/works/keystone3-firmware/external/ccan/sha256.h \
+ /home/komo/works/keystone3-firmware/src/utils/log/log_print.h \
+ /home/komo/works/keystone3-firmware/src/crypto/utils/hash_and_salt.h \
+ /home/komo/works/keystone3-firmware/src/managers/keystore.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
+ /home/komo/works/keystone3-firmware/src/utils/assert.h \
+ /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
+ /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_resource.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_style.h \

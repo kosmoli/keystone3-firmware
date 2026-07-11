@@ -1,7 +1,6 @@
 #include "gui.h"
 #include "gui_passphrase_widgets.h"
 #include "gui_status_bar.h"
-#include "gui_chain.h"
 #include "gui_style.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"

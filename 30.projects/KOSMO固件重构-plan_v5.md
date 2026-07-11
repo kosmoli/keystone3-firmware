@@ -114,57 +114,44 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 - `GetAccountIndex/SetAccountIndex` → `KosmoApi_*`（1 文件）
 - `GetAccountReceiveIndex/Path` → `KosmoApi_*`（4 文件）
 
-**剩余后端 include（widget 层）**：
+**剩余后端 include（widget + component 层，82 → 37）**：
 
-| Header | 文件数 | 主要残留符号 | 处理方案 |
-|---|---|---|---|
-| `keystore.h` | 26 | `SecretCache*`（~40 处） | Phase 14：SecretCache 包装 |
-| `gui_model.h` | 22 | 类型定义 + `AsyncExecute`（1 处） | Phase 15：类型迁移 + AsyncExecute 清理 |
-| `account_manager.h` | 21 | `GetExistAccountNum`（3）、`GetPassphraseQuickAccess`（1） | Phase 14：包装 |
-| `gui_chain.h` | 16 | ConnectWallet 状态、地址生成 | Phase 8：ConnectWallet 重构 |
-| `account_public_info.h` | 11 | `GetIsTempAccount`（6）、`GetFirstReceive`（4）、`AccountPublicHomeCoinGet`（2） | Phase 14：包装 |
-| `bip39.h` | 6 | `bip39_mnemonic_from_bytes`（1 处） | Phase 14：包装 |
-| `rust.h` | 5 | Rust FFI 直接调用 | Phase 10：包装 |
+| Header | v5 开始 | Phase 15 后 | Phase 8 后 | 处理方案 |
+|---|---|---|---|---|
+| `gui_chain.h` | 16 | 16 | **10** | Phase 8 ✅ -6, Phase 9 剩余 10 |
+| `bip39.h` | 6 | 6 | **6** | Phase 10 |
+| `rust.h` | 5 | 5 | **5** | Phase 10 |
+| `secret_cache.h` | 26 | 11 | **5** | Slip39/DiceRolls/keyboard（暂保留） |
+| `gui_model.h` | 22 | 22 | **3** | Phase 15 ✅ |
+| `account_public_info.h` | 11 | 7 | **1** | 1 处死 include |
+| `keystore.h` | 26 | 13 | **1** | 1 处死 include |
+| `account_manager.h` | 21 | 17 | **0** | Phase 7 + 14 ✅ |
 
 ---
 
-### Phase 8：KosmoApi 扩展 — ConnectWallet 状态管理
+### Phase 8：KosmoApi 扩展 — ConnectWallet 状态管理 ✅
 
 **目标**：将 `gui_connect_wallet_widgets.c` 的 ~50 个后端调用收编到 KosmoApi。
 
-这是最复杂的单文件迁移。`gui_connect_wallet_widgets.c` 直接调用了：
-- `GetConnectWalletPathIndex()` / `SetConnectWalletPathIndex()`
-- `GetConnectWalletAccountIndex()` / `SetConnectWalletAccountIndex()`
-- `GetConnectWalletNetwork()` / `SetConnectWalletNetwork()`
-- `GetWalletNameByIndex()`
-- `GetAdaXPubTypeByIndexAndDerivationType()`
-- `GuiGetXrpAddressByIndex()`
-- `GuiGetADABaseAddressByXPub()`
-- `GuiGetKeplrDataByIndex()`
-- `GuiGetADADataByIndex()`
-- `get_tonkeeper_wallet_ur()`
-- `GetWalletName()`
-- `GetMnemonicType()`
+**已完成**：
 
-**8.1 新增 KosmoApi ConnectWallet 接口**
-
-```c
-// ConnectWallet 状态（读写）
-uint8_t KosmoApi_GetConnectWalletPathIndex(const char *walletName);
-void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint8_t index);
-uint8_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName);
-void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint8_t index);
-uint8_t KosmoApi_GetConnectWalletNetwork(const char *walletName);
-void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint8_t network);
-const char *KosmoApi_GetWalletName(void);
-const char *KosmoApi_GetWalletNameByIndex(uint8_t index);
-```
+**8.1 新增 KosmoApi ConnectWallet 接口（15 个函数）**
+- `KosmoApi_GetConnectWalletPathIndex/SetConnectWalletPathIndex`
+- `KosmoApi_GetConnectWalletAccountIndex/SetConnectWalletAccountIndex`
+- `KosmoApi_GetConnectWalletNetwork/SetConnectWalletNetwork`
+- `KosmoApi_GetWalletName/GetWalletNameByIndex`
+- `KosmoApi_GetXrpAddressByIndex/GetAdaBaseAddressByXPub/GetKeplrDataByIndex/GetAdaDataByIndex/GetXrpToolkitDataByIndex`
+- `KosmoApi_GetTonkeeperWalletUr/GetFewchaData`
 
 **8.2 Widget 迁移**
+- 53 个后端调用 → `KosmoApi_*`
+- `gui_chain.h` → `kosmo_api.h`
+- `GuiChainCoinType` 依赖消除（Fewcha 改用 `bool isSui`）
+- 5 个死 include 清理（gui_general_home_widgets.c 等）
 
-`gui_connect_wallet_widgets.c`：将所有后端调用替换为 `KosmoApi_*` 调用。
-
-**8.3 验证**：编译零 error，模拟器启动。
+**8.3 结果**
+- `gui_chain.h`: 16 → **10** 文件
+- gui_connect_wallet_widgets.c 零后端 include（仅 `kosmo_api.h`）
 
 ---
 
@@ -275,17 +262,23 @@ UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 
 ---
 
-## 四、预期最终状态
+## 四、预期最终状态（更新于 Phase 15 后）
 
-| 指标 | 当前 | 目标 |
-|---|---|---|
-| Widget 后端 include | ~50 个文件 | **0** |
-| View 后端 include | 4 个文件 | **0** |
-| `GuiApiEmitSignal`（gui_model.c） | 15 | **≤13**（view 级信号） |
-| Widget `GuiEmitSignal` | 10 | **10**（view-to-view，保留） |
-| KosmoApi getter 函数 | 14 | **~40** |
-| KosmoApi 请求类型 | 39 | **39**（不变） |
-| LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **0** |
+| 指标 | v5 开始 | 当前 | 目标 |
+|---|---|---|---|
+| Widget 后端 include 总数 | **153** | **31**（-80%） | **0** |
+| `account_manager.h` | 21 | **0** ✅ | 0 |
+| `keystore.h` | 26 | **1** | 0 |
+| `secret_cache.h` | 26 | **5** | 0 |
+| `gui_model.h` | 22 | **3** | 0 |
+| `gui_chain.h` | 16 | **10** | 0 |
+| `account_public_info.h` | 11 | **1** | 0 |
+| `bip39.h` | 6 | **6** | 0 |
+| `rust.h` | 5 | **5** | 0 |
+| `GuiApiEmitSignal`（gui_model.c） | 15 | 15 | **≤13**（view 级信号） |
+| Widget `GuiEmitSignal` | 10 | 10 | **10**（view-to-view，保留） |
+| KosmoApi 函数总数 | 39 | **~78** | ~80 |
+| LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **大幅减少** | **0** |
 
 ## 五、风险评估
 
@@ -300,21 +293,21 @@ UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 | 12（Widget 信号） | 无 | 全部保留 |
 | 13（验证） | 无 | 编译 + 模拟器 |
 
-## 六、预估工时
+## 六、预估工时（更新于 Phase 15 后）
 
-| Phase | 预估 | 备注 |
-|---|---|---|
-| 6 | ✅ 0.5h | 已完成 |
-| 7 | ✅ 2h | 已完成（130+ 处迁移） |
-| 8 | 2-3h | ConnectWallet 重构 |
-| 9 | 1-2h | 地址生成包装 |
-| 10 | 1h | BIP39 + AsyncExecute + Rust FFI |
-| 11 | 0.5h | 2 个信号迁移 |
-| 12 | 0h | 全部保留 |
-| 13 | 0.5h | 验证 + 文档 |
-| 14 | 2-3h | SecretCache + 小函数包装（新增） |
-| 15 | 1h | gui_model.h 类型迁移（新增） |
-| **总计** | **10-14h** | 已完成 ~2.5h |
+| Phase | 预估 | 实际 | 备注 |
+|---|---|---|---|
+| 6 | 0.5h | ✅ 0.5h | 死 include 清理 |
+| 7 | 2h | ✅ 2h | Account/Wallet 层包装（130+ 处迁移） |
+| 8 | 2-3h | ✅ 2h | ConnectWallet 重构（53 个调用迁移，15 个新函数） |
+| 9 | 1-2h | ⬜ | 链操作包装 |
+| 10 | 1h | ⬜ | BIP39 + AsyncExecute + Rust FFI |
+| 11 | 0.5h | ⬜ | 2 个信号迁移 |
+| 12 | 0h | ✅ 0h | 全部保留 |
+| 13 | 0.5h | ⬜ | 验证 + 文档 |
+| 14 | 1.5h | ✅ 1.5h | SecretCache + 小函数包装 + 死 include 清理 |
+| 15 | 0.5h | ✅ 0.5h | gui_model.h: 22→3 |
+| **总计** | **10-14h** | **已完成 ~7h** | **剩余 ~3-7h** |
 
 ## 七、执行顺序建议
 
@@ -323,59 +316,44 @@ Phase 6 ✅（死 include 清理）
   ↓
 Phase 7 ✅（Account/Wallet 层包装 — 最大面泄漏已解决）
   ↓
-Phase 14（SecretCache + 小函数包装）
-  ↓ 解决 keystore.h(26) + account_manager.h(21) + account_public_info.h(11)
-Phase 8（ConnectWallet 重构）
-  ↓ 最难的单点
-Phase 9（链操作包装）
-  ↓ 收尾 gui_chain.h(16)
-Phase 10（BIP39 + AsyncExecute + Rust FFI）
-  ↓ 小修补
-Phase 15（gui_model.h 类型迁移）
-  ↓ 解决 gui_model.h(22)
-Phase 11（信号残留）
-Phase 13（验证 + 文档）
+Phase 14 ✅（SecretCache + 小函数包装 — account_manager.h 归零）
+  ↓
+Phase 15 ✅（gui_model.h 类型迁移 — 22→3）
+  ↓
+Phase 8 ✅（ConnectWallet 重构 — 最难的单点，53 个调用迁移）
+  ↓
+Phase 9 ⬜（链操作包装 — 收尾 gui_chain.h 剩余 10 个文件）
+  ↓
+Phase 10 ⬜（BIP39 + AsyncExecute + Rust FFI）
+  ↓
+Phase 11 ⬜（信号残留 — 2 个信号迁移）
+Phase 13 ⬜（验证 + 文档）
   ↓ 收官
 ```
 
-## 八、新增 Phase 14：SecretCache + 小函数包装
+## 八、Phase 14：SecretCache + 小函数包装 ✅
 
-**目标**：将 `keystore.h`、`account_manager.h`、`account_public_info.h` 中剩余的小函数收编到 KosmoApi。
+**已完成**：
 
-**14.1 SecretCache 包装**
+**14.1 SecretCache 包装（12 个函数）**
+- `KosmoApi_CacheGetPassword/SetPassword/GetMnemonic/SetMnemonic/SetPassphrase`
+- `KosmoApi_CacheGetChecksum/SetWalletIndex/SetWalletName/GetNewPassword/SetNewPassword/GetDiceRollsLen`
 
-`SecretCache*` 是最大的剩余泄漏（~40 处，26 个 widget 文件）。需要包装：
-```c
-const char *KosmoApi_CacheGetPassword(void);
-void KosmoApi_CacheSetPassword(const char *password);
-const char *KosmoApi_CacheGetMnemonic(void);
-void KosmoApi_CacheSetPassphrase(const char *passphrase);
-void KosmoApi_CacheGetChecksum(uint8_t *hash);
-void KosmoApi_CacheSetWalletIndex(uint8_t index);
-void KosmoApi_CacheSetWalletName(const char *name);
-const char *KosmoApi_CacheGetNewPassword(void);
-void KosmoApi_CacheSetNewPassword(const char *password);
-bool KosmoApi_CacheGetDiceRollsLen(void);
-```
-
-**14.2 小函数包装**
-```c
-// account_manager.h
-void KosmoApi_GetExistAccountNum(uint8_t *count);
-bool KosmoApi_GetPassphraseQuickAccess(void);
-
-// account_public_info.h
-bool KosmoApi_GetIsTempAccount(void);
-bool KosmoApi_GetFirstReceive(const char *chainName);
-void KosmoApi_SetFirstReceive(const char *chainName, bool isFirst);
-void KosmoApi_AccountPublicHomeCoinGet(void *walletList, uint8_t count);
-```
+**14.2 小函数包装（6 个）**
+- `KosmoApi_GetExistAccountNum/GetPassphraseQuickAccess`
+- `KosmoApi_GetIsTempAccount/GetFirstReceive/SetFirstReceive/AccountPublicHomeCoinGet`
 
 **14.3 Widget 迁移**
+- SecretCache*: ~40 处 → 0
+- 其他小函数: ~15 处 → 0
+- 死 include 清理: 21 个文件
 
-批量替换 26+21+11 = 58 个文件中的后端调用。
-
-**14.4 验证**：编译零 error，模拟器启动。
+**14.4 死 include 清理**
+- `account_manager.h`: 21 → **0** ✅（Phase 7 迁移 + Phase 14 清理）
+- `keystore.h`: 26 → **1**（仅 gui_keyboard_hintbox.h）
+- `secret_cache.h`: 26 → **5**（Slip39/DiceRolls/keyboard 保留）
+- `account_public_info.h`: 11 → **1**（1 处死 include）
+- `gui_model.h`: 22 → **3**（Phase 15 迁移，keyboard_hintbox 保留）
 
 ## 九、新增 Phase 15：gui_model.h 类型迁移
 

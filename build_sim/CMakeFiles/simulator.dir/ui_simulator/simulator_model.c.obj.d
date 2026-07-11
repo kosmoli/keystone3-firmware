@@ -301,6 +301,9 @@ CMakeFiles/simulator.dir/ui_simulator/simulator_model.c.obj: \
  /home/komo/works/keystone3-firmware/external/cjson/cJSON.h \
  /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
@@ -319,7 +322,6 @@ CMakeFiles/simulator.dir/ui_simulator/simulator_model.c.obj: \
  /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_attention_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_obj.h \

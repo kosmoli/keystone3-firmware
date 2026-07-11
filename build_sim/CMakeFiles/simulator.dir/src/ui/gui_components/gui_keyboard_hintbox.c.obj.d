@@ -308,6 +308,8 @@ CMakeFiles/simulator.dir/src/ui/gui_components/gui_keyboard_hintbox.c.obj: \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
@@ -332,6 +334,4 @@ CMakeFiles/simulator.dir/src/ui/gui_components/gui_keyboard_hintbox.c.obj: \
  /home/komo/works/keystone3-firmware/src/managers/motor_manager.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_widgets.h \
  /home/komo/works/keystone3-firmware/src/managers/fingerprint_process.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/tasks/usb_task.h

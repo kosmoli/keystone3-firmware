@@ -12,6 +12,9 @@
 
 #include "kosmo_types.h"
 
+/* Forward declaration for UR types (defined in rust.h) */
+typedef struct UREncodeResult UREncodeResult;
+
 /* ── 初始化 ─────────────────────────────────────────── */
 
 /*
@@ -250,6 +253,76 @@ int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK);
  * Phase 4 完成后将被内部化。
  */
 uint32_t KosmoChainToXPubType(KosmoChainType chain);
+
+/* ── ConnectWallet 状态管理 ────────────────────────────── */
+
+/*
+ * ConnectWallet 路径索引（读写）。
+ * @param walletName  钱包名称（如 "MetaMask", "Keplr"）
+ */
+uint32_t KosmoApi_GetConnectWalletPathIndex(const char *walletName);
+void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint32_t index);
+
+/*
+ * ConnectWallet 账户索引（读写）。
+ */
+uint32_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName);
+void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint32_t index);
+
+/*
+ * ConnectWallet 网络选择（读写）。
+ */
+uint32_t KosmoApi_GetConnectWalletNetwork(const char *walletName);
+void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint32_t network);
+
+/*
+ * 当前钱包名称。
+ */
+const char *KosmoApi_GetWalletName(void);
+
+/*
+ * 按索引获取钱包名称。
+ */
+const char *KosmoApi_GetWalletNameByIndex(uint8_t index);
+
+/* ── 地址生成（ConnectWallet 专用）─────────────────────── */
+
+/*
+ * XRP 地址。
+ */
+char *KosmoApi_GetXrpAddressByIndex(uint16_t index);
+
+/*
+ * ADA Base 地址（从 XPub）。
+ */
+char *KosmoApi_GetAdaBaseAddressByXPub(char *xpub);
+
+/*
+ * Keplr 数据（Cosmos 链 UR）。
+ */
+UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint32_t index);
+
+/*
+ * ADA 数据（Cardano UR）。
+ */
+UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
+
+/*
+ * XRP Toolkit 数据。
+ */
+UREncodeResult *KosmoApi_GetXrpToolkitDataByIndex(uint16_t index);
+
+/*
+ * Tonkeeper 数据。
+ */
+UREncodeResult *KosmoApi_GetTonkeeperWalletUr(const char *xpub, const char *walletName,
+                                               const char *mfp, uint32_t mfpLen, const char *path);
+
+/*
+ * Fewcha 钱包数据（APT/SUI）。
+ * @param isSui  true=SUI, false=APT
+ */
+UREncodeResult *KosmoApi_GetFewchaData(bool isSui);
 
 /* ── 便捷宏 ─────────────────────────────────────────── */
 

@@ -18,6 +18,11 @@
 #include "keystore.h"
 #include "bip39.h"
 #include "wordlist.h"
+#include "gui_wallet.h"
+#include "gui_xrp.h"
+#include "gui_ada.h"
+#include "rust.h"
+#include "gui_status_bar.h"
 #include "secret_cache.h"
 
 /* Phase 2: gui_model.h 的 GuiModel* 函数作为异步分发目标。
@@ -732,4 +737,75 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     default:
         return KOSMO_ERR_INVALID;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 8: ConnectWallet 状态管理 + 地址生成包装
+ * ═══════════════════════════════════════════════════════════ */
+
+#include "account_public_info.h"  /* ConnectWallet state functions */
+
+/* ── ConnectWallet 状态 ──────────────────────────────── */
+
+uint32_t KosmoApi_GetConnectWalletPathIndex(const char *walletName) {
+    return GetConnectWalletPathIndex(walletName);
+}
+
+void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint32_t index) {
+    SetConnectWalletPathIndex(walletName, index);
+}
+
+uint32_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName) {
+    return GetConnectWalletAccountIndex(walletName);
+}
+
+void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint32_t index) {
+    SetConnectWalletAccountIndex(walletName, index);
+}
+
+uint32_t KosmoApi_GetConnectWalletNetwork(const char *walletName) {
+    return GetConnectWalletNetwork(walletName);
+}
+
+void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint32_t network) {
+    SetConnectWalletNetwork(walletName, network);
+}
+
+const char *KosmoApi_GetWalletName(void) {
+    return GetWalletName();
+}
+
+const char *KosmoApi_GetWalletNameByIndex(uint8_t index) {
+    return GetWalletNameByIndex(index);
+}
+
+/* ── 地址生成 ────────────────────────────────────────── */
+
+char *KosmoApi_GetXrpAddressByIndex(uint16_t index) {
+    return GuiGetXrpAddressByIndex(index);
+}
+
+char *KosmoApi_GetAdaBaseAddressByXPub(char *xpub) {
+    return GuiGetADABaseAddressByXPub(xpub);
+}
+
+UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint32_t index) {
+    return GuiGetKeplrDataByIndex(index);
+}
+
+UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName) {
+    return GuiGetADADataByIndex((char *)walletName);
+}
+
+UREncodeResult *KosmoApi_GetXrpToolkitDataByIndex(uint16_t index) {
+    return GuiGetXrpToolkitDataByIndex(index);
+}
+
+UREncodeResult *KosmoApi_GetTonkeeperWalletUr(const char *xpub, const char *walletName,
+                                               const char *mfp, uint32_t mfpLen, const char *path) {
+    return get_tonkeeper_wallet_ur((char *)xpub, (char *)walletName, (char *)mfp, mfpLen, (char *)path);
+}
+
+UREncodeResult *KosmoApi_GetFewchaData(bool isSui) {
+    return GuiGetFewchaDataByCoin(isSui ? CHAIN_SUI : CHAIN_APT);
 }

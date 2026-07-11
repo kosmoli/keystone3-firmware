@@ -311,6 +311,9 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/setting/gui_namewallet_widgets.c.obj
  /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_cosmos.h \
  /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
@@ -329,7 +332,6 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/setting/gui_namewallet_widgets.c.obj
  /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_attention_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_obj.h \
@@ -363,8 +365,6 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/setting/gui_namewallet_widgets.c.obj
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_button.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_enter_passcode.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
- /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/setting/gui_setting_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/bip39_english.h \
  /home/komo/works/keystone3-firmware/src/crypto/slip39/slip39.h \

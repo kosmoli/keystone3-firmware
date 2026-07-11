@@ -1,6 +1,5 @@
 #include "gui_standard_receive_widgets.h"
 #include "gui_status_bar.h"
-#include "gui_chain.h"
 #include "gui_views.h"
 #include "gui_hintbox.h"
 #include "kosmo_api.h"

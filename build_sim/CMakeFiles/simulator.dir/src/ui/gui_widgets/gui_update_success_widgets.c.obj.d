@@ -296,10 +296,26 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_update_success_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/external/cjson/cJSON.h \
  /home/komo/works/keystone3-firmware/src/ram/user_memory.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_obj.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_api.h \
+ /home/komo/works/keystone3-firmware/src/api/kosmo_types.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_status_bar.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_chain.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
+ /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_btc.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_zcash.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_eth.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_eth_batch_tx_widgets.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_trx.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_cosmos.h \
+ /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
+ /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_model/gui_model.h \
  /home/komo/works/keystone3-firmware/ui_simulator/simulator_model.h \
  /home/komo/works/keystone3-firmware/src/tasks/qrdecode_task.h \
- /home/komo/works/keystone3-firmware/ui_simulator/lib/rust-builds/librust_c.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_lock_device_widgets.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_analyze/gui_analyze_chains.h \
  /home/komo/works/keystone3-firmware/src/crypto/rsa.h \
@@ -311,24 +327,10 @@ CMakeFiles/simulator.dir/src/ui/gui_widgets/gui_update_success_widgets.c.obj: \
  /home/komo/works/keystone3-firmware/src/managers/keystore.h \
  /home/komo/works/keystone3-firmware/src/crypto/secret_cache.h \
  /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
  /home/komo/works/keystone3-firmware/src/utils/assert.h \
  /home/komo/works/keystone3-firmware/src/managers/account_manager.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_rtc.h \
  /home/komo/works/keystone3-firmware/src/driver/drv_battery.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_animating_qrcode.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_status_bar.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_chain.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_btc.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/rust.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_zcash.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_eth.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_widgets/gui_eth_batch_tx_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_trx.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_chain/gui_cosmos.h \
- /home/komo/works/keystone3-firmware/src/crypto/account_public_info.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_widgets/multi/gui_home_widgets.h \
- /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_keyboard.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_components/gui_attention_hintbox.h \
  /home/komo/works/keystone3-firmware/src/ui/gui_frame/gui_resource.h \

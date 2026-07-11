@@ -523,7 +523,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
         bool isSlip39 = mnemonicType == KOSMO_MNEMONIC_SLIP39;
         int seedLen = isSlip39 ? KosmoApi_GetEntropyLen() : sizeof(seed) ;
 
-        GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);
+        KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);
         ExtendedPublicKey xpubs[24];
         SimpleResponse_c_char *pubkey[24];
         for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {
@@ -543,25 +543,25 @@ static UREncodeResult *ModelGenerateSyncUR(void)
                     } else {
                         uint8_t entropyLen = 0;
                         uint8_t entropy[64];
-                        GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
-                        SimpleResponse_c_char* cip3_response = get_icarus_master_key(entropy, entropyLen, GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
+                        KosmoApi_GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
+                        SimpleResponse_c_char* cip3_response = get_icarus_master_key(entropy, entropyLen, KosmoApi_GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
                         char* icarusMasterKey = cip3_response->data;
                         pubkey[i] = derive_bip32_ed25519_extended_pubkey(icarusMasterKey, path);
                     }
                     uint8_t entropyLen = 0;
                     uint8_t entropy[64];
-                    GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
-                    SimpleResponse_c_char* cip3_response = get_icarus_master_key(entropy, entropyLen, GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
+                    KosmoApi_GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
+                    SimpleResponse_c_char* cip3_response = get_icarus_master_key(entropy, entropyLen, KosmoApi_GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
                     char* icarusMasterKey = cip3_response->data;
                     pubkey[i] = derive_bip32_ed25519_extended_pubkey(icarusMasterKey, path);
                 } else if (g_adaDerivationAlgo == HD_LEDGER_BITBOX_ADA || g_isUsb) {
                     // seed -> mnemonic --> master key(m) -> derive key
                     uint8_t entropyLen = 0;
                     uint8_t entropy[64];
-                    GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
+                    KosmoApi_GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
                     char *mnemonic = NULL;
                     bip39_mnemonic_from_bytes(NULL, entropy, entropyLen, &mnemonic);
-                    SimpleResponse_c_char *ledger_bitbox02_response  = get_ledger_bitbox02_master_key(mnemonic, GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
+                    SimpleResponse_c_char *ledger_bitbox02_response  = get_ledger_bitbox02_master_key(mnemonic, KosmoApi_GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
                     char* ledgerBitbox02Key = ledger_bitbox02_response->data;
                     pubkey[i] = derive_bip32_ed25519_extended_pubkey(ledgerBitbox02Key, path);
                 }

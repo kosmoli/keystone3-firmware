@@ -161,7 +161,7 @@ static void ConfirmAddrTypeHandler(lv_event_t *e)
 
     if (code == LV_EVENT_CLICKED && IsAddrTypeSelectChanged()) {
         SetPathIndex(g_selectType);
-        SetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin, g_selectType);
+        KosmoApi_SetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin, g_selectType);
         if (g_changed_cb != NULL) {
             SetReceivePageAdaXPubType(g_selectType);
             g_changed_cb(e);
@@ -177,12 +177,12 @@ static bool IsAddrTypeSelectChanged()
 
 static uint32_t GetPathIndex(void)
 {
-    return GetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin);
+    return KosmoApi_GetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin);
 }
 
 static void SetPathIndex(uint32_t index)
 {
-    SetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin, index);
+    KosmoApi_SetAccountReceivePath(GetCoinCardByIndex(g_currentChain)->coin, index);
 }
 
 static void InitDerivationPathDesc(uint8_t chain)

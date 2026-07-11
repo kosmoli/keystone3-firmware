@@ -166,9 +166,9 @@ void GuiMultiAccountsReceiveInit(uint8_t chain)
     g_pageWidget = CreatePageWidget();
     g_multiAccountsReceiveWidgets.cont = g_pageWidget->contentZone;
     g_multiAccountsReceiveWidgets.tileView = lv_tileview_create(g_multiAccountsReceiveWidgets.cont);
-    g_showAccountIndex = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    g_showAccountIndex = KosmoApi_GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
     g_selectedAccount[KosmoApi_GetCurrentAccountIndex()] = g_showAccountIndex;
-    g_showIndex = GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    g_showIndex = KosmoApi_GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
     g_selectedIndex[KosmoApi_GetCurrentAccountIndex()] = g_showIndex;
     lv_obj_set_style_bg_opa(g_multiAccountsReceiveWidgets.tileView, LV_OPA_0, LV_PART_SCROLLBAR & LV_STATE_SCROLLED);
     lv_obj_set_style_bg_opa(g_multiAccountsReceiveWidgets.tileView, LV_OPA_0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
@@ -467,7 +467,7 @@ static void GuiCreateSwitchAddressWidget(lv_obj_t *parent)
 static void SetCurrentSelectIndex(uint32_t index)
 {
     g_selectedIndex[KosmoApi_GetCurrentAccountIndex()] = index;
-    SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, index);
+    KosmoApi_SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, index);
 }
 
 static bool IsIndexSelectChanged()
@@ -514,7 +514,7 @@ static void ConfirmAccountHandler(lv_event_t *e)
 {
     if (IsAccountSelectChanged()) {
         g_selectedAccount[KosmoApi_GetCurrentAccountIndex()] = g_tmpAccount;
-        SetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin, g_tmpAccount);
+        KosmoApi_SetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin, g_tmpAccount);
         g_tmpIndex = 0;
         SetCurrentSelectIndex(g_tmpIndex);
         CloseSwitchAccountHandler(e);
@@ -585,7 +585,7 @@ static void RefreshQrCode(void)
 {
     AddressDataItem_t addressDataItem;
 
-    ModelGetAddress(GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin), &addressDataItem, 0);
+    ModelGetAddress(KosmoApi_GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin), &addressDataItem, 0);
     lv_qrcode_update(g_multiAccountsReceiveWidgets.qrCode, addressDataItem.address, strnlen_s(addressDataItem.address, ADDRESS_MAX_LEN));
     lv_obj_t *fullscreen_qrcode = GuiFullscreenModeGetCreatedObjectWhenVisible();
     if (fullscreen_qrcode) {
@@ -1051,7 +1051,7 @@ static void OpenSwitchAddressHandler(lv_event_t *e)
 static void OpenSwitchAccountHandler(lv_event_t *e)
 {
     // g_tmpAccount = g_selectedAccount[KosmoApi_GetCurrentAccountIndex()];
-    g_tmpAccount = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    g_tmpAccount = KosmoApi_GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
     GuiCreateSwitchAccountWidget();
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
 }
@@ -1197,7 +1197,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
     SimpleResponse_c_char *result = NULL;
     switch (g_chainCard) {
     case HOME_WALLET_CARD_ADA: {
-        uint32_t currentAccount = GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
+        uint32_t currentAccount = KosmoApi_GetAccountIndex(GetCoinCardByIndex(g_chainCard)->coin);
         xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, currentAccount, GetReceivePageAdaXPubType());
         snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'/0/%u", currentAccount, index);
         // cardano mainnet;

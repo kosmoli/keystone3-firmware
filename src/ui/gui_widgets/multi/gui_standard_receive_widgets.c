@@ -1102,7 +1102,7 @@ static void SetCurrentSelectIndex(uint32_t selectIndex)
             break;
         }
     }
-    SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
+    KosmoApi_SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
 }
 
 static uint32_t GetCurrentSelectIndex()
@@ -1110,7 +1110,7 @@ static uint32_t GetCurrentSelectIndex()
     if (!IsAccountSwitchable()) {
         return 0;
     }
-    return GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    return KosmoApi_GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
 }
 
 static uint32_t* GetCosmosChainCurrentSelectIndex()

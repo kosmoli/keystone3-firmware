@@ -165,6 +165,55 @@ uint8_t KosmoApi_GetAccountCount(void)
     return count;
 }
 
+/* ── 账户状态（account_public_info 包装）────────────── */
+
+uint32_t KosmoApi_GetAccountReceiveIndex(const char *chainName)
+{
+    return GetAccountReceiveIndex(chainName);
+}
+
+void KosmoApi_SetAccountReceiveIndex(const char *chainName, uint32_t index)
+{
+    SetAccountReceiveIndex(chainName, index);
+}
+
+uint32_t KosmoApi_GetAccountReceivePath(const char *chainName)
+{
+    return GetAccountReceivePath(chainName);
+}
+
+void KosmoApi_SetAccountReceivePath(const char *chainName, uint32_t index)
+{
+    SetAccountReceivePath(chainName, index);
+}
+
+uint32_t KosmoApi_GetAccountIndex(const char *chainName)
+{
+    return GetAccountIndex(chainName);
+}
+
+void KosmoApi_SetAccountIndex(const char *chainName, uint32_t index)
+{
+    SetAccountIndex(chainName, index);
+}
+
+/* ── 种子/熵/密码（keystore 包装）───────────────────── */
+
+int32_t KosmoApi_GetAccountSeed(uint8_t accountIndex, uint8_t *out, const char *password)
+{
+    return GetAccountSeed(accountIndex, out, password);
+}
+
+int32_t KosmoApi_GetAccountEntropy(uint8_t accountIndex, uint8_t *entropy, uint8_t *entropyLen, const char *password)
+{
+    return GetAccountEntropy(accountIndex, entropy, entropyLen, password);
+}
+
+char *KosmoApi_GetPassphrase(uint8_t accountIndex)
+{
+    return GetPassphrase(accountIndex);
+}
+
 /* ── 同步查询：链信息 ───────────────────────────────── */
 
 const char *KosmoApi_GetPublicKey(KosmoChainType chain)

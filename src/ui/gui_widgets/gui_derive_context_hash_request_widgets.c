@@ -333,7 +333,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     char *password = SecretCacheGetPassword();
     KosmoMnemonicType mnemonicType = KosmoApi_GetMnemonicType();
     int seedLen = (mnemonicType == KOSMO_MNEMONIC_SLIP39) ? KosmoApi_GetEntropyLen() : sizeof(seed);
-    GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);
+    KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);
     UREncodeResult *urResult = generate_derive_context_hash_ur(g_data, seed, seedLen, g_address);
     memset(seed, 0, sizeof(seed));
     ClearSecretCache();

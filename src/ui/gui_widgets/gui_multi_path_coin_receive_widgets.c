@@ -203,7 +203,7 @@ void GuiMultiPathCoinReceiveInit(uint8_t chain)
 {
     InitDerivationPathDesc(chain);
     if (chain == HOME_WALLET_CARD_ADA) {
-        SetPathIndex(GetAccountReceivePath("ADA"));
+        SetPathIndex(KosmoApi_GetAccountReceivePath("ADA"));
     }
     g_chainCard = chain;
     g_currentAccountIndex = KosmoApi_GetCurrentAccountIndex();
@@ -1082,12 +1082,12 @@ static void RightBtnHandler(lv_event_t *e)
 
 static uint32_t GetPathIndex(void)
 {
-    return GetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin);
+    return KosmoApi_GetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin);
 }
 
 static void SetPathIndex(uint32_t index)
 {
-    SetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin, index);
+    KosmoApi_SetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin, index);
 }
 
 static void UpdateAddrTypeCheckbox(uint8_t i, bool isChecked)
@@ -1450,10 +1450,10 @@ void GuiResetAllEthAddressIndex(void)
 
 static void SetCurrentSelectIndex(uint32_t selectIndex)
 {
-    SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
+    KosmoApi_SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
 }
 
 static uint32_t GetCurrentSelectIndex()
 {
-    return GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    return KosmoApi_GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
 }

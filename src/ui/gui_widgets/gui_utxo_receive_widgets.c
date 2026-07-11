@@ -220,7 +220,7 @@ void GuiReceiveInit(uint8_t chain)
     g_btcPreviewShowAsTestAddress = false;
     g_currentAccountIndex = KosmoApi_GetCurrentAccountIndex();
     g_selectIndex = GetCurrentSelectIndex();
-    g_selectType = GetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin);
+    g_selectType = KosmoApi_GetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin);
     g_addressType[g_currentAccountIndex] = g_selectType;
     g_pageWidget = CreatePageWidget();
     g_utxoReceiveWidgets.cont = g_pageWidget->contentZone;
@@ -589,7 +589,7 @@ static void GetHint(char *hint)
 
 static uint32_t GetCurrentSelectIndex()
 {
-    return GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
+    return KosmoApi_GetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin);
     switch (g_chainCard) {
     case HOME_WALLET_CARD_BTC:
         return g_btcSelectIndex[g_currentAccountIndex];
@@ -623,7 +623,7 @@ static void SetCurrentSelectIndex(uint32_t selectIndex)
     default:
         break;
     }
-    SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
+    KosmoApi_SetAccountReceiveIndex(GetCoinCardByIndex(g_chainCard)->coin, selectIndex);
 }
 
 static void GuiCreateSwitchAddressWidget(lv_obj_t *parent)
@@ -728,7 +728,7 @@ static void ConfirmAddrTypeHandler(lv_event_t *e)
         }
         if (isAddrTypeChanged) {
             g_addressType[g_currentAccountIndex] = g_selectType;
-            SetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin, g_selectType);
+            KosmoApi_SetAccountReceivePath(GetCoinCardByIndex(g_chainCard)->coin, g_selectType);
             g_selectIndex = 0;
             SetCurrentSelectIndex(g_selectIndex);
         }

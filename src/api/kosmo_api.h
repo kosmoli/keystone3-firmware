@@ -158,6 +158,45 @@ uint8_t KosmoApi_GetCurrentAccountIndex(void);
  */
 uint8_t KosmoApi_GetAccountCount(void);
 
+/* ── 账户状态（account_public_info 包装）────────────── */
+
+/*
+ * 获取链的接收路径索引。
+ * @param chainName  链名（如 "BTC", "ETH"）
+ */
+uint32_t KosmoApi_GetAccountReceiveIndex(const char *chainName);
+void KosmoApi_SetAccountReceiveIndex(const char *chainName, uint32_t index);
+uint32_t KosmoApi_GetAccountReceivePath(const char *chainName);
+void KosmoApi_SetAccountReceivePath(const char *chainName, uint32_t index);
+
+/*
+ * 获取/设置链的账户索引（多账户用）。
+ */
+uint32_t KosmoApi_GetAccountIndex(const char *chainName);
+void KosmoApi_SetAccountIndex(const char *chainName, uint32_t index);
+
+/* ── 种子/熵/密码（keystore 包装）───────────────────── */
+
+/*
+ * 获取账户种子。
+ * @param accountIndex  账户索引
+ * @param out           输出缓冲区
+ * @param password      设备密码
+ * @return KOSMO_OK 或错误码
+ */
+int32_t KosmoApi_GetAccountSeed(uint8_t accountIndex, uint8_t *out, const char *password);
+
+/*
+ * 获取账户熵。
+ */
+int32_t KosmoApi_GetAccountEntropy(uint8_t accountIndex, uint8_t *entropy, uint8_t *entropyLen, const char *password);
+
+/*
+ * 获取账户密码短语。
+ * @return 密码短语字符串（只读，不要 free）
+ */
+char *KosmoApi_GetPassphrase(uint8_t accountIndex);
+
 /*
  * 检查 Solana 派生路径是否支持。
  * @param path  HD 路径字符串

@@ -1,5 +1,4 @@
 #include "gui_eth_batch_tx_widgets.h"
-#include "keystore.h"
 #include "gui.h"
 #include "gui_page.h"
 #include "kosmo_api.h"
@@ -13,7 +12,6 @@
 #include "gui_keyboard_hintbox.h"
 
 #ifndef COMPILE_SIMULATOR
-#include "keystore.h"
 
 #else
 #define FP_SUCCESS_CODE 0

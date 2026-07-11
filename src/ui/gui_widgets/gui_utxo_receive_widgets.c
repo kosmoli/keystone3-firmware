@@ -17,7 +17,6 @@
 #include "gui_tutorial_widgets.h"
 #include "gui_fullscreen_mode.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "gui_global_resources.h"
 #include "user_memory.h"
 

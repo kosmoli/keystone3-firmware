@@ -10,8 +10,6 @@
 #include "gui_setting_widgets.h"
 #include "gui_qr_hintbox.h"
 #include "user_memory.h"
-#include "secret_cache.h"
-#include "keystore.h"
 #include "version.h"
 #include "presetting.h"
 #include "assert.h"

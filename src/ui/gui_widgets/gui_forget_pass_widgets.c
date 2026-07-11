@@ -8,8 +8,6 @@
 #include "gui_enter_passcode.h"
 #include "kosmo_api.h"
 #include "user_memory.h"
-#include "secret_cache.h"
-#include "keystore.h"
 #include "gui_lock_widgets.h"
 #include "bip39_english.h"
 #include "bip39.h"

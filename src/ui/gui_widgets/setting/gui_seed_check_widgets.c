@@ -34,7 +34,6 @@
 #include "kosmo_api.h"
 #include "gui_mnemonic_input.h"
 #include "kosmo_api.h"
-#include "account_manager.h"
 #include "kosmo_api.h"
 #ifndef COMPILE_SIMULATOR
 #include "sha256.h"

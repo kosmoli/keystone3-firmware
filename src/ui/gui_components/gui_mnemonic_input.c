@@ -17,7 +17,6 @@
 #include "secret_cache.h"
 #include "gui_forget_pass_widgets.h"
 #include "gui_setting_widgets.h"
-#include "keystore.h"
 #include "user_memory.h"
 
 #ifdef COMPILE_SIMULATOR

@@ -17,7 +17,6 @@
 #include "gui_setup_widgets.h"
 #include "keystore.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "log_print.h"
 #include "version.h"
 #include "gui_pending_hintbox.h"

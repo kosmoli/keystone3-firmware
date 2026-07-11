@@ -22,7 +22,6 @@
 #include "gui_fullscreen_mode.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "gui_pending_hintbox.h"
 #include "general/eapdu_services/service_resolve_ur.h"
 #include "gui_eth.h"

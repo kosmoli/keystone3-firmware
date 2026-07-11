@@ -11,8 +11,6 @@
 #include "kosmo_api.h"
 #include "gui_setting_widgets.h"
 #include "stdio.h"
-#include "secret_cache.h"
-#include "keystore.h"
 #include "gui_keyboard.h"
 #include "motor_manager.h"
 #include "gui_page.h"

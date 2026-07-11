@@ -1,5 +1,4 @@
 #include "gui_status_bar.h"
-#include "account_manager.h"
 #include "gui_button.h"
 #include "gui_chain.h"
 #include "gui_connect_wallet_widgets.h"

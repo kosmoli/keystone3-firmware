@@ -11,7 +11,6 @@
 #include "background_task.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "gui_about_info_widgets.h"
 #include "version.h"
 #include "user_memory.h"

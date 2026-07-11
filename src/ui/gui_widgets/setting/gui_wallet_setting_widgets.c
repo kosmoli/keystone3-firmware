@@ -11,17 +11,13 @@
 #include "gui_lock_widgets.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_qr_hintbox.h"
-#include "secret_cache.h"
-#include "keystore.h"
 #include "version.h"
 #include "presetting.h"
 #include "assert.h"
 #include "user_memory.h"
-#include "account_manager.h"
 #include "gui_lock_widgets.h"
 #include "screen_manager.h"
 #include "fingerprint_process.h"
-#include "keystore.h"
 #include "gui_home_widgets.h"
 
 /* DEFINES */

@@ -20,7 +20,6 @@
 #include "gui_animating_qrcode.h"
 #include "gui_global_resources.h"
 #include "gui_page.h"
-#include "keystore.h"
 #include "gui_select_address_widgets.h"
 #include "account_public_info.h"
 #include "kosmo_api.h"

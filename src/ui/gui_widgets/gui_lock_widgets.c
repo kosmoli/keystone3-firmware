@@ -8,12 +8,10 @@
 #include "gui_hintbox.h"
 #include "kosmo_api.h"
 #include "gui_api.h"
-#include "keystore.h"
 #include "gui_lock_device_widgets.h"
 #include "fingerprint_process.h"
 #include "device_setting.h"
 #include "gui_page.h"
-#include "account_manager.h"
 #include "user_memory.h"
 #include "presetting.h"
 #include "assert.h"
@@ -529,7 +527,6 @@ void GuiLockScreenUpdatePassCode(void)
 }
 
 #ifndef COMPILE_SIMULATOR
-#include "keystore.h"
 #endif
 
 static void CountDownTimerChangeLabelTextHandler(lv_timer_t *timer)

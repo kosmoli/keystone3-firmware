@@ -8,7 +8,6 @@
 #include "gui_setting_widgets.h"
 #include "gui_lock_widgets.h"
 #include "motor_manager.h"
-#include "account_manager.h"
 #include "gui_keyboard_hintbox.h"
 #include "drv_mpu.h"
 #include "device_setting.h"

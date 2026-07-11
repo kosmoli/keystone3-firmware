@@ -155,24 +155,27 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 
 ---
 
-### Phase 9：KosmoApi 扩展 — 链操作包装
+### Phase 9：KosmoApi 扩展 — 链操作包装 ✅
 
-**目标**：将 gui_chain.h 中 widget 需要的地址生成函数收编到 KosmoApi。
+**已完成**：
 
-**9.1 地址生成包装**
+**9.1 GuiChainCoinType 迁移**
+- 枚举从 `gui_chain.h` 迁移到 `kosmo_types.h`
+- `gui_chain.h` 新增 `#include "kosmo_types.h"`（向后兼容）
 
-```c
-const char *KosmoApi_GetXrpAddressByIndex(uint8_t index);
-const char *KosmoApi_GetAdaBaseAddressByXPub(const char *xpub);
-UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint8_t accountIndex);
-UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
-```
+**9.2 新增 KosmoApi 链操作函数（7 个）**
+- `KosmoApi_ViewTypeToChainTypeSwitch`
+- `KosmoApi_GetUrGenerator / GetSingleUrGenerator`
+- `KosmoApi_IsMessageType / IsTonSignProof / IsCatalystVotingRegistration`
+- `KosmoApi_GetAdaXPubType`
 
-**9.2 Widget 迁移**
+**9.3 Widget 迁移**
+- 7 个文件 `gui_chain.h` → `kosmo_api.h`
+- gui_status_bar.c/h: `gui_chain.h` → `kosmo_types.h`
 
-3 个文件的地址生成调用 → `KosmoApi_*` 调用。
-
-**9.3 验证**：编译零 error，模拟器启动。
+**9.4 结果**
+- `gui_chain.h`: 10 → **3** 文件（仅剩 CHECK_CHAIN 宏使用者）
+- 总后端 include: 31 → **25**
 
 ---
 
@@ -266,12 +269,12 @@ UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 
 | 指标 | v5 开始 | 当前 | 目标 |
 |---|---|---|---|
-| Widget 后端 include 总数 | **153** | **31**（-80%） | **0** |
+| Widget 后端 include 总数 | **153** | **25**（-84%） | **0** |
 | `account_manager.h` | 21 | **0** ✅ | 0 |
 | `keystore.h` | 26 | **1** | 0 |
 | `secret_cache.h` | 26 | **5** | 0 |
 | `gui_model.h` | 22 | **3** | 0 |
-| `gui_chain.h` | 16 | **10** | 0 |
+| `gui_chain.h` | 16 | **3** | 0 |
 | `account_public_info.h` | 11 | **1** | 0 |
 | `bip39.h` | 6 | **6** | 0 |
 | `rust.h` | 5 | **5** | 0 |
@@ -300,14 +303,14 @@ UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 | 6 | 0.5h | ✅ 0.5h | 死 include 清理 |
 | 7 | 2h | ✅ 2h | Account/Wallet 层包装（130+ 处迁移） |
 | 8 | 2-3h | ✅ 2h | ConnectWallet 重构（53 个调用迁移，15 个新函数） |
-| 9 | 1-2h | ⬜ | 链操作包装 |
+| 9 | 1-2h | ✅ 1h | 链操作包装 + GuiChainCoinType 迁移 |
 | 10 | 1h | ⬜ | BIP39 + AsyncExecute + Rust FFI |
 | 11 | 0.5h | ⬜ | 2 个信号迁移 |
 | 12 | 0h | ✅ 0h | 全部保留 |
 | 13 | 0.5h | ⬜ | 验证 + 文档 |
 | 14 | 1.5h | ✅ 1.5h | SecretCache + 小函数包装 + 死 include 清理 |
 | 15 | 0.5h | ✅ 0.5h | gui_model.h: 22→3 |
-| **总计** | **10-14h** | **已完成 ~7h** | **剩余 ~3-7h** |
+| **总计** | **10-14h** | **已完成 ~8h** | **剩余 ~2-6h** |
 
 ## 七、执行顺序建议
 
@@ -322,7 +325,7 @@ Phase 15 ✅（gui_model.h 类型迁移 — 22→3）
   ↓
 Phase 8 ✅（ConnectWallet 重构 — 最难的单点，53 个调用迁移）
   ↓
-Phase 9 ⬜（链操作包装 — 收尾 gui_chain.h 剩余 10 个文件）
+Phase 9 ✅（链操作包装 — gui_chain.h: 16→3）
   ↓
 Phase 10 ⬜（BIP39 + AsyncExecute + Rust FFI）
   ↓

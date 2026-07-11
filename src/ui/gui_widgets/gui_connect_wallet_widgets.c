@@ -8,7 +8,6 @@
 #include "gui_status_bar.h"
 #include "gui_views.h"
 #include "gui_wallet.h"
-#include "rust.h"
 #include "kosmo_api.h"
 #include "user_memory.h"
 #include "gui_qr_hintbox.h"

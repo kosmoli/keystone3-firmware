@@ -1456,7 +1456,7 @@ uint32_t BinarySearchLastNonFFSector(void)
     uint32_t endIndex = (APP_END_ADDR - APP_ADDR) / SECTOR_SIZE;
 
     uint8_t percent = 1;
-    GuiApiEmitSignal(SIG_SETTING_CHECKSUM_PERCENT, &percent, sizeof(percent));
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
 
     for (int i = startIndex + 1; i < endIndex; i++) {
         if (g_stopCalChecksum == true) {
@@ -1466,7 +1466,7 @@ uint32_t BinarySearchLastNonFFSector(void)
         memcpy_s(buffer, SECTOR_SIZE, (uint32_t *)(APP_ADDR + i * SECTOR_SIZE), SECTOR_SIZE);
         if ((i - startIndex) % 200 == 0) {
             percent++;
-            GuiApiEmitSignal(SIG_SETTING_CHECKSUM_PERCENT, &percent, sizeof(percent));
+            KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
         }
         if (memcmp(buffer, APP_END_MAGIC_NUMBER, APP_END_MAGIC_NUMBER_SIZE) == 0) {
             if (CheckAllFF(&buffer[APP_END_MAGIC_NUMBER_SIZE], SECTOR_SIZE - APP_END_MAGIC_NUMBER_SIZE)) {
@@ -1503,7 +1503,7 @@ static int32_t ModelCalculateCheckSum(const void *indata, uint32_t inDataLen)
         if (percent != i * 100 / num) {
             percent = i * 100 / num;
             if (percent != 100 && percent >= 10) {
-                GuiApiEmitSignal(SIG_SETTING_CHECKSUM_PERCENT, &percent, sizeof(percent));
+                KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
             }
         }
     }
@@ -1512,12 +1512,12 @@ static int32_t ModelCalculateCheckSum(const void *indata, uint32_t inDataLen)
     percent = 100;
     SetPageLockScreen(true);
     SecretCacheSetChecksum(hash);
-    GuiApiEmitSignal(SIG_SETTING_CHECKSUM_PERCENT, &percent, sizeof(percent));
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
 #else
     uint8_t percent = 100;
     char *hash = "131b3a1e9314ba076f8e459a1c4c6713eeb38862f3eb6f9371360aa234cdde1f";
     SecretCacheSetChecksum(hash);
-    GuiEmitSignal(SIG_SETTING_CHECKSUM_PERCENT, &percent, sizeof(percent));
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
 #endif
     return SUCCESS_CODE;
 }
@@ -1562,7 +1562,7 @@ static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen)
                 printf("==========copy %d%%==========\n", percent);
                 oldPercent = percent;
                 if (percent != 100 && percent >= 2) {
-                    GuiApiEmitSignal(SIG_SETTING_SHA256_PERCENT, &percent, sizeof(percent));
+                    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
                 }
             }
         }
@@ -1575,9 +1575,9 @@ static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen)
         }
         SecretCacheSetChecksum(hash);
         percent = 100;
-        GuiApiEmitSignal(SIG_SETTING_SHA256_PERCENT, &percent, sizeof(percent));
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
     } else {
-        GuiApiEmitSignal(SIG_SETTING_SHA256_PERCENT_ERROR, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, ERR_GENERAL_FAIL, NULL, 0);
     }
     SRAM_FREE(data);
     f_close(&fp);
@@ -1586,7 +1586,7 @@ static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen)
     percent = 100;
     char *hash = "131b3a1e9314ba076f8e459a1c4c6713eeb38862f3eb6f9371360aa234cdde1f";
     SecretCacheSetChecksum(hash);
-    GuiEmitSignal(SIG_SETTING_SHA256_PERCENT, &percent, sizeof(percent));
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
 #endif
     return SUCCESS_CODE;
 }

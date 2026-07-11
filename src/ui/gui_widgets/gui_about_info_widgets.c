@@ -27,6 +27,7 @@ static void LogExportHandler(lv_event_t *e);
 static void StartFirmwareCheckSumHandler(lv_event_t *e);
 static void CloseVerifyHintBoxHandler(lv_event_t *e);
 static void OpenVerifyFirmwareHandler(lv_event_t *e);
+static void ChecksumProgressCallback(const KosmoResult *result);
 
 uint32_t GetBatteryMilliVolt();
 static lv_obj_t *g_firmwareVerifyCont = NULL;
@@ -352,7 +353,14 @@ static void StartFirmwareCheckSumHandler(lv_event_t *e)
     lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeHintBox, "0%");
     lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -140);
     lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, 0);
-    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_CHECKSUM }; KosmoApi_Request(&req, NULL); }
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_CHECKSUM, .persistent = true }; KosmoApi_Request(&req, ChecksumProgressCallback); }
+}
+
+static void ChecksumProgressCallback(const KosmoResult *result) {
+    if (result->data != NULL && result->dataLen >= sizeof(uint8_t)) {
+        uint8_t percent = *(uint8_t *)result->data;
+        GuiUpdateCheckSumPercent(percent);
+    }
 }
 
 void GuiStopFirmwareCheckSumHandler(lv_event_t *e)

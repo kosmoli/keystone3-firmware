@@ -19,6 +19,8 @@
 #include "keystore.h"
 #include "user_fatfs.h"
 
+static void Sha256ProgressCallback(const KosmoResult *result);
+
 typedef enum {
     FIRMWARE_UPDATE_SELECT = 0,
     FIRMWARE_UPDATE_USB_INSTRUCTION,
@@ -463,14 +465,25 @@ static void FirmwareSdcardCheckSha256Handler(lv_event_t *e)
     lv_obj_t *desc = GuiCreateNoticeLabel(g_noticeWindow, "0%");
     lv_obj_align(desc, LV_ALIGN_BOTTOM_MID, 0, -140);
     lv_obj_set_style_text_align(desc, LV_TEXT_ALIGN_CENTER, 0);
-    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256 }; KosmoApi_Request(&req, NULL); }
+    { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256, .persistent = true }; KosmoApi_Request(&req, Sha256ProgressCallback); }
+}
+
+static void Sha256ProgressCallback(const KosmoResult *result) {
+    if (result->errorCode != KOSMO_OK) {
+        // Error path — view still handles via signal for now
+        return;
+    }
+    if (result->data != NULL && result->dataLen >= sizeof(uint8_t)) {
+        uint8_t percent = *(uint8_t *)result->data;
+        GuiFirmwareUpdateSha256Percent(percent);
+    }
 }
 
 static void FirmwareSdcardCheckSha256HintBoxHandler(lv_event_t *e)
 {
     if (SdCardInsert()) {
         lv_obj_del(lv_event_get_target(e));
-        { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256 }; KosmoApi_Request(&req, NULL); }
+        { KosmoRequest req = { .type = KOSMO_REQ_CALCULATE_SHA256, .persistent = true }; KosmoApi_Request(&req, Sha256ProgressCallback); }
     }
 }
 

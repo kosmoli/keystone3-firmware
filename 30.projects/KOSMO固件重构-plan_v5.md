@@ -15,9 +15,9 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 │   ├── 纯 UI 渲染 + 用户交互
 │   ├── 通过 KosmoApi_*() 获取数据、发起请求
 │   ├── 通过 callback 接收异步结果
-│   └── 后端 include 仅剩 3 个 rust.h（UREncodeResult 类型定义） ✅
+│   └── 后端 include: 0（完全消除） ✅
 │
-├── KosmoApi.h（唯一接口，81 个函数）
+├── KosmoApi.h（唯一接口，89 个函数）
 │   ├── 账户/链信息：GetAccountInfo / GetChainList / IsMoneroSupported ...
 │   ├── BIP39 + 公钥/地址 + Seed/Entropy：GetBip39Word / GetPublicKey / GetSeed ...
 │   ├── 公钥/地址：GetPublicKey / GetPublicKeyByPath / GetPath ...
@@ -31,7 +31,9 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
     ├── KosmoAccountInfo 结构体
     ├── KosmoMnemonicType 枚举
     ├── KosmoPasswordVerifyResult_t 结构体
-    └── 常量宏（KOSMO_BIP39_MAX_WORD_LEN 等）
+    ├── Slip39Data_t / Bip39Data_t / TonData_t / WalletDesc_t 结构体
+    ├── ReturnVoidPointerFunc 函数指针类型
+    └── 常量宏（KOSMO_BIP39_MAX_WORD_LEN, ADDRESS_MAX_LEN, PATH_ITEM_MAX_LEN, PASSWORD_MAX_LEN 等）
 
 后端世界（对 LVGL 开发者完全不可见）
 ├── gui_model.c（异步分发 + 15 个 view 级信号路由）
@@ -70,7 +72,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                        │               │ (view-to-view)
                 ┌──────▼───────────────▼──────────┐
                 │         KosmoApi (api/)           │
-                │  · 81 个函数                      │
+                │  · 89 个函数                      │
                 │  · 同步查询 + 异步请求              │
                 │  · SecretCache + Rust FFI 包装     │
                 └──────────┬──────────────────────┘
@@ -92,7 +94,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                 └──────────────────────┘
 ```
 
-### KosmoApi 接口分类（81 个函数）
+### KosmoApi 接口分类（89 个函数）
 
 | 类别 | 数量 | 函数 |
 |---|---|---|
@@ -106,10 +108,10 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | 链操作/UR | 7 | `ViewTypeToChainTypeSwitch`, `GetUrGenerator`, `GetSingleUrGenerator`, `IsMessageType`, `IsTonSignProof`, `IsCatalystVotingRegistration`, `GetAdaXPubType` |
 | ConnectWallet | 15 | `GetConnectWalletPathIndex/Set`, `GetConnectWalletAccountIndex/Set`, `GetConnectWalletNetwork/Set`, `GetWalletName`, `GetWalletNameByIndex`, `GetXrpAddressByIndex`, `GetAdaBaseAddressByXPub`, `GetKeplrData`, `GetAdaData`, `GetXrpToolkitData`, `GetTonkeeperWalletUr`, `GetFewchaData` |
 | SecretCache | 17 | `CacheGetPassword/Set`, `CacheGetMnemonic/Set`, `CacheSetPassphrase`, `CacheGetChecksum`, `CacheSetWalletIndex/Name`, `CacheGetNewPassword/Set`, `CacheGetDiceRollsLen`, `CacheSetEntropy`, `CacheCleanSecretCache`, `CacheSetSlip39Mnemonic/Get`, `CacheSetDiceRollHash`, `CacheSetDiceRollsLen` |
+| Rust FFI 包装 | 8 | `EthSignBatchTx`, `FreeSimpleResponseCChar`, `FreeUrEncodeResult`, `FreeUrParseMultiResult`, `FreeUrParseResult`, `ParseDeriveContextHash`, `ParseQrHardwareCall`, `CardanoGetAddress` |
 | 状态/杂项 | 7 | `GetAccountSeed`, `GetAccountEntropy`, `GetFirstReceive/Set`, `AccountPublicHomeCoinGet`, `CheckSolPathSupport`, `GetHomeCoinList`, `GetZcashSFP`, `GetZcashUFVK` |
 | **宏** | **3** | `KOSMO_API_REQUEST_WALLET`, `KOSMO_API_REQUEST_DEVICE`, `KOSMO_API_REQUEST_ACCOUNT` |
-| Rust FFI 包装 | 7 | `EthSignBatchTx`, `FreeSimpleResponseCChar`, `FreeUrEncodeResult`, `FreeUrParseResult`, `ParseDeriveContextHash`, `ParseQrHardwareCall` |
-| **总计** | **88+3** | |
+| **总计** | **89+3** | |
 
 ---
 
@@ -285,6 +287,42 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 
 ---
 
+### Phase 17：Rust FFI 包装 ✅
+
+**已完成**：
+- 新增 7 个 KosmoApi 包装函数：`EthSignBatchTx`, `FreeSimpleResponseCChar`, `FreeUrEncodeResult`, `FreeUrParseMultiResult`, `FreeUrParseResult`, `ParseDeriveContextHash`, `ParseQrHardwareCall`
+- `gui_eth_batch_tx_widgets.c/.h`：删除 `rust.h`，14 处 Rust 调用 → KosmoApi
+- `gui_animating_qrcode.h`：改用前向声明 `UREncodeResult` 替代 `#include "rust.h"`
+- Widget+Component 层 rust.h: **3→0（完全清零）**
+
+---
+
+### Phase 18：构建修复 + 类型迁移 ✅
+
+**背景**：Phase 15-16 的类型迁移过程中，`gui_model.h` 被过度清理导致全量构建失败。
+
+**修复内容**：
+- `gui_model.h`：恢复 37 个 `GuiModel*`/`GuiMode*` 函数声明（被误删）
+- `gui_model.h`：补上缺失的 `#endif` 守卫 + 添加 `#include "rust.h"`
+- `kosmo_types.h`：删除第 299 行多余的 `#endif`（导致迁移的类型在守卫外）
+- `kosmo_types.h`：添加 `MAX_LOGIN_PASSWORD_ERROR_COUNT`
+- `gui_model.c`：添加 `ModelGetPassphraseQuickAccess` 和 `RsaGenerateKeyPair` 前向声明
+- `gui_scan_widgets.h`：修复 `GuiTransactionCheckFailed` 类型不匹配
+- Simulator 构建：**0 error，二进制正常生成**
+
+---
+
+### Phase 19：Cardano 地址包装 + 最终清理 ✅
+
+**已完成**：
+- 新增 `KosmoApi_CardanoGetAddress()`：包装 `cardano_get_*_address`，隐藏 `SimpleResponse_c_char`
+- `gui_change_path_type_widgets.c`：删除 `#include "rust.h"`，`ModelGetADAAddress` 改用 KosmoApi 包装
+- `ADDRESS_MAX_LEN` / `PATH_ITEM_MAX_LEN` 宏从 `rust.h` 迁移到 `kosmo_types.h`
+- Widget+Component 层后端 include：**确认 0**（全文搜索验证）
+- KosmoApi 函数总数：**89 个**
+
+---
+
 ## 四、最终状态
 
 | 指标 | v5 开始 | 最终 | 变化 |
@@ -298,12 +336,15 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | `account_public_info.h` | 11 | **0** ✅ | 完全消除 |
 | `bip39.h` | 6 | **0** ✅ | 完全消除 |
 | `rust.h` | 5 | **0** ✅ | 完全消除 |
-| KosmoApi 函数总数 | 39 | **81** | +48 |
+| KosmoApi 函数总数 | 39 | **89** | +50 |
 | LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **0** | |
 
-### 剩余 rust.h 说明
+### kosmo_types.h 最终内容
 
-**已全部消除。** `gui_animating_qrcode.h` 改用前向声明 `typedef struct UREncodeResult UREncodeResult;`，不需要完整 `rust.h`。
+从 `gui_model.h` / `rust.h` 迁移的类型和宏，使 widget 层无需任何后端头文件：
+- 结构体：`Slip39Data_t`, `Bip39Data_t`, `TonData_t`, `WalletDesc_t`
+- 函数指针：`ReturnVoidPointerFunc`
+- 宏：`ADDRESS_MAX_LEN`, `PATH_ITEM_MAX_LEN`, `PASSWORD_MAX_LEN`, `MAX_LOGIN_PASSWORD_ERROR_COUNT`, `WALLET_NAME_MAX_LEN`
 
 ---
 
@@ -322,7 +363,10 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | 14 | 1.5h | ✅ 2h | SecretCache 全面包装（17 个函数） |
 | 15 | 0.5h | ✅ 0.5h | gui_model.h 类型迁移 |
 | 16 | — | ✅ 0.5h | gui_chain.h + gui_model.h 最终归零 |
-| **总计** | **10-14h** | **~11.5h** | **全部完成** |
+| 17 | — | ✅ 1h | Rust FFI 包装（7 函数，rust.h 完全清零） |
+| 18 | — | ✅ 1.5h | 构建修复（类型迁移善后，37 函数声明恢复） |
+| 19 | — | ✅ 0.5h | Cardano 地址包装 + 宏迁移 |
+| **总计** | **10-14h** | **~15h** | **全部完成** |
 
 ---
 
@@ -338,6 +382,9 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | 11（信号残留） | 无 | 全部保留 |
 | 14（SecretCache） | 低 | 敏感操作，但包装不改变安全属性 |
 | 16（宏提取） | 低 | 宏是纯文本替换，移到新头文件即可 |
+| 17（Rust FFI） | 低 | 纯包装，前向声明替代 include |
+| 18（构建修复） | **中** | 类型迁移级联影响，需逐个修复编译错误 |
+| 19（Cardano） | 低 | 单函数包装，逻辑简单 |
 
 ---
 
@@ -360,8 +407,14 @@ Phase 13 ✅（最终验证 + 死 include 清理）
   ↓
 Phase 14 ✅（SecretCache 全面包装 — 17 个函数）
   ↓
-Phase 15 ✅（gui_model.h 归零）
+Phase 15 ✅（gui_model.h 类型迁移）
   ↓
 Phase 16 ✅（gui_chain.h 归零 — 153→3）
+  ↓
+Phase 17 ✅（Rust FFI 包装 — rust.h 完全清零）
+  ↓
+Phase 18 ✅（构建修复 — 类型迁移善后）
+  ↓
+Phase 19 ✅（Cardano 包装 — 最后一个 rust.h 残留消除）
   ↓ 完成
 ```

@@ -63,7 +63,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                 │  · 纯 UI 渲染 + 用户交互            │
                 │  · 依赖: kosmo_api.h +             │
                 │    kosmo_types.h + LVGL           │
-                │  · 后端 include: 仅 3 个 rust.h    │
+                │  · 后端 include: 0 (完全消除)     │
                 └──────┬───────────────┬──────────┘
                        │               │
           KosmoApi_*() │               │ GuiEmitSignal
@@ -72,7 +72,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                 │         KosmoApi (api/)           │
                 │  · 81 个函数                      │
                 │  · 同步查询 + 异步请求              │
-                │  · SecretCache 包装               │
+                │  · SecretCache + Rust FFI 包装     │
                 └──────────┬──────────────────────┘
                            │
         ┌──────────────────┼──────────────────────┐
@@ -289,7 +289,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 
 | 指标 | v5 开始 | 最终 | 变化 |
 |---|---|---|---|
-| **Widget 后端 include 总数** | **153** | **3** | **-98%** |
+| **Widget 后端 include 总数** | **153** | **0** | **-100%** |
 | `account_manager.h` | 21 | **0** ✅ | 完全消除 |
 | `keystore.h` | 26 | **0** ✅ | 完全消除 |
 | `secret_cache.h` | 26 | **0** ✅ | 完全消除 |
@@ -297,18 +297,13 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | `gui_chain.h` | 16 | **0** ✅ | 完全消除 |
 | `account_public_info.h` | 11 | **0** ✅ | 完全消除 |
 | `bip39.h` | 6 | **0** ✅ | 完全消除 |
-| `rust.h` | 5 | **3** | 保留（类型定义） |
+| `rust.h` | 5 | **0** ✅ | 完全消除 |
 | KosmoApi 函数总数 | 39 | **81** | +48 |
-| LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **仅 UREncodeResult** | |
+| LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **0** | |
 
-### 剩余 3 个 rust.h 说明
+### 剩余 rust.h 说明
 
-| 文件 | 用途 | 能否消除 |
-|---|---|---|
-| `gui_animating_qrcode.h` | `UREncodeResult *` 类型定义 + `GenerateUR` 函数指针 | 需要把类型移到 `kosmo_types.h`，但 `UREncodeResult` 是 Rust FFI 核心类型，移动需改 Rust 构建配置 |
-| `gui_eth_batch_tx_widgets.c/.h` | 同上 | 同上 |
-
-**结论**：`rust.h` 的 3 个 include 是**合理保留**——`UREncodeResult` 是 Rust FFI 的核心类型，移动它需要和 Rust 构建流程（cbindgen）协调。收益低，风险高。
+**已全部消除。** `gui_animating_qrcode.h` 改用前向声明 `typedef struct UREncodeResult UREncodeResult;`，不需要完整 `rust.h`。
 
 ---
 

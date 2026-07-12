@@ -309,8 +309,56 @@ typedef struct {
 
 ## 九、已知遗留问题
 
-1. **KosmoApi_Request 住在 keyboard 组件里**：`KeyboardConfirmHandler` 直接调 `KosmoApi_Request`，应该由父 Widget 发起请求。keyboard 只负责收集输入。
+### Issue 1：KosmoApi_Request 住在 keyboard/passcode 组件里 ✅ 已解决
 
-2. **KOSMO_DEFAULT_VERIFY_CALLBACK 是临时方案**：各 Widget 应提供自定义 callback 直接处理结果，不经过信号系统。
+**问题**：`KeyboardConfirmHandler` 和 `GuiEnterPasscodeVerifyHandler` 直接调 `KosmoApi_Request`，组件层不应知道后端交互细节。
 
-3. **verify_password.errorCount 字段被滥用**：实际传的是原始信号 ID（如 `SIG_SETTING_CHANGE_PASSWORD`），不是 errorCount。
+**解决方案**：给 `KeyboardWidget_t` 和 `GuiEnterPasscodeItem_t` 增加 `onConfirm` 回调。
+
+```
+KeyboardConfirmHandler():
+    if (keyboardWidget->onConfirm != NULL) {
+        keyboardWidget->onConfirm(keyboardWidget);   ← 父 Widget 控制
+    } else {
+        KosmoApi_Request(VERIFY_PASSWORD, ...);       ← 默认兜底
+    }
+```
+
+父 Widget 通过 `SetKeyboardWidgetOnConfirm` / `GuiSetEnterPasscodeOnConfirm` 设置自定义确认逻辑。不设置时保留默认的密码验证行为，向后兼容。
+
+**效果**：组件层的 `KosmoApi_Request` 变为可选的默认行为，不再是硬编码依赖。
+
+### Issue 2：各 Widget 应提供自定义 callback 替代默认信号转发 ⬜ 渐进式
+
+**问题**：当前所有 Widget 使用 `KOSMO_DEFAULT_VERIFY_CALLBACK`，它只是把 KosmoApi 结果翻译成信号再 emit 给 View 栈——本质上还是信号在做前后端交互。
+
+**目标**：每个 Widget 的 callback 直接处理结果（UI 更新、页面跳转等），不经过信号系统。
+
+**当前状态**：
+- `KOSMO_DEFAULT_VERIFY_CALLBACK` 保证向后兼容，所有现有流程正常工作
+- Widget 可以通过 `SetKeyboardWidgetCallback` / `GuiSetEnterPasscodeCallback` 提供自定义 callback
+- 尚无 Widget 实际使用自定义 callback
+
+**迁移路径**（逐个 Widget 推进）：
+1. 锁屏验证（gui_lock_widgets.c）→ `LockScreenVerifyCallback`：直接处理解锁/错误显示
+2. 交易签名（gui_transaction_detail_widgets.c）→ `TxSignVerifyCallback`：直接处理签名流程
+3. 批量签名（gui_eth_batch_tx_widgets.c）→ `BatchTxVerifyCallback`
+4. 设置页密码（gui_setting_widgets.c）→ `SettingVerifyCallback`
+5. RSA 密码验证（gui_connect_wallet_widgets.c）→ `RsaVerifyCallback`
+6. 其他调用点...
+
+每个 Widget 迁移后，对应的 View 层信号 handler 可以删除。
+
+### Issue 3：verify_password.errorCount 字段被滥用 ✅ 已解决
+
+**问题**：`KosmoRequest.verify_password.errorCount` 实际传递的是原始信号 ID（如 `SIG_SETTING_CHANGE_PASSWORD`），不是密码错误次数。
+
+**解决方案**：重命名为 `verify_password.signalId`，语义准确。
+
+```c
+// 之前（误导性命名）
+struct { uint16_t errorCount; } verify_password;
+
+// 之后（准确命名）
+struct { uint16_t signalId; } verify_password;  /* original signal identifying the caller context */
+```

@@ -129,6 +129,13 @@ void KosmoApi_RegisterCallback(KosmoRequestType type, KosmoCallback cb, bool per
     g_persistentCallbacks[type] = persistent;
 }
 
+void KosmoApi_ClearCallback(KosmoRequestType type)
+{
+    if (type >= KOSMO_REQ_NUM) return;
+    g_pendingCallbacks[type] = NULL;
+    g_persistentCallbacks[type] = false;
+}
+
 /* ── 同步查询：账户 ─────────────────────────────────── */
 
 int32_t KosmoApi_GetAccountInfo(KosmoAccountInfo *out)

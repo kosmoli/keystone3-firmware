@@ -55,6 +55,12 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
  */
 void KosmoApi_RegisterCallback(KosmoRequestType type, KosmoCallback cb, bool persistent);
 
+/*
+ * 清除指定请求类型的 callback。
+ * Widget 在操作结束时调用，释放 callback 注册。
+ */
+void KosmoApi_ClearCallback(KosmoRequestType type);
+
 /* ── 同步查询（状态读取）────────────────────────────── */
 
 /*

@@ -20,6 +20,7 @@ typedef struct KeyboardWidget {
     lv_obj_t *switchLabel;
     uint8_t currentNum;
     uint16_t *sig;
+    KosmoCallback verifyCallback;   /* Phase 20: Widget-owned callback for verify result */
     lv_timer_t *countDownTimer;
     uint8_t *timerCounter;
     lv_obj_t *errHintBox;
@@ -29,7 +30,12 @@ typedef struct KeyboardWidget {
 
 KeyboardWidget_t *GuiCreateKeyboardWidget(lv_obj_t *parent);
 KeyboardWidget_t *GuiCreateKeyboardWidgetView(lv_obj_t *parent, lv_event_cb_t buttonCb, uint16_t *signal);
+/* Default verify callback — forwards KosmoApi result as signal to view stack.
+ * Any Widget can use this, or provide its own custom callback. */
+extern const KosmoCallback KOSMO_DEFAULT_VERIFY_CALLBACK;
+
 void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig);
+void SetKeyboardWidgetCallback(KeyboardWidget_t *keyboardWidget, KosmoCallback cb);
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self);
 void SetKeyboardWidgetMode(uint8_t mode);
 uint8_t GetKeyboardWidgetMode(void);

@@ -1,6 +1,7 @@
 #ifndef _GUI_ENTER_PASSCODE_H
 #define _GUI_ENTER_PASSCODE_H
 
+#include "kosmo_api.h"
 #include "gui.h"
 #include "gui_keyboard.h"
 #define CREATE_PIN_NUM                                  6
@@ -38,6 +39,7 @@ typedef struct GuiEnterPasscodeItem {
     lv_style_t      *scoreBarStyle;
     lv_obj_t        *scoreLevel;
     lv_obj_t        *lenOverLabel;
+    KosmoCallback    verifyCallback;   /* Phase 20: Widget-owned callback */
 } GuiEnterPasscodeItem_t;
 
 void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, ENTER_PASSCODE_ENUM method);
@@ -46,6 +48,7 @@ void GuiEnterPassCodeStatus(GuiEnterPasscodeItem_t *item, bool en);
 void GuiEnterPassLabelRefresh(void);
 void SwitchPasswordModeHandler(lv_event_t *e);
 void GuiUpdateEnterPasscodeParam(GuiEnterPasscodeItem_t *item, void *param);
+void GuiSetEnterPasscodeCallback(GuiEnterPasscodeItem_t *item, KosmoCallback cb);
 uint8_t GetPassWordStrength(const char *password, uint8_t len);
 void GuiFingerPrintStatus(GuiEnterPasscodeItem_t *item, bool en, uint8_t errCnt);
 void PassWordPinSwitch(GuiEnterPasscodeItem_t *item);

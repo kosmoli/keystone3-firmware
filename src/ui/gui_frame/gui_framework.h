@@ -12,7 +12,6 @@ int32_t GuiFrameOpenView(GUI_VIEW *view);
 bool GuiCheckIfViewOpened(GUI_VIEW *viewToOpen);
 int32_t GuiFrameWorkViewHandleMsg(void *data, uint16_t len);
 void GuiFrameDebugging(void);
-void GuiFramework_RegisterBridgeCallbacks(void);
 int32_t GuiCloseToTargetView(GUI_VIEW *view);
 bool GuiCheckIfTopView(GUI_VIEW *view);
 

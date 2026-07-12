@@ -1,7 +1,7 @@
 #include "gui_obj.h"
 #include "kosmo_api.h"
 #include "gui_views.h"
-#include "gui_framework.h"
+#include "kosmo_api.h"
 #include "gui_style.h"
 #include "kosmo_api.h"
 #include "gui_status_bar.h"
@@ -56,8 +56,6 @@
 
 static int32_t GuiInitViewInit(void *param)
 {
-    /* Phase 20: Register bridge callbacks for KosmoApi → signal routing */
-    GuiFramework_RegisterBridgeCallbacks();
     bool isTamper = false;
     if (param != NULL) {
         isTamper = *(bool *)param;

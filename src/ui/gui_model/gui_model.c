@@ -1145,23 +1145,22 @@ static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
     return SUCCESS_CODE;
 }
 
-static uint16_t ModelVerifyPassSuccess(uint16_t *param)
+static void ModelVerifyPassSuccess(uint16_t *param)
 {
     int32_t ret = SUCCESS_CODE;
     uint8_t walletAmount;
-    uint16_t resultSignal = SIG_VERIFY_PASSWORD_PASS;
     switch (*param) {
     case DEVICE_SETTING_ADD_WALLET:
         GetExistAccountNum(&walletAmount);
         if (walletAmount == 3) {
-            resultSignal = SIG_SETTING_ADD_WALLET_AMOUNT_LIMIT;
+            GuiApiEmitSignal(SIG_SETTING_ADD_WALLET_AMOUNT_LIMIT, NULL, 0);
         } else {
-            /* walletAmount will be delivered via KosmoApi data */
-            resultSignal = SIG_VERIFY_PASSWORD_PASS;
+            GuiEmitSignal(SIG_INIT_GET_ACCOUNT_NUMBER, &walletAmount, sizeof(walletAmount));
+            GuiApiEmitSignal(SIG_VERIFY_PASSWORD_PASS, param, sizeof(*param));
         }
         break;
     case SIG_SETTING_WRITE_PASSPHRASE:
-        resultSignal = SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS;
+        GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS, param, sizeof(*param));
         SetPageLockScreen(false);
         if (SecretCacheGetPassphrase() == NULL) {
             SecretCacheSetPassphrase("");
@@ -1169,26 +1168,25 @@ static uint16_t ModelVerifyPassSuccess(uint16_t *param)
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetPassword());
         SetPageLockScreen(true);
         if (ret == SUCCESS_CODE) {
-            resultSignal = SIG_SETTING_WRITE_PASSPHRASE_PASS;
+            GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_PASS, NULL, 0);
             ClearSecretCache();
         } else {
-            resultSignal = SIG_SETTING_WRITE_PASSPHRASE_FAIL;
+            GuiApiEmitSignal(SIG_SETTING_WRITE_PASSPHRASE_FAIL, NULL, 0);
         }
         break;
     case SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE:
-        resultSignal = SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS;
+        GuiApiEmitSignal(SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS, param, sizeof(*param));
         break;
     case SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD:
-        resultSignal = SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_PASS;
+        GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_PASS, param, sizeof(*param));
         break;
     default:
-        resultSignal = SIG_VERIFY_PASSWORD_PASS;
+        GuiApiEmitSignal(SIG_VERIFY_PASSWORD_PASS, param, sizeof(*param));
         break;
     }
-    return resultSignal;
 }
 
-static uint16_t ModelVerifyPassFailed(uint16_t *param)
+static void ModelVerifyPassFailed(uint16_t *param)
 {
     uint16_t signal = SIG_VERIFY_PASSWORD_FAIL;
     switch (*param) {
@@ -1226,8 +1224,9 @@ static uint16_t ModelVerifyPassFailed(uint16_t *param)
         break;
     }
     g_passwordVerifyResult.signal = param;
-    return signal;
+    GuiApiEmitSignal(signal, (void *)&g_passwordVerifyResult, sizeof(g_passwordVerifyResult));
 }
+
 // verify wallet password
 static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
 {
@@ -1242,8 +1241,7 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
     if (SIG_LOCK_VIEW_VERIFY_PIN == *param || SIG_LOCK_VIEW_SCREEN_GO_HOME_PASS == *param) {
         ret = VerifyPasswordAndLogin(&accountIndex, SecretCacheGetPassword());
         if (ret == ERR_KEYSTORE_EXTEND_PUBLIC_KEY_NOT_MATCH) {
-            KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ret, NULL, 0);
-            SetLockScreen(enable);
+            GuiApiEmitSignal(SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH, NULL, 0);
             return ret;
         } else if (ret == SUCCESS_CODE) {
             ModeGetWalletDesc(NULL, 0);
@@ -1275,25 +1273,13 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
         ClearSecretCache();
     }
     SetLockScreen(enable);
-    uint16_t resultSignal;
     if (ret == SUCCESS_CODE) {
-        resultSignal = ModelVerifyPassSuccess(param);
+        KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, SUCCESS_CODE, param, sizeof(*param));
+        ModelVerifyPassSuccess(param);
     } else {
-        resultSignal = ModelVerifyPassFailed(param);
+        KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ret, param, sizeof(*param));
+        ModelVerifyPassFailed(param);
     }
-    /* Phase 20: Pack resultSignal + original param into static context
-       for the bridge callback. The callback reads resultSignal to know
-       which frontend signal to emit, and param for the original request context. */
-    static struct {
-        uint16_t resultSignal;
-        uint16_t originalParam;
-        uint16_t errorCount;
-    } s_verifyContext;
-    s_verifyContext.resultSignal = resultSignal;
-    s_verifyContext.originalParam = *param;
-    s_verifyContext.errorCount = g_passwordVerifyResult.errorCount;
-    KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ret,
-                          &s_verifyContext, sizeof(s_verifyContext));
     return SUCCESS_CODE;
 }
 
@@ -1653,10 +1639,8 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
 {
     bool lockState = IsPreviousLockScreenEnable();
     SetLockScreen(false);
-    /* Stage 1: START */
     if (needEmitSignal) {
-        uint16_t stage = SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_START;
-        KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
+        GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_START, NULL, 0);
     }
 
     int32_t ret = SUCCESS_CODE;
@@ -1675,11 +1659,7 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
         ret = FlashWriteRsaPrimes(secret->data);
         CHECK_ERRCODE_BREAK("flash write rsa primes", ret);
 
-        /* Stage 2: GENERATE_ADDRESS */
-        if (needEmitSignal) {
-            uint16_t stage = SIG_SETUP_RSA_PRIVATE_KEY_GENERATE_ADDRESS;
-            KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
-        }
+        GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_GENERATE_ADDRESS, NULL, 0);
 
         ret = AccountPublicInfoSwitch(GetCurrentAccountIndex(), SecretCacheGetPassword(), true);
         CHECK_ERRCODE_BREAK("account public info switch", ret);
@@ -1688,18 +1668,14 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
     } while (0);
 
     if (needEmitSignal) {
-        /* Stage 3: PASS or FAIL */
-        uint16_t stage;
         if (ret == SUCCESS_CODE) {
-            stage = SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_PASS;
-            KosmoApi_NotifyResult(requestType, SUCCESS_CODE, &stage, sizeof(stage));
+            GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_PASS, NULL, 0);
+            KosmoApi_NotifyResult(requestType, SUCCESS_CODE, NULL, 0);
         } else {
-            stage = SIG_SETUP_RSA_PRIVATE_KEY_WRITE_FAIL;
-            KosmoApi_NotifyResult(requestType, ret, &stage, sizeof(stage));
+            GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_WRITE_FAIL, &ret, sizeof(ret));
+            KosmoApi_NotifyResult(requestType, ret, NULL, 0);
         }
-        /* Stage 4: HIDE_LOADING */
-        stage = SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING;
-        KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
+        GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING, NULL, 0);
     }
     memset_s(seed, sizeof(seed), 0, sizeof(seed));
     if (secret != NULL) {

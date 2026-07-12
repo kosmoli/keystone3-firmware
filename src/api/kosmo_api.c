@@ -122,13 +122,6 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
 
 /* KosmoApi_Request 实现在文件末尾（Phase 2 分发逻辑） */
 
-void KosmoApi_RegisterCallback(KosmoRequestType type, KosmoCallback cb, bool persistent)
-{
-    if (type >= KOSMO_REQ_NUM) return;
-    g_pendingCallbacks[type] = cb;
-    g_persistentCallbacks[type] = persistent;
-}
-
 /* ── 同步查询：账户 ─────────────────────────────────── */
 
 int32_t KosmoApi_GetAccountInfo(KosmoAccountInfo *out)
@@ -564,10 +557,16 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 {
     if (request == NULL) return KOSMO_ERR_INVALID;
 
-    /* 存储 callback（cb=NULL 时保留已有 callback，不清除） */
-    if (request->type < KOSMO_REQ_NUM && cb != NULL) {
-        g_pendingCallbacks[request->type] = cb;
-        g_persistentCallbacks[request->type] = request->persistent;
+    /* 存储/清除 callback */
+    if (request->type < KOSMO_REQ_NUM) {
+        if (cb != NULL) {
+            g_pendingCallbacks[request->type] = cb;
+            g_persistentCallbacks[request->type] = request->persistent;
+        } else {
+            /* cb=NULL 时清除 callback 和 persistent 标志（如 UR_CLEAR） */
+            g_pendingCallbacks[request->type] = NULL;
+            g_persistentCallbacks[request->type] = false;
+        }
     }
 
     switch (request->type) {

@@ -24,7 +24,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 │   ├── 链操作：ViewTypeToChainTypeSwitch / GetUrGenerator / SignTransaction ...
 │   ├── ConnectWallet：GetConnectWalletPathIndex / GetWalletName / GetKeplrData ...
 │   ├── SecretCache：CacheGetPassword / CacheSetMnemonic / CacheCleanSecretCache ...
-│   └── 通用：GetBip39Word / GetHomeCoinList / GetZcashSFP ...
+│   └── 通用：GetBip39Word / GetHomeCoinList ...
 │
 └── KosmoTypes.h（共享类型）
     ├── GuiChainCoinType 枚举（链类型）
@@ -99,14 +99,12 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | 账户管理 | 12 | `GetCurrentAccountIndex`, `GetAccountCount`, `GetExistAccountNum`, `GetIsTempAccount` |
 | 密钥/助记词 | 8 | `GetMnemonicType`, `GetEntropyLen`, `GetSeedLen`, `GetBip39Word` |
 | Seed/Entropy/Passphrase | 6 | `GetAccountSeed`, `GetAccountEntropy`, `GetPassphrase`, `GetSeed` |
-| 公钥/地址 | 8 | `GetPublicKey`, `GetPublicKeyByPath`, `GetPath`, `GetPublicKeyRaw` |
+| 公钥/地址 | 11 | `GetPublicKey`, `GetPublicKeyByPath`, `GetPath`, `GetPublicKeyRaw`, `GetZcashSFP`, `GetZcashUFVK` |
 | 链索引管理 | 6 | `GetAccountReceiveIndex/Set`, `GetAccountReceivePath/Set`, `GetAccountIndex/Set` |
 | ConnectWallet | 15 | `GetConnectWalletPathIndex`, `GetWalletName`, `GetKeplrData`, `GetFewchaData` |
-| 链操作/UR | 8 | `ViewTypeToChainTypeSwitch`, `GetUrGenerator`, `SignInternal`, `IsMessageType` |
+| 链操作/UR | 9 | `ViewTypeToChainTypeSwitch`, `GetUrGenerator`, `SignInternal`, `IsMessageType`, `GetAdaXPubType` |
 | SecretCache | 17 | `CacheGetPassword`, `CacheSetMnemonic`, `CacheSetEntropy`, `CacheCleanSecretCache` |
-| 公钥存储 | 4 | `GetCoinCardByIndex`, `GetPublicHomeCoinGet`, `GetZcashSFP`, `GetZcashUFVK` |
-| Zcash/Monero | 4 | `GetZcashSFP`, `GetZcashUFVK`, `GetAdaXPubType` |
-| 其他 | 6 | `GetHomeCoinList`, `GetPassphraseQuickAccess`, `GetFirstReceive/Set` |
+| 公钥存储 | 2 | `GetCoinCardByIndex`, `GetPublicHomeCoinGet` |
 | **总计** | **~87** | |
 
 ---

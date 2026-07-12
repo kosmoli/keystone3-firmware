@@ -276,6 +276,36 @@ void KosmoApi_CacheSetMnemonic(const char *mnemonic)
     SecretCacheSetMnemonic((char *)mnemonic);
 }
 
+void KosmoApi_CacheSetEntropy(const uint8_t *entropy, uint32_t len)
+{
+    SecretCacheSetEntropy((uint8_t *)entropy, len);
+}
+
+void KosmoApi_CacheCleanSecretCache(void)
+{
+    ClearSecretCache();
+}
+
+void KosmoApi_CacheSetSlip39Mnemonic(char *mnemonic, int index)
+{
+    SecretCacheSetSlip39Mnemonic(mnemonic, index);
+}
+
+const char *KosmoApi_CacheGetSlip39Mnemonic(int index)
+{
+    return SecretCacheGetSlip39Mnemonic(index);
+}
+
+void KosmoApi_CacheSetDiceRollHash(uint8_t *hash)
+{
+    SecretCacheSetDiceRollHash(hash);
+}
+
+void KosmoApi_CacheSetDiceRollsLen(uint32_t len)
+{
+    SecretCacheSetDiceRollsLen(len);
+}
+
 /* ── 账户管理小函数 ───────────────────────────────────── */
 
 void KosmoApi_GetExistAccountNum(uint8_t *count)

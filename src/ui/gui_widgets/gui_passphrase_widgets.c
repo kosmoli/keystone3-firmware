@@ -196,7 +196,7 @@ static void SkipHandler(lv_event_t *e)
 #endif
     GuiCloseCurrentWorkingView();
     GuiLockScreenHidden();
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
     if (g_homeView.isActive) {
         GuiLockScreenTurnOff();
         GuiCloseToTargetView(&g_homeView);

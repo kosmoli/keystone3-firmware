@@ -101,7 +101,7 @@ uint8_t GuiGetFingerSettingIndex(void)
 void CancelVerifyFingerHandler(lv_event_t *e)
 {
 
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
     FpCancelCurOperate();
     GUI_DEL_OBJ(g_verifyFingerCont)
 }
@@ -119,7 +119,7 @@ void GuiFingerManagerDestruct(void *obj, void *param)
         lv_timer_del(g_fpRecognizeTimer);
         g_fpRecognizeTimer = NULL;
     }
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
 }
 
 void GuiFpVerifyDestruct(void)
@@ -193,7 +193,7 @@ void GuiSettingDealFingerRecognize(void *param)
         lv_img_set_src(g_imgSignFinger, &imgRedFinger);
         if (g_fpEnSignCnt >= FINGERPRINT_EN_SING_ERR_TIMES) {
             GUI_DEL_OBJ(g_verifyFingerCont)
-            ClearSecretCache();
+            KosmoApi_CacheCleanSecretCache();
             GuiEmitSignal(SIG_SETUP_VIEW_TILE_PREV, NULL, 0);
         } else {
             g_fpRecognizeTimer = lv_timer_create(RecognizeFailHandler, 1000, NULL);

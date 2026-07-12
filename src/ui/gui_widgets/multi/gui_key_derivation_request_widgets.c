@@ -575,7 +575,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
         GetMasterFingerPrint(mfp);
         // clean the cache after use
         if (!g_isUsb) {
-            ClearSecretCache();
+            KosmoApi_CacheCleanSecretCache();
         }
         Ptr_UREncodeResult urResult = generate_key_derivation_ur(mfp, 4, &keys, firmwareVersion);
         for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {

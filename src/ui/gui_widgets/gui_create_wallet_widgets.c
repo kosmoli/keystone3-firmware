@@ -5,7 +5,7 @@
 #include "gui_button.h"
 #include "gui_hintbox.h"
 #include "gui_create_wallet_widgets.h"
-#include "secret_cache.h"
+
 #include "user_memory.h"
 #include "gui_enter_passcode.h"
 #include "motor_manager.h"
@@ -462,7 +462,7 @@ void GuiCreateWalletDeInit(void)
 
     g_createWalletTileView.currentTile = 0;
     CLEAR_OBJECT(g_createWalletTileView);
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
     if (g_pageWidget != NULL) {
         DestroyPageWidget(g_pageWidget);
         g_pageWidget = NULL;

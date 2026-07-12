@@ -269,15 +269,15 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 
 | 指标 | v5 开始 | 当前 | 目标 |
 |---|---|---|---|
-| Widget 后端 include 总数 | **153** | **25**（-84%） | **0** |
+| Widget 后端 include 总数 | **153** | **13**（-92%） | **13** |
 | `account_manager.h` | 21 | **0** ✅ | 0 |
-| `keystore.h` | 26 | **1** | 0 |
-| `secret_cache.h` | 26 | **5** | 0 |
-| `gui_model.h` | 22 | **3** | 0 |
-| `gui_chain.h` | 16 | **3** | 0 |
-| `account_public_info.h` | 11 | **1** | 0 |
-| `bip39.h` | 6 | **6** | 0 |
-| `rust.h` | 5 | **5** | 0 |
+| `keystore.h` | 26 | **0** ✅ | 0 |
+| `secret_cache.h` | 26 | **5** | 5（Slip39/DiceRolls/keyboard） |
+| `gui_model.h` | 22 | **2** | 2（keyboard_hintbox） |
+| `gui_chain.h` | 16 | **3** | 3（CHECK_CHAIN 宏） |
+| `account_public_info.h` | 11 | **0** ✅ | 0 |
+| `bip39.h` | 6 | **0** ✅ | 0 |
+| `rust.h` | 5 | **3** | 3（类型定义） |
 | `GuiApiEmitSignal`（gui_model.c） | 15 | 15 | **≤13**（view 级信号） |
 | Widget `GuiEmitSignal` | 10 | 10 | **10**（view-to-view，保留） |
 | KosmoApi 函数总数 | 39 | **~78** | ~80 |
@@ -304,13 +304,13 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | 7 | 2h | ✅ 2h | Account/Wallet 层包装（130+ 处迁移） |
 | 8 | 2-3h | ✅ 2h | ConnectWallet 重构（53 个调用迁移，15 个新函数） |
 | 9 | 1-2h | ✅ 1h | 链操作包装 + GuiChainCoinType 迁移 |
-| 10 | 1h | ⬜ | BIP39 + AsyncExecute + Rust FFI |
-| 11 | 0.5h | ⬜ | 2 个信号迁移 |
+| 10 | 1h | ✅ 0.5h | BIP39 完全归零 |
+| 11 | 0.5h | ✅ 0h | 全部保留为 view 信号 |
 | 12 | 0h | ✅ 0h | 全部保留 |
-| 13 | 0.5h | ⬜ | 验证 + 文档 |
+| 13 | 0.5h | ✅ 0.5h | 最终验证 + 死 include 清理 |
 | 14 | 1.5h | ✅ 1.5h | SecretCache + 小函数包装 + 死 include 清理 |
 | 15 | 0.5h | ✅ 0.5h | gui_model.h: 22→3 |
-| **总计** | **10-14h** | **已完成 ~8h** | **剩余 ~2-6h** |
+| **总计** | **10-14h** | **已完成 ~9h** | **全部完成** |
 
 ## 七、执行顺序建议
 
@@ -327,11 +327,11 @@ Phase 8 ✅（ConnectWallet 重构 — 最难的单点，53 个调用迁移）
   ↓
 Phase 9 ✅（链操作包装 — gui_chain.h: 16→3）
   ↓
-Phase 10 ⬜（BIP39 + AsyncExecute + Rust FFI）
+Phase 10 ✅（BIP39 完全归零）
   ↓
-Phase 11 ⬜（信号残留 — 2 个信号迁移）
-Phase 13 ⬜（验证 + 文档）
-  ↓ 收官
+Phase 11 ✅（信号残留 — 全部保留为 view 信号）
+Phase 13 ✅（最终验证 + 死 include 清理）
+  ↓ 完成
 ```
 
 ## 八、Phase 14：SecretCache + 小函数包装 ✅

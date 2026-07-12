@@ -9,7 +9,7 @@
 #include "gui_create_wallet_widgets.h"
 #include "slip39.h"
 #include "user_memory.h"
-#include "secret_cache.h"
+
 #include "background_task.h"
 #include "user_utils.h"
 #include "motor_manager.h"
@@ -146,9 +146,9 @@ static void ResetBtnHandler(lv_event_t * e)
 void GuiCreateShareUpdateMnemonic(void *signalParam, uint16_t paramLen)
 {
     g_shareBackupTile.keyBoard->wordCnt = g_selectCnt;
-    GuiUpdateMnemonicKeyBoard(g_shareBackupTile.keyBoard, SecretCacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), false);
+    GuiUpdateMnemonicKeyBoard(g_shareBackupTile.keyBoard, KosmoApi_CacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), false);
     g_shareConfirmTile.keyBoard->wordCnt = g_selectCnt;
-    ArrayRandom(SecretCacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), g_randomBuff, g_selectCnt);
+    ArrayRandom(KosmoApi_CacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), g_randomBuff, g_selectCnt);
     GuiUpdateMnemonicKeyBoard(g_shareConfirmTile.keyBoard, g_randomBuff, true);
     GuiStopCircleAroundAnimation();
     if (g_pageWidget != NULL && g_createShareTileView.currentTile == CREATE_SHARE_BACKUPFROM) {
@@ -351,7 +351,7 @@ static void MnemonicConfirmHandler(lv_event_t * e)
                 }
             }
             Vibrate(SLIGHT);
-            if (strcmp(confirmMnemonic, SecretCacheGetSlip39Mnemonic(g_createShareTileView.currentSlice)) == 0) {
+            if (strcmp(confirmMnemonic, KosmoApi_CacheGetSlip39Mnemonic(g_createShareTileView.currentSlice)) == 0) {
                 GuiEmitSignal(SIG_CREATE_SHARE_VIEW_NEXT_SLICE, NULL, 0);
                 lv_obj_scroll_to_y(g_shareBackupTile.keyBoard->cont, 0, LV_ANIM_OFF);
                 lv_obj_scroll_to_y(g_shareConfirmTile.keyBoard->cont, 0, LV_ANIM_OFF);
@@ -468,10 +468,10 @@ int8_t GuiCreateShareNextSlice(void)
 
     g_createShareTileView.currentTile = CREATE_SHARE_CUSTODIAN;
     ResetBtnTest();
-    GuiUpdateMnemonicKeyBoard(g_shareBackupTile.keyBoard, SecretCacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), false);
+    GuiUpdateMnemonicKeyBoard(g_shareBackupTile.keyBoard, KosmoApi_CacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), false);
     SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
     lv_obj_set_tile_id(g_createShareTileView.tileView, g_createShareTileView.currentTile, 0, LV_ANIM_OFF);
-    ArrayRandom(SecretCacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), g_randomBuff, g_selectCnt);
+    ArrayRandom(KosmoApi_CacheGetSlip39Mnemonic(g_createShareTileView.currentSlice), g_randomBuff, g_selectCnt);
     GuiUpdateMnemonicKeyBoard(g_shareConfirmTile.keyBoard, g_randomBuff, true);
     return SUCCESS_CODE;
 }

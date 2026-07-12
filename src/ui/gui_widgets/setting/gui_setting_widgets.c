@@ -395,11 +395,11 @@ void GuiDevSettingPassCode(bool result, uint16_t tileIndex)
         walletIndex = DEVICE_SETTING_PASSPHRASE_ENTER;
         break;
     case DEVICE_SETTING_ADD_WALLET:
-        ClearSecretCache();
+        KosmoApi_CacheCleanSecretCache();
         walletIndex = DEVICE_SETTING_ADD_WALLET_NOTICE;
         break;
     case DEVICE_SETTING_DEL_WALLET:
-        ClearSecretCache();
+        KosmoApi_CacheCleanSecretCache();
         walletIndex = DEVICE_SETTING_DEL_WALLET_VERIFY;
         break;
     default:

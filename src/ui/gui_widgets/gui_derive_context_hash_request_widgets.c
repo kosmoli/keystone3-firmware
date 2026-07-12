@@ -332,7 +332,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
     KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, password);
     UREncodeResult *urResult = generate_derive_context_hash_ur(g_data, seed, seedLen, g_address);
     memset(seed, 0, sizeof(seed));
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
     SetLockScreen(enable);
     return urResult;
 }

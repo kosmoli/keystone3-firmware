@@ -1,5 +1,5 @@
 #include "gui.h"
-#include "secret_cache.h"
+
 #include "gui_page.h"
 #include "gui_hintbox.h"
 #include "user_memory.h"
@@ -340,8 +340,8 @@ static void ConfirmHandler(lv_event_t *e)
     memset_s(temp, DICE_ROLLS_MAX_LEN + 1, 0, DICE_ROLLS_MAX_LEN + 1);
     SRAM_FREE(temp);
     uint8_t entropyMethod = ENTROPY_TYPE_DICE_ROLLS;
-    SecretCacheSetDiceRollHash(hash);
-    SecretCacheSetDiceRollsLen(rollsLen);
+    KosmoApi_CacheSetDiceRollHash(hash);
+    KosmoApi_CacheSetDiceRollsLen(rollsLen);
     CLEAR_ARRAY(hash);
     if (g_seedType == SEED_TYPE_BIP39) {
         GuiFrameOpenViewWithParam(&g_singlePhraseView, &entropyMethod, sizeof(entropyMethod));

@@ -98,7 +98,7 @@ void GuiSetPinDestruct(void *obj, void *param)
         SRAM_FREE(g_setPassCode);
         g_setPassCode = NULL;
     }
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
 }
 
 void GuiSettingRecoveryCheck(void)

@@ -400,7 +400,7 @@ void RecalculateManageWalletState(void)
 void GuiShowRsaInitializatioCompleteHintbox(void)
 {
     GuiPendingHintBoxRemove();
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
     GuiCreateInitializatioCompleteHintbox();
 }
 

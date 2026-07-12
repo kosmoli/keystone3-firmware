@@ -14,7 +14,7 @@
 #include "kosmo_api.h"
 #include "sha256.h"
 #include "gui_setting_widgets.h"
-#include "secret_cache.h"
+
 #include "gui_forget_pass_widgets.h"
 #include "gui_setting_widgets.h"
 #include "user_memory.h"
@@ -156,7 +156,7 @@ void ImportShareNextSlice(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
             if (!isSame) {
                 sha256((struct sha256 *)g_sliceSha256[mkb->currentSlice], mnemonic, strlen(mnemonic));
                 if (mkb->intputType != MNEMONIC_INPUT_SETTING_VIEW) {
-                    SecretCacheSetSlip39Mnemonic(mnemonic, mkb->currentSlice);
+                    KosmoApi_CacheSetSlip39Mnemonic(mnemonic, mkb->currentSlice);
                 }
 
                 if (mkb->intputType == MNEMONIC_INPUT_SETTING_VIEW) {

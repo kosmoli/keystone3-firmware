@@ -399,7 +399,7 @@ void GuiForgetPassDeInit(void)
         g_pageWidget = NULL;
     }
     memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
-    ClearSecretCache();
+    KosmoApi_CacheCleanSecretCache();
 }
 
 int8_t GuiForgetPassNextTile(uint8_t tileIndex)

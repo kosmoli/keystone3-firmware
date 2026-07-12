@@ -213,6 +213,12 @@ const char *KosmoApi_CacheGetNewPassword(void);
 void KosmoApi_CacheSetNewPassword(const char *password);
 uint32_t KosmoApi_CacheGetDiceRollsLen(void);
 void KosmoApi_CacheSetMnemonic(const char *mnemonic);
+void KosmoApi_CacheSetEntropy(const uint8_t *entropy, uint32_t len);
+void KosmoApi_CacheCleanSecretCache(void);
+void KosmoApi_CacheSetSlip39Mnemonic(char *mnemonic, int index);
+const char *KosmoApi_CacheGetSlip39Mnemonic(int index);
+void KosmoApi_CacheSetDiceRollHash(uint8_t *hash);
+void KosmoApi_CacheSetDiceRollsLen(uint32_t len);
 
 /* ── 账户管理小函数 ───────────────────────────────────── */
 

@@ -1360,7 +1360,7 @@ static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t 
     item->index = index;
     strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
     strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void ModelGetSolAddress(uint32_t index, AddressDataItem_t *item)
@@ -1376,7 +1376,7 @@ static void ModelGetSolAddress(uint32_t index, AddressDataItem_t *item)
         strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
     } else {
     }
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void ModelGetEthAddress(uint32_t index, AddressDataItem_t *item)
@@ -1392,7 +1392,7 @@ static void ModelGetEthAddress(uint32_t index, AddressDataItem_t *item)
         strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
         strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
     }
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void ModelGetAvaxAddress(uint32_t index, AddressDataItem_t *item)
@@ -1415,7 +1415,7 @@ static void ModelGetAvaxAddress(uint32_t index, AddressDataItem_t *item)
             strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
             strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
         }
-        free_simple_response_c_char(result);
+        KosmoApi_FreeSimpleResponseCChar(result);
     } else {
         // x p chain address
         xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_AVAX, 1 + index, 0);

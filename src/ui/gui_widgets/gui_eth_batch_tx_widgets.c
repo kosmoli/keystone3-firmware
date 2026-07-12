@@ -2,7 +2,7 @@
 #include "gui.h"
 #include "gui_page.h"
 #include "kosmo_api.h"
-#include "rust.h"
+
 #include "gui_chain_components.h"
 #include "gui_obj.h"
 #include "gui_eth.h"
@@ -120,10 +120,10 @@ static void ClearPageData()
     }
 
     if (g_isMulti) {
-        free_ur_parse_multi_result((PtrT_URParseMultiResult)g_urMultiResult);
+        KosmoApi_FreeUrParseMultiResult((PtrT_URParseMultiResult)g_urMultiResult);
         g_urMultiResult = NULL;
     } else {
-        free_ur_parse_result((PtrT_URParseResult)g_urResult);
+        KosmoApi_FreeUrParseResult((PtrT_URParseResult)g_urResult);
         g_urResult = NULL;
     }
 }
@@ -149,7 +149,7 @@ UREncodeResult *GuiGetEthBatchTxSignQrCodeData()
     uint8_t seed[64];
     int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
     KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, KosmoApi_CacheGetPassword());
-    encodeResult = eth_sign_batch_tx(data, seed, len);
+    encodeResult = KosmoApi_EthSignBatchTx(data, seed, len);
     KosmoApi_CacheCleanSecretCache();
     return encodeResult;
 }

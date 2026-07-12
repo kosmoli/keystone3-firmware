@@ -1,7 +1,7 @@
 #ifndef _GUI_ETH_BATCH_TX_WIDGETS_H
 #define _GUI_ETH_BATCH_TX_WIDGETS_H
 
-#include "rust.h"
+
 
 #include "stdint.h"
 #include "stdlib.h"

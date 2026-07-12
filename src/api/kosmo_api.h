@@ -363,6 +363,16 @@ UREncodeResult *KosmoApi_GetTonkeeperWalletUr(const char *xpub, const char *wall
  */
 UREncodeResult *KosmoApi_GetFewchaData(bool isSui);
 
+/* ── Rust FFI 包装 ─────────────────────────────────────── */
+
+UREncodeResult *KosmoApi_EthSignBatchTx(void *data, const uint8_t *seed, uint32_t seedLen);
+void KosmoApi_FreeSimpleResponseCChar(void *ptr);
+void KosmoApi_FreeUrEncodeResult(void *ptr);
+void KosmoApi_FreeUrParseMultiResult(void *ptr);
+void KosmoApi_FreeUrParseResult(void *ptr);
+void *KosmoApi_ParseDeriveContextHash(void *ur);
+void *KosmoApi_ParseQrHardwareCall(void *ur);
+
 /* ── 便捷宏 ─────────────────────────────────────────── */
 
 /* 简化异步调用：自动构造 KosmoRequest */

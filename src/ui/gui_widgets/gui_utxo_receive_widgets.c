@@ -1482,7 +1482,7 @@ static void ModelGetUtxoAddress(uint32_t index, AddressDataItem_t *item)
         CHECK_CHAIN_BREAK(result);
     } while (0);
     strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 void GuiResetCurrentUtxoAddressIndex(uint8_t index)

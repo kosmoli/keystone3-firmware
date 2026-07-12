@@ -716,7 +716,7 @@ static void RefreshQrCode(void)
         if (fixedAddress->error_code == 0) {
             lv_label_set_text(g_standardReceiveWidgets.addressLabel, fixedAddress->data);
         }
-        free_simple_response_c_char(fixedAddress);
+        KosmoApi_FreeSimpleResponseCChar(fixedAddress);
     } else if (g_chainCard == HOME_WALLET_CARD_XLM) {
         char addressString[128];
         CutAndFormatString(addressString, sizeof(addressString), addressDataItem.address, 40);
@@ -974,7 +974,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item)
         strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
         strcpy_s(item->path, 32, hdPath);
     }
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 void GuiResetCurrentStandardAddressIndex(uint8_t index)

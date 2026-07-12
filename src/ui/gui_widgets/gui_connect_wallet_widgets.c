@@ -1502,42 +1502,42 @@ static void GetEthEgAddress(void)
                  KosmoApi_GetPublicKey(KOSMO_CHAIN_ETH), "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[Bip44Standard][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = eth_get_address(
                  "44'/60'/0'/0/1",
                  KosmoApi_GetPublicKey(KOSMO_CHAIN_ETH), "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[Bip44Standard][1], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = eth_get_address(
                  "44'/60'/0'/0/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 2, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLive][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = eth_get_address(
                  "44'/60'/1'/0/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 3, 0),
                  "44'/60'/1'");
     CutAndFormatString(g_derivationPathAddr[LedgerLive][1], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = eth_get_address(
                  "44'/60'/0'/0", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 1, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLegacy][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = eth_get_address(
                  "44'/60'/0'/1", KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ETH, 1, 0),
                  "44'/60'/0'");
     CutAndFormatString(g_derivationPathAddr[LedgerLegacy][1], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void GetSolEgAddress(void)
@@ -1547,31 +1547,31 @@ static void GetSolEgAddress(void)
         solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 0, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result =
         solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 1, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44][1], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result =
         solana_get_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 50, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44ROOT][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = solana_get_address(
                  KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 51, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44Change][0], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result = solana_get_address(
                  KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_SOL, 52, 0));
     CutAndFormatString(g_solDerivationPathAddr[SOLBip44Change][1], BUFFER_SIZE_64,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void GetAdaEgAddress(void)
@@ -1582,13 +1582,13 @@ static void GetAdaEgAddress(void)
         cardano_get_base_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 0, adaDerivType), 0, 1);
     CutAndFormatString(g_adaDerivationPathAddr[GetCurrentSelectedIndex()][0], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     result =
         cardano_get_base_address(KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, adaDerivType), 0, 1);
     CutAndFormatString(g_adaDerivationPathAddr[GetCurrentSelectedIndex()][1], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void GetEgAddress(void)

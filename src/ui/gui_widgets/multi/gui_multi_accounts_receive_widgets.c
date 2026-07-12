@@ -1240,7 +1240,7 @@ static void ModelGetAddress(uint32_t index, AddressDataItem_t *item, uint8_t typ
         strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
         strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
     }
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 void GuiResetCurrentMultiAccountsCache(uint8_t index)

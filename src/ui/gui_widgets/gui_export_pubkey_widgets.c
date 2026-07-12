@@ -325,7 +325,7 @@ static void GetBtcPubkey(char *dest, uint8_t pathType, uint32_t maxLen)
     result = xpub_convert_version(xpub, head);
     ASSERT(result);
     strcpy_s(dest, maxLen, result->data);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 void GetExportPubkey(char *dest, uint16_t chain, uint8_t pathType, uint32_t maxLen)
@@ -419,7 +419,7 @@ static void ModelGetUtxoAddress(char *dest, uint8_t pathType, uint32_t index, ui
         CHECK_CHAIN_BREAK(result);
     } while (0);
     snprintf_s(dest, maxLen, "%s", result->data);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void SetEgContent(uint8_t index)

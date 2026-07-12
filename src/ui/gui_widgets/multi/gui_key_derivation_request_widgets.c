@@ -368,7 +368,7 @@ void UpdateAndParseHardwareCall(void)
 
 static void ModelParseQRHardwareCall()
 {
-    Response_QRHardwareCallData *data = parse_qr_hardware_call(g_data);
+    Response_QRHardwareCallData *data = KosmoApi_ParseQrHardwareCall(g_data);
     g_callData = data->data;
     g_response = data;
     for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {
@@ -580,7 +580,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
         Ptr_UREncodeResult urResult = generate_key_derivation_ur(mfp, 4, &keys, firmwareVersion);
         for (size_t i = 0; i < g_callData->key_derivation->schemas->size; i++) {
             if (pubkey[i] != NULL) {
-                free_simple_response_c_char(pubkey[i]);
+                KosmoApi_FreeSimpleResponseCChar(pubkey[i]);
             }
         }
         SetLockScreen(enable);
@@ -872,7 +872,7 @@ void HiddenKeyboardAndShowAnimateQR()
         g_isUsbPassWordCheck = true;
         UREncodeResult *urResult = ModelGenerateSyncUR();
         HandleURResultViaUSBFunc(urResult->data, strlen(urResult->data), GetCurrentUSParsingRequestID(), PRS_EXPORT_HARDWARE_CALL_SUCCESS);
-        free_ur_encode_result(urResult);
+        KosmoApi_FreeUrEncodeResult(urResult);
     } else {
         GuiDeleteKeyboardWidget(g_keyboardWidget);
         // show dynamic qr code
@@ -962,25 +962,25 @@ static void GetCardanoEgAddress(void)
     SimpleResponse_c_char *result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[STANDARD_ADA][0], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, 0);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[STANDARD_ADA][1], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 0, 1);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[LEDGER_ADA][0], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 
     xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, 1, 1);
     result = cardano_get_base_address(xPub, 0, 1);
     CutAndFormatString(g_derivationPathAddr[LEDGER_ADA][1], BUFFER_SIZE_128,
                        result->data, 24);
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void UpdateCardanoEgAddress(uint8_t index)

@@ -244,9 +244,9 @@ void GuiWebAuthResultAreaDeInit()
     GuiWebAuthResultHidePending();
     if (g_urResult != NULL) {
         if (g_isMulti) {
-            free_ur_parse_multi_result(g_urMultiResult);
+            KosmoApi_FreeUrParseMultiResult(g_urMultiResult);
         } else {
-            free_ur_parse_result(g_urResult);
+            KosmoApi_FreeUrParseResult(g_urResult);
         }
         g_urResult = NULL;
         g_urMultiResult = NULL;

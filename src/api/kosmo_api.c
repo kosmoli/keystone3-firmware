@@ -879,3 +879,42 @@ uint32_t KosmoApi_GetAdaXPubType(void) {
 int32_t KosmoApi_Bip39MnemonicFromBytes(const uint8_t *entropy, uint32_t entropyLen, char **outMnemonic) {
     return bip39_mnemonic_from_bytes(NULL, (uint8_t *)entropy, entropyLen, outMnemonic);
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 17: Rust FFI 包装
+ * ═══════════════════════════════════════════════════════════ */
+
+UREncodeResult *KosmoApi_EthSignBatchTx(void *data, const uint8_t *seed, uint32_t seedLen)
+{
+    return eth_sign_batch_tx((PtrUR)data, (PtrBytes)seed, seedLen);
+}
+
+void KosmoApi_FreeSimpleResponseCChar(void *ptr)
+{
+    free_simple_response_c_char((PtrT_SimpleResponse_c_char)ptr);
+}
+
+void KosmoApi_FreeUrEncodeResult(void *ptr)
+{
+    free_ur_encode_result((PtrT_UREncodeResult)ptr);
+}
+
+void KosmoApi_FreeUrParseMultiResult(void *ptr)
+{
+    free_ur_parse_multi_result((PtrT_URParseMultiResult)ptr);
+}
+
+void KosmoApi_FreeUrParseResult(void *ptr)
+{
+    free_ur_parse_result((PtrT_URParseResult)ptr);
+}
+
+void *KosmoApi_ParseDeriveContextHash(void *ur)
+{
+    return parse_derive_context_hash((PtrUR)ur);
+}
+
+void *KosmoApi_ParseQrHardwareCall(void *ur)
+{
+    return parse_qr_hardware_call((PtrUR)ur);
+}

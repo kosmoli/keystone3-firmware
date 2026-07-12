@@ -82,7 +82,7 @@ static void FreeDeriveContextHashMemory(void)
 
 static void ModelParse(void)
 {
-    g_response = parse_derive_context_hash(g_data);
+    g_response = KosmoApi_ParseDeriveContextHash(g_data);
     g_callData = g_response->data;
 }
 
@@ -129,10 +129,10 @@ static bool DeriveConnectedAddress(void)
     if (result->error_code == 0 && result->data != NULL) {
         g_address = SRAM_MALLOC(strnlen_s(result->data, BUFFER_SIZE_128) + 1);
         strcpy(g_address, result->data);
-        free_simple_response_c_char(result);
+        KosmoApi_FreeSimpleResponseCChar(result);
         return true;
     }
-    free_simple_response_c_char(result);
+    KosmoApi_FreeSimpleResponseCChar(result);
     return false;
 }
 

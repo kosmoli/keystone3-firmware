@@ -4,7 +4,6 @@
 #include "gui_keyboard.h"
 #include "gui_button.h"
 #include "gui_hintbox.h"
-#include "bip39.h"
 #include "user_memory.h"
 #include "bip39_english.h"
 #include "kosmo_api.h"

@@ -10,7 +10,6 @@
 #include "user_memory.h"
 #include "gui_lock_widgets.h"
 #include "bip39_english.h"
-#include "bip39.h"
 #include "slip39.h"
 #include "gui_forget_pass_widgets.h"
 #include "gui_setting_widgets.h"

@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "gui.h"
 #include "gui_model.h"
+#include "kosmo_types.h"
 #include "gui_views.h"
 #include "gui_api.h"
 #include "bip39_english.h"
@@ -112,8 +113,10 @@ static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen);
 static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen);
 static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen);
 static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen);
+bool ModelGetPassphraseQuickAccess(void);
+int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 
-static PasswordVerifyResult_t g_passwordVerifyResult;
+static KosmoPasswordVerifyResult_t g_passwordVerifyResult;
 static bool g_stopCalChecksum = false;
 
 #ifdef COMPILE_SIMULATOR

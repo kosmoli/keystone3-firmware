@@ -1,6 +1,7 @@
 #ifndef _GUI_MODEL_H
 #define _GUI_MODEL_H
 
+#include "kosmo_types.h"
 #ifndef COMPILE_SIMULATOR
 #include "user_sqlite3.h"
 #include "fingerprint_process.h"
@@ -18,6 +19,7 @@
 #endif
 #include "gui_analyze_chains.h"
 #include "rsa.h"
+#include "rust.h"
 #include "drv_rtc.h"
 #include "drv_battery.h"
 #include "gui_animating_qrcode.h"
@@ -26,78 +28,62 @@
 
 #define MAX_LOGIN_PASSWORD_ERROR_COUNT  10
 #define MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX 4
-#define MAX_CURRENT_PASSWORD_ERROR_COUNT_WIPE_DEVICE 14
 
-typedef struct {
-    uint8_t threShold;
-    uint8_t memberCnt;
-    uint8_t wordCnt;
-    bool forget;
-} Slip39Data_t;
+/* ── GuiModel* / GuiMode* 函数声明 ───────────────────────── */
 
-typedef struct {
-    uint8_t wordCnt;
-    bool forget;
-} Bip39Data_t;
-
-typedef struct {
-    bool forget;
-} TonData_t;
-
-typedef struct {
-    uint8_t iconIndex;
-    char name[WALLET_NAME_MAX_LEN + 1];
-} WalletDesc_t;
-
-typedef struct PasswordVerifyResult {
-    void *signal;
-    uint16_t errorCount;
-} PasswordVerifyResult_t;
-
-typedef void *(*ReturnVoidPointerFunc)(void);
-
+/* 后端写入 / 状态修改 */
 void GuiModelWriteSe(void);
-void GuiModelSlip39CalWriteSe(Slip39Data_t slip39);
 void GuiModelBip39CalWriteSe(Bip39Data_t bip39);
+void GuiModelBip39RecoveryCheck(uint8_t wordsCnt);
+void GuiModelBip39ForgetPassword(uint8_t wordsCnt);
+void GuiModelBip39UpdateMnemonic(uint8_t wordCnt);
+void GuiModelBip39UpdateMnemonicWithDiceRolls(uint8_t wordCnt);
+void GuiModelSlip39WriteSe(uint8_t wordsCnt);
+void GuiModelSlip39CalWriteSe(Slip39Data_t slip39);
+void GuiModelSlip39ForgetPassword(Slip39Data_t slip39);
+void GuiModelSlip39UpdateMnemonic(Slip39Data_t slip39);
+void GuiModelSlip39UpdateMnemonicWithDiceRolls(Slip39Data_t slip39);
+
+/* 密码 / 设备管理 */
+void GuiModelChangeAccountPassWord(void);
+void GuiModelVerifyAccountPassWord(uint16_t *param);
+void GuiModelWriteLastLockDeviceTime(uint32_t time);
+
+/* 钱包描述 / Passphrase */
 void GuiModelSettingSaveWalletDesc(WalletDesc_t *wallet);
 void GuiModelSettingDelWalletDesc(void);
 void GuiModelLockedDeviceDelAllWalletDesc(void);
-void GuiModelChangeAccountPassWord(void);
-void GuiModelVerifyAccountPassWord(uint16_t *param);
-void GuiModelBip39UpdateMnemonic(uint8_t wordCnt);
-void GuiModelBip39UpdateMnemonicWithDiceRolls(uint8_t wordCnt);
-void GuiModelSlip39UpdateMnemonic(Slip39Data_t slip39);
-void GuiModelSlip39UpdateMnemonicWithDiceRolls(Slip39Data_t slip39);
-void GuiModelBip39RecoveryCheck(uint8_t wordsCnt);
-void GuiModeGetWalletDesc(void);
-void GuiModeGetAccount(void);
-void GuiModeControlQrDecode(bool en);
-void GuiModelSlip39WriteSe(uint8_t wordCnt);
-void GuiModelBip39ForgetPassword(uint8_t wordsCnt);
+void GuiModelSettingWritePassphrase(void);
 
-void GuiModelSlip39ForgetPassword(Slip39Data_t slip39);
-void GuiModelWriteLastLockDeviceTime(uint32_t time);
+/* 查询 / 计算 */
+void GuiModelCalculateCheckSum(void);
+void GuiModelStopCalculateCheckSum(void);
+void GuiModelCalculateBinSha256(void);
 void GuiModelCalculateWebAuthCode(void *webAuthData);
+
+/* SD 卡 / OTA */
+void GuiModelFormatMicroSd(void);
 void GuiModelCopySdCardOta(void);
+void GuiModelUpdateBoot(void);
+
+/* UR / QR */
 void GuiModelURGenerateQRCode(GenerateUR func);
 void GuiModelURUpdate(void);
 void GuiModelURClear(void);
-void GuiModelCheckTransaction(ViewType ViewType);
-int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
-void GuiModelRsaGenerateKeyPair(void);
+
+/* 交易 */
+void GuiModelCheckTransaction(ViewType viewType);
 void GuiModelTransactionCheckResultClear(void);
 void GuiModelParseTransaction(ReturnVoidPointerFunc func);
-bool ModelGetPassphraseQuickAccess(void);
-void GuiModelCalculateCheckSum(void);
-void GuiModelStopCalculateCheckSum(void);
-void GuiModelSettingWritePassphrase(void);
-void GuiModelCalculateBinSha256(void);
-void GuiModelFormatMicroSd(void);
-void GuiModelUpdateBoot(void);
-uint32_t BinarySearchLastNonFFSector(void);
 void GuiModelParseTransactionRawData(void);
 void GuiModelTransactionParseRawDataDelay(void);
 
+/* RSA */
+void GuiModelRsaGenerateKeyPair(void);
+
+/* GuiMode* 查询 */
+void GuiModeGetAccount(void);
+void GuiModeGetWalletDesc(void);
+void GuiModeControlQrDecode(bool en);
 
 #endif /* _GUI_MODEL_H */
-

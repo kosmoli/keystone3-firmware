@@ -374,7 +374,7 @@ void GuiLockScreenPassCode(bool en)
 
 void GuiLockScreenErrorCount(void *param)
 {
-    PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+    KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
     printf("GuiLockScreenErrorCount  errorcount is %d\n", passwordVerifyResult->errorCount);
     if (g_verifyLock != NULL) {
         char hint[BUFFER_SIZE_128];

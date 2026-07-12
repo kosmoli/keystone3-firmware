@@ -4,6 +4,7 @@
 #include "lvgl.h"
 #include "gui_analyze.h"
 #include "gui_chain.h"
+#include "gui_analyze_chains.h"
 #include "kosmo_api.h"
 
 #ifndef COMPILE_SIMULATOR

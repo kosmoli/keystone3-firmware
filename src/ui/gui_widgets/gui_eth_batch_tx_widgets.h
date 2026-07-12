@@ -6,6 +6,10 @@
 #include "stdint.h"
 #include "stdlib.h"
 #include "stdbool.h"
+/* Forward declarations for Rust FFI types */
+typedef struct URParseResult URParseResult;
+typedef struct URParseMultiResult URParseMultiResult;
+typedef struct UREncodeResult UREncodeResult;
 
 
 void GuiEthBatchTxWidgetsInit();

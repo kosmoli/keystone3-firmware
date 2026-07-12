@@ -292,4 +292,37 @@ typedef enum {
 
 /* ── BIP39 常量 ──────────────────────────────────────────── */
 #define KOSMO_BIP39_MAX_WORD_LEN  10
+#define MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX 4
+#define PASSWORD_MAX_LEN            (128)
+#define PASSPHRASE_MAX_LEN          (128)
+#define MNEMONIC_MAX_LEN            (33 * 10)
+
+/* ── 从 gui_model.h 迁移的类型 ───────────────────────── */
+
+#define WALLET_NAME_MAX_LEN                 16
+#define MAX_CURRENT_PASSWORD_ERROR_COUNT_WIPE_DEVICE 14
+#define MAX_LOGIN_PASSWORD_ERROR_COUNT  10
+
+typedef struct {
+    uint8_t threShold;
+    uint8_t memberCnt;
+    uint8_t wordCnt;
+    bool forget;
+} Slip39Data_t;
+
+typedef struct {
+    uint8_t wordCnt;
+    bool forget;
+} Bip39Data_t;
+
+typedef struct {
+    bool forget;
+} TonData_t;
+
+typedef struct {
+    uint8_t iconIndex;
+    char name[WALLET_NAME_MAX_LEN + 1];
+} WalletDesc_t;
+
+typedef void *(*ReturnVoidPointerFunc)(void);
 #endif /* _KOSMO_TYPES_H */

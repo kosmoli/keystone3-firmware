@@ -366,7 +366,7 @@ void GuiDeriveContextHashWidgetHandleURUpdate(char *data, uint16_t len)
 
 void GuiDeriveContextHashPasswordErrorCount(void *param)
 {
-    PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+    KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
     GuiShowErrorNumber(g_keyboardWidget, passwordVerifyResult);
 }
 

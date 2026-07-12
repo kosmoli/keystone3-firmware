@@ -3,6 +3,7 @@
 #include "gui_api.h"
 #include "screen_manager.h"
 #include "gui_model.h"
+#include "kosmo_types.h"
 #ifndef COMPILE_SIMULATOR
 #include "user_msg.h"
 #endif
@@ -56,7 +57,7 @@ int32_t GuiEmitSignal(uint16_t usEvent, void *param, uint16_t usLen)
     if (GuiLockScreenIsTop()) {
         //verify failed
         if (usEvent == SIG_VERIFY_PASSWORD_FAIL) {
-            PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+            KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
             if (SIG_LOCK_VIEW_VERIFY_PIN == *(uint16_t *)passwordVerifyResult->signal) {
                 sigHandled = GuiViewHandleEvent(&g_lockView, usEvent, param, usLen);
                 return SUCCESS_CODE;

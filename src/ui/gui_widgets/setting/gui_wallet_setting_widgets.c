@@ -408,7 +408,7 @@ void GuiShowKeyboardHandler(lv_event_t *e)
 
 void GuiVerifyCurrentPasswordErrorCount(void *param)
 {
-    PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+    KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
     GuiShowErrorNumber(g_keyboardWidget, passwordVerifyResult);
 }
 

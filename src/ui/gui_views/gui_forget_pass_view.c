@@ -50,7 +50,7 @@ int32_t GuiForgetViewEventProcess(void *self, uint16_t usEvent, void *param, uin
         break;
     case SIG_VERIFY_PASSWORD_FAIL:
         if (param != NULL) {
-            PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+            KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
             tileIndex = *(uint16_t *)passwordVerifyResult->signal;
         } else {
             return ERR_GUI_ERROR;

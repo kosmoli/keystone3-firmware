@@ -42,7 +42,7 @@ int32_t GuiKeyDerivationRequestViewEventProcess(void *self, uint16_t usEvent, vo
         break;
     case SIG_VERIFY_PASSWORD_FAIL:
         if (param != NULL) {
-            PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+            KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
             uint16_t sig = *(uint16_t *) passwordVerifyResult->signal;
             if (sig == SIG_LOCK_VIEW_SCREEN_GO_HOME_PASS) {
                 GuiLockScreenPassCode(false);

@@ -233,7 +233,7 @@ void GuiTransactionDetailVerifyPasswordSuccess(void)
 
 void GuiSignVerifyPasswordErrorCount(void *param)
 {
-    PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+    KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
     if (passwordVerifyResult->errorCount == MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX) {
         if (GetCurrentTransactionMode() == TRANSACTION_MODE_USB) {
             const char *data = "Please try again after unlocking";

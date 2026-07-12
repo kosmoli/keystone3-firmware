@@ -664,7 +664,7 @@ static void CloseQrcodeHandler(lv_event_t *e)
 
 void GuiFirmwareUpdateVerifyPasswordErrorCount(void *param)
 {
-    PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+    KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
     if (g_keyboardWidget != NULL) {
         GuiShowErrorNumber(g_keyboardWidget, passwordVerifyResult);
     }

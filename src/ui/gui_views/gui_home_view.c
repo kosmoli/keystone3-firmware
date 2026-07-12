@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "gui_model.h"
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "gui_home_widgets.h"
@@ -54,7 +55,7 @@ int32_t GuiHomeViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
         break;
     case SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_FAIL:
         if (param != NULL) {
-            PasswordVerifyResult_t *passwordVerifyResult = (PasswordVerifyResult_t *)param;
+            KosmoPasswordVerifyResult_t *passwordVerifyResult = (KosmoPasswordVerifyResult_t *)param;
             uint16_t sig = *(uint16_t *)passwordVerifyResult->signal;
             if (sig == SIG_LOCK_VIEW_SCREEN_GO_HOME_PASS) {
                 GuiLockScreenPassCode(false);

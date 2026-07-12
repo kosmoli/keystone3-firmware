@@ -1,3 +1,4 @@
+#include "rust.h"
 #include "gui_change_path_type_widgets.h"
 #include "kosmo_api.h"
 

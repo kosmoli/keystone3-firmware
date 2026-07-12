@@ -127,13 +127,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 case ENTER_PASSCODE_VERIFY_PIN:
                     KosmoApi_CacheSetPassword(g_pinBuf);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    if (item->onConfirm != NULL) {
-                        item->onConfirm(item);
-                    } else {
-                        KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
-                                             .verify_password = { .signalId = *(uint16_t *)g_userParam } };
-                        KosmoApi_Request(&req, item->verifyCallback);
-                    }
+                    item->onConfirm(item, NULL);
                     break;
                 case ENTER_PASSCODE_SET_PIN:
                     if (CheckPasswordExisted(g_pinBuf, index)) {
@@ -205,13 +199,7 @@ static void SetPassWordHandler(lv_event_t *e)
                 if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
                     KosmoApi_CacheSetPassword((char *)currText);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    if (item->onConfirm != NULL) {
-                        item->onConfirm(item);
-                    } else {
-                        KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
-                                             .verify_password = { .signalId = *(uint16_t *)g_userParam } };
-                        KosmoApi_Request(&req, item->verifyCallback);
-                    }
+                    item->onConfirm(item, NULL);
                 }
             }
             lv_textarea_set_text(ta, "");
@@ -598,8 +586,7 @@ void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, EN
     g_passParam.setpinParam = passCodeItem;
     g_passParam.userParam = param;
     passCodeItem->eyeImg = NULL;
-    passCodeItem->verifyCallback = KOSMO_DEFAULT_VERIFY_CALLBACK;
-    passCodeItem->onConfirm = NULL;
+    passCodeItem->onConfirm = DefaultPasscodeVerifyConfirm;
 
     switch (mode) {
     case ENTER_PASSCODE_VERIFY_PIN:
@@ -644,13 +631,45 @@ void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, EN
     return passCodeItem;
 }
 
-void GuiSetEnterPasscodeCallback(GuiEnterPasscodeItem_t *item, KosmoCallback cb)
+/* Signal-forwarding callback for verify results (same pattern as keyboard hintbox) */
+static uint16_t s_passcodeVerifyOriginalParam;
+
+static void PasscodeVerifySignalForward(const KosmoResult *result)
 {
-    item->verifyCallback = cb;
+    if (result->data != NULL && result->dataLen >= 3 * sizeof(uint16_t)) {
+        uint16_t *ctx = (uint16_t *)result->data;
+        uint16_t resultSignal = ctx[0];
+        uint16_t originalParam = ctx[1];
+        uint16_t errorCount = ctx[2];
+
+        if (result->errorCode == SUCCESS_CODE) {
+            s_passcodeVerifyOriginalParam = originalParam;
+            GuiEmitSignal(resultSignal, &s_passcodeVerifyOriginalParam, sizeof(uint16_t));
+        } else {
+            static KosmoPasswordVerifyResult_t s_pwdResult;
+            s_passcodeVerifyOriginalParam = originalParam;
+            s_pwdResult.errorCount = errorCount;
+            s_pwdResult.signal = &s_passcodeVerifyOriginalParam;
+            GuiEmitSignal(resultSignal, (void *)&s_pwdResult, sizeof(s_pwdResult));
+        }
+    } else if (result->errorCode != SUCCESS_CODE) {
+        GuiEmitSignal(SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH, NULL, 0);
+    }
+}
+
+void DefaultPasscodeVerifyConfirm(GuiEnterPasscodeItem_t *self, KosmoCallback cb)
+{
+    UNUSED(self);
+    UNUSED(cb);
+    KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD,
+                              PasscodeVerifySignalForward, true);
+    KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
+                         .verify_password = { .signalId = *(uint16_t *)g_userParam } };
+    KosmoApi_Request(&req, NULL);
 }
 
 void GuiSetEnterPasscodeOnConfirm(GuiEnterPasscodeItem_t *item,
-                                   void (*onConfirm)(struct GuiEnterPasscodeItem *self))
+                                   void (*onConfirm)(struct GuiEnterPasscodeItem *self, KosmoCallback cb))
 {
     item->onConfirm = onConfirm;
 }

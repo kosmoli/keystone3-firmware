@@ -40,6 +40,7 @@ typedef struct GuiEnterPasscodeItem {
     lv_obj_t        *scoreLevel;
     lv_obj_t        *lenOverLabel;
     KosmoCallback    verifyCallback;   /* Phase 20: Widget-owned callback */
+    void (*onConfirm)(struct GuiEnterPasscodeItem *self);  /* Phase 20: confirm handler */
 } GuiEnterPasscodeItem_t;
 
 void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, ENTER_PASSCODE_ENUM method);
@@ -49,6 +50,8 @@ void GuiEnterPassLabelRefresh(void);
 void SwitchPasswordModeHandler(lv_event_t *e);
 void GuiUpdateEnterPasscodeParam(GuiEnterPasscodeItem_t *item, void *param);
 void GuiSetEnterPasscodeCallback(GuiEnterPasscodeItem_t *item, KosmoCallback cb);
+void GuiSetEnterPasscodeOnConfirm(GuiEnterPasscodeItem_t *item,
+                                   void (*onConfirm)(struct GuiEnterPasscodeItem *self));
 uint8_t GetPassWordStrength(const char *password, uint8_t len);
 void GuiFingerPrintStatus(GuiEnterPasscodeItem_t *item, bool en, uint8_t errCnt);
 void PassWordPinSwitch(GuiEnterPasscodeItem_t *item);

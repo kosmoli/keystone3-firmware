@@ -165,7 +165,7 @@ typedef struct {
 
         /* 账户 */
         struct { uint8_t iconIndex; char name[17]; } save_wallet_desc;
-        struct { uint16_t errorCount; } verify_password;
+        struct { uint16_t signalId; } verify_password;  /* original signal identifying the caller context */
 
         /* 通用 */
         struct { uint32_t value; } uint32_param;

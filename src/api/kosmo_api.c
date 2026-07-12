@@ -678,7 +678,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         return KOSMO_OK;
     }
     case KOSMO_REQ_VERIFY_PASSWORD: {
-        uint16_t param = request->verify_password.errorCount;
+        uint16_t param = request->verify_password.signalId;
         GuiModelVerifyAccountPassWord(&param);
         return KOSMO_OK;
     }

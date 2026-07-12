@@ -127,7 +127,13 @@ static void SetPinEventHandler(lv_event_t *e)
                 case ENTER_PASSCODE_VERIFY_PIN:
                     KosmoApi_CacheSetPassword(g_pinBuf);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, item->verifyCallback); }
+                    if (item->onConfirm != NULL) {
+                        item->onConfirm(item);
+                    } else {
+                        KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
+                                             .verify_password = { .signalId = *(uint16_t *)g_userParam } };
+                        KosmoApi_Request(&req, item->verifyCallback);
+                    }
                     break;
                 case ENTER_PASSCODE_SET_PIN:
                     if (CheckPasswordExisted(g_pinBuf, index)) {
@@ -199,7 +205,13 @@ static void SetPassWordHandler(lv_event_t *e)
                 if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
                     KosmoApi_CacheSetPassword((char *)currText);
                     GuiLockScreenShowVerifyLoading(g_userParam);
-                    { KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = { .errorCount = *(uint16_t *)g_userParam } }; KosmoApi_Request(&req, item->verifyCallback); }
+                    if (item->onConfirm != NULL) {
+                        item->onConfirm(item);
+                    } else {
+                        KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
+                                             .verify_password = { .signalId = *(uint16_t *)g_userParam } };
+                        KosmoApi_Request(&req, item->verifyCallback);
+                    }
                 }
             }
             lv_textarea_set_text(ta, "");
@@ -587,6 +599,7 @@ void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, EN
     g_passParam.userParam = param;
     passCodeItem->eyeImg = NULL;
     passCodeItem->verifyCallback = KOSMO_DEFAULT_VERIFY_CALLBACK;
+    passCodeItem->onConfirm = NULL;
 
     switch (mode) {
     case ENTER_PASSCODE_VERIFY_PIN:
@@ -634,6 +647,12 @@ void *GuiCreateEnterPasscode(lv_obj_t *parent, lv_event_cb_t Cb, void *param, EN
 void GuiSetEnterPasscodeCallback(GuiEnterPasscodeItem_t *item, KosmoCallback cb)
 {
     item->verifyCallback = cb;
+}
+
+void GuiSetEnterPasscodeOnConfirm(GuiEnterPasscodeItem_t *item,
+                                   void (*onConfirm)(struct GuiEnterPasscodeItem *self))
+{
+    item->onConfirm = onConfirm;
 }
 
 void GuiUpdateEnterPasscodeParam(GuiEnterPasscodeItem_t *item, void *param)

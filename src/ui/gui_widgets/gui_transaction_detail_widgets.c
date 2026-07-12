@@ -252,7 +252,7 @@ void GuiSignDealFingerRecognize(void *param)
     }
     if (errCode == FP_SUCCESS_CODE) {
         lv_img_set_src(g_fpErrorImg, &imgYellowFinger);
-        {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = passCodeType}}; KosmoApi_Request(&r, NULL);}
+        {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.signalId = passCodeType}}; KosmoApi_Request(&r, NULL);}
         g_fingerSignErrCount = 0;
     } else {
         g_fingerSignErrCount++;

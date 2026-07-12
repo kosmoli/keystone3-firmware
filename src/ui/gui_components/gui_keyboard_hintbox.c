@@ -57,7 +57,14 @@ static void KeyboardConfirmHandler(lv_event_t *e)
         if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
             KosmoApi_CacheSetPassword((char *)currText);
             GuiClearKeyboardInput(keyboardWidget);
-            {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, keyboardWidget->verifyCallback);};
+            if (keyboardWidget->onConfirm != NULL) {
+                keyboardWidget->onConfirm(keyboardWidget);
+            } else {
+                /* Default: verify password via KosmoApi */
+                KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
+                                  .verify_password = {.signalId = *keyboardWidget->sig}};
+                KosmoApi_Request(&r, keyboardWidget->verifyCallback);
+            }
         }
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         GuiHideErrorLabel(keyboardWidget);
@@ -90,6 +97,7 @@ static KeyboardWidget_t *CreateKeyboardWidget()
     static uint16_t sig = ENTER_PASSCODE_VERIFY_PASSWORD;
     keyboardWidget->sig = &sig;
     keyboardWidget->verifyCallback = KOSMO_DEFAULT_VERIFY_CALLBACK;
+    keyboardWidget->onConfirm = NULL;
     keyboardWidget->countDownTimer = NULL;
     keyboardWidget->timerCounter = SRAM_MALLOC(sizeof(uint8_t));
     *keyboardWidget->timerCounter = DEFAULT_TIMER_COUNTER;
@@ -138,6 +146,12 @@ void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig)
 void SetKeyboardWidgetCallback(KeyboardWidget_t *keyboardWidget, KosmoCallback cb)
 {
     keyboardWidget->verifyCallback = cb;
+}
+
+void SetKeyboardWidgetOnConfirm(KeyboardWidget_t *keyboardWidget,
+                                void (*onConfirm)(KeyboardWidget_t *self))
+{
+    keyboardWidget->onConfirm = onConfirm;
 }
 
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self)
@@ -198,7 +212,13 @@ static void SetPinEventHandler(lv_event_t *e)
                 memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
                 keyboardWidget->currentNum = 0;
                 GuiClearKeyboardInput(keyboardWidget);
-                {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, keyboardWidget->verifyCallback);};
+                if (keyboardWidget->onConfirm != NULL) {
+                    keyboardWidget->onConfirm(keyboardWidget);
+                } else {
+                    KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
+                                      .verify_password = {.signalId = *keyboardWidget->sig}};
+                    KosmoApi_Request(&r, keyboardWidget->verifyCallback);
+                }
             }
 
         }

@@ -21,6 +21,7 @@ typedef struct KeyboardWidget {
     uint8_t currentNum;
     uint16_t *sig;
     KosmoCallback verifyCallback;   /* Phase 20: Widget-owned callback for verify result */
+    void (*onConfirm)(struct KeyboardWidget *self);  /* Phase 20: called on confirm, replaces direct KosmoApi_Request */
     lv_timer_t *countDownTimer;
     uint8_t *timerCounter;
     lv_obj_t *errHintBox;
@@ -36,6 +37,8 @@ extern const KosmoCallback KOSMO_DEFAULT_VERIFY_CALLBACK;
 
 void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig);
 void SetKeyboardWidgetCallback(KeyboardWidget_t *keyboardWidget, KosmoCallback cb);
+void SetKeyboardWidgetOnConfirm(KeyboardWidget_t *keyboardWidget,
+                                void (*onConfirm)(struct KeyboardWidget *self));
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self);
 void SetKeyboardWidgetMode(uint8_t mode);
 uint8_t GetKeyboardWidgetMode(void);

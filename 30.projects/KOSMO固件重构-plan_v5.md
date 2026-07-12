@@ -416,5 +416,127 @@ Phase 17 ✅（Rust FFI 包装 — rust.h 完全清零）
 Phase 18 ✅（构建修复 — 类型迁移善后）
   ↓
 Phase 19 ✅（Cardano 包装 — 最后一个 rust.h 残留消除）
+  ↓
+Phase 20 ⬜（前后端信号解耦 — gui_model.c 的 EmitSignal 全部迁移到 KosmoApi）
   ↓ 完成
 ```
+
+---
+
+## 十二、Phase 20：前后端信号解耦
+
+### 问题
+
+`gui_model.c`（后端）中有 **~15 处 `GuiApiEmitSignal`**，直接向前端发射信号通知结果。
+这些是前后端交互的信号残余——信号系统应该仅限于前端 View 路由。
+
+### 分类
+
+#### A 类：密码验证结果（最复杂，~10 个 View 订阅）
+
+**发出方**：`ModelVerifyPassSuccess` / `ModelVerifyPassFailed`
+
+| 信号 | 订阅者 | 用途 |
+|---|---|---|
+| `SIG_VERIFY_PASSWORD_PASS` | home_view, lock_view, setting_view, system_setting_view, connect_wallet_view, forget_pass_view, firmware_update_view, eth_batch_tx_view, transaction_detail_view, derive_context_hash_request_view, key_derivation_request_view | 密码验证成功→各 View 根据 param 做不同跳转 |
+| `SIG_VERIFY_PASSWORD_FAIL` | gui_framework.c（路由）, lock_view, setting_view, system_setting_view, forget_pass_view, firmware_update_view, eth_batch_tx_view, transaction_detail_view, derive_context_hash_request_view, key_derivation_request_view | 密码验证失败→显示错误次数 |
+
+**特殊性**：信号携带 `PasswordVerifyResult_t { errorCount, signal }`，其中 `signal` 是原始请求信号（如 `SIG_LOCK_VIEW_VERIFY_PIN`），View 据此区分上下文。
+
+#### B 类：Passphrase 写入流程（setting_view 订阅）
+
+| 信号 | 订阅者 |
+|---|---|
+| `SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS` | setting_view |
+| `SIG_SETTING_WRITE_PASSPHRASE_PASS` | setting_view, passphrase_view |
+| `SIG_SETTING_WRITE_PASSPHRASE_FAIL` | setting_view |
+
+#### C 类：RSA 密钥生成进度（home_view / connect_wallet_view / standard_receive_view 订阅）
+
+| 信号 | 订阅者 |
+|---|---|
+| `SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_START` | home_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_GENERATE_ADDRESS` | home_view, connect_wallet_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_PASS` | home_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_WRITE_FAIL` | home_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_PASS` | home_view, connect_wallet_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_FAIL` | home_view, connect_wallet_view |
+| `SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING` | standard_receive_view |
+
+#### D 类：单一订阅者
+
+| 信号 | 订阅者 |
+|---|---|
+| `SIG_INIT_GET_ACCOUNT_NUMBER` | init_view, setting_view |
+| `SIG_SETTING_ADD_WALLET_AMOUNT_LIMIT` | setting_view |
+| `SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS` | lock_view |
+| `SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH` | lock_view |
+
+### 迁移方案
+
+#### 新增 KosmoApi 请求类型
+
+```c
+// 密码验证
+KOSMO_REQ_VERIFY_PASSWORD         // 统一密码验证，data 携带原始 signal 标识上下文
+
+// 账户（已有）
+KOSMO_REQ_GET_ACCOUNT             // ✅ 已存在
+
+// Passphrase 写入
+KOSMO_REQ_WRITE_PASSPHRASE        // 统一 passphrase 操作，data 携带阶段标识
+
+// RSA 密钥生成
+KOSMO_REQ_RSA_VERIFY_PASSWORD     // RSA 密码验证
+KOSMO_REQ_RSA_GENERATE_KEYPAIR    // ✅ 已存在
+```
+
+#### 迁移步骤
+
+**Step 1：密码验证迁移**
+
+`ModelVerifyPassSuccess` + `ModelVerifyPassFailed` 中的 `GuiApiEmitSignal(SIG_VERIFY_PASSWORD_PASS/FAIL, ...)` 改为 `KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ...)`。
+
+前端所有订阅 `SIG_VERIFY_PASSWORD_PASS/FAIL` 的 View 改为 `KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD, callback)`。
+
+`PasswordVerifyResult_t` 通过 `KosmoApi_NotifyResult` 的 `data` 参数传递，View 的 callback 从 `result->data` 中解析原始 signal 以区分上下文。
+
+**Step 2：Passphrase 流程迁移**
+
+`SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS/PASS/FAIL` 改为 `KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, ...)`，data 携带阶段标识。
+
+setting_view 和 passphrase_view 改为注册 KosmoApi callback。
+
+**Step 3：RSA 进度迁移**
+
+`RsaGenerateKeyPair` 中 4-6 个 `GuiApiEmitSignal(SIG_SETUP_RSA_PRIVATE_KEY_*)` 改为 `KosmoApi_NotifyResult(KOSMO_REQ_RSA_GENERATE_KEYPAIR, ...)`，data 携带进度阶段。
+
+home_view / connect_wallet_view / standard_receive_view 改为注册 KosmoApi callback。
+
+`ModelVerifyPassSuccess/Failed` 中 RSA 分支改为 `KosmoApi_NotifyResult(KOSMO_REQ_RSA_VERIFY_PASSWORD, ...)`。
+
+**Step 4：单一订阅者迁移**
+
+`SIG_INIT_GET_ACCOUNT_NUMBER`、`SIG_SETTING_ADD_WALLET_AMOUNT_LIMIT`、`SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS`、`SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH` 各自有已存在的 KosmoApi 请求类型或可复用的类型，逐个迁移。
+
+**Step 5：清理**
+
+删除 `gui_views.h` 中不再使用的信号枚举值（预计删除 ~20 个）。
+确认 `GuiApiEmitSignal` 在 `gui_model.c` 中调用次数归零。
+确认 `gui_framework.c` 中的 `SIG_VERIFY_PASSWORD_FAIL` 路由逻辑用 KosmoApi callback 替代。
+
+### 风险评估
+
+| 风险 | 等级 | 说明 |
+|---|---|---|
+| `SIG_VERIFY_PASSWORD_PASS` 多路复用 | **高** | 10+ 个 View 订阅，每个 View 用 `param` 区分上下文。需确保 KosmoApi callback 也能传递原始 signal |
+| `gui_framework.c` 路由 | **中** | 框架层对 `SIG_VERIFY_PASSWORD_FAIL` 有特殊拦截逻辑（锁屏优先），需保留或用 KosmoApi priority callback 替代 |
+| 信号枚举删除范围 | **低** | 需确认信号不被 Widget 层的 `GuiEmitSignal` 使用（Widget 层的信号是前端内部的，保留） |
+
+### 预期结果
+
+- `gui_model.c` 中 `GuiApiEmitSignal` 调用：**15 → 0**
+- 信号系统完全限定于前端 View 路由
+- 前端→后端：`KosmoApi_SubmitRequest()`
+- 后端→前端：`KosmoApi_NotifyResult()`
+- 前端内部：信号系统（View 路由）

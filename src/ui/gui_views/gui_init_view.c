@@ -40,7 +40,6 @@
 #include "kosmo_api.h"
 #include "gui_about_info_widgets.h"
 #include "kosmo_api.h"
-#include "account_manager.h"
 #include "kosmo_api.h"
 #include "gui_setup_widgets.h"
 #include "kosmo_api.h"

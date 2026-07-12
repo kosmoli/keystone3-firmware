@@ -1,5 +1,4 @@
 #include "gui_connect_wallet_widgets.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "gui.h"
 #include "gui_button.h"
@@ -19,7 +18,6 @@
 #include "gui_global_resources.h"
 #include "gui_page.h"
 #include "gui_select_address_widgets.h"
-#include "account_public_info.h"
 #include "kosmo_api.h"
 #include "gui_wallet_tutorial_widgets.h"
 

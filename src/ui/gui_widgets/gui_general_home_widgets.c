@@ -13,7 +13,6 @@
 #include "kosmo_api.h"
 #include "gui_web_auth_widgets.h"
 #include "gui_setup_widgets.h"
-#include "keystore.h"
 #include "gui_page.h"
 #include "log_print.h"
 #include "version.h"

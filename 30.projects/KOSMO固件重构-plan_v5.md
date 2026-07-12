@@ -108,7 +108,8 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | SecretCache | 17 | `CacheGetPassword/Set`, `CacheGetMnemonic/Set`, `CacheSetPassphrase`, `CacheGetChecksum`, `CacheSetWalletIndex/Name`, `CacheGetNewPassword/Set`, `CacheGetDiceRollsLen`, `CacheSetEntropy`, `CacheCleanSecretCache`, `CacheSetSlip39Mnemonic/Get`, `CacheSetDiceRollHash`, `CacheSetDiceRollsLen` |
 | 状态/杂项 | 7 | `GetAccountSeed`, `GetAccountEntropy`, `GetFirstReceive/Set`, `AccountPublicHomeCoinGet`, `CheckSolPathSupport`, `GetHomeCoinList`, `GetZcashSFP`, `GetZcashUFVK` |
 | **宏** | **3** | `KOSMO_API_REQUEST_WALLET`, `KOSMO_API_REQUEST_DEVICE`, `KOSMO_API_REQUEST_ACCOUNT` |
-| **总计** | **81+3** | |
+| Rust FFI 包装 | 7 | `EthSignBatchTx`, `FreeSimpleResponseCChar`, `FreeUrEncodeResult`, `FreeUrParseResult`, `ParseDeriveContextHash`, `ParseQrHardwareCall` |
+| **总计** | **88+3** | |
 
 ---
 

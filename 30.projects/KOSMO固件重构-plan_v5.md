@@ -17,9 +17,9 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 │   ├── 通过 callback 接收异步结果
 │   └── 后端 include 仅剩 3 个 rust.h（UREncodeResult 类型定义） ✅
 │
-├── KosmoApi.h（唯一接口，~87 个函数）
-│   ├── 账户管理：GetCurrentAccountIndex / GetAccountCount / GetMnemonicType ...
-│   ├── 密钥派生：GetSeed / GetAccountEntropy / GetPassphrase ...
+├── KosmoApi.h（唯一接口，81 个函数）
+│   ├── 账户/链信息：GetAccountInfo / GetChainList / IsMoneroSupported ...
+│   ├── BIP39 + 公钥/地址 + Seed/Entropy：GetBip39Word / GetPublicKey / GetSeed ...
 │   ├── 公钥/地址：GetPublicKey / GetPublicKeyByPath / GetPath ...
 │   ├── 链操作：ViewTypeToChainTypeSwitch / GetUrGenerator / SignTransaction ...
 │   ├── ConnectWallet：GetConnectWalletPathIndex / GetWalletName / GetKeplrData ...
@@ -70,7 +70,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                        │               │ (view-to-view)
                 ┌──────▼───────────────▼──────────┐
                 │         KosmoApi (api/)           │
-                │  · ~87 个函数                      │
+                │  · 81 个函数                      │
                 │  · 同步查询 + 异步请求              │
                 │  · SecretCache 包装               │
                 └──────────┬──────────────────────┘
@@ -92,20 +92,23 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
                 └──────────────────────┘
 ```
 
-### KosmoApi 接口分类
+### KosmoApi 接口分类（81 个函数）
 
-| 类别 | 函数数 | 示例 |
+| 类别 | 数量 | 函数 |
 |---|---|---|
-| 账户管理 | 12 | `GetCurrentAccountIndex`, `GetAccountCount`, `GetExistAccountNum`, `GetIsTempAccount` |
-| 密钥/助记词 | 8 | `GetMnemonicType`, `GetEntropyLen`, `GetSeedLen`, `GetBip39Word` |
-| Seed/Entropy/Passphrase | 6 | `GetAccountSeed`, `GetAccountEntropy`, `GetPassphrase`, `GetSeed` |
-| 公钥/地址 | 11 | `GetPublicKey`, `GetPublicKeyByPath`, `GetPath`, `GetPublicKeyRaw`, `GetZcashSFP`, `GetZcashUFVK` |
+| 基础设施 | 3 | `Init`, `Request`, `NotifyResult` |
+| 账户/链信息 | 4 | `GetAccountInfo`, `GetChainList`, `IsMoneroSupported`, `IsZcashSupported` |
+| BIP39 | 3 | `GetBip39Word`, `ValidateWord`, `Bip39MnemonicFromBytes` |
+| 公钥/地址 | 4 | `GetPublicKey`, `GetPublicKeyByPath`, `GetPublicKeyRaw`, `GetPath` |
+| Seed/Entropy | 5 | `GetSeed`, `GetMnemonicType`, `GetSeedLen`, `GetEntropyLen`, `GetPassphrase` |
+| 账户管理 | 5 | `GetCurrentAccountIndex`, `GetAccountCount`, `GetExistAccountNum`, `GetIsTempAccount`, `GetPassphraseQuickAccess` |
 | 链索引管理 | 6 | `GetAccountReceiveIndex/Set`, `GetAccountReceivePath/Set`, `GetAccountIndex/Set` |
-| ConnectWallet | 15 | `GetConnectWalletPathIndex`, `GetWalletName`, `GetKeplrData`, `GetFewchaData` |
-| 链操作/UR | 9 | `ViewTypeToChainTypeSwitch`, `GetUrGenerator`, `SignInternal`, `IsMessageType`, `GetAdaXPubType` |
-| SecretCache | 17 | `CacheGetPassword`, `CacheSetMnemonic`, `CacheSetEntropy`, `CacheCleanSecretCache` |
-| 公钥存储 | 2 | `GetCoinCardByIndex`, `GetPublicHomeCoinGet` |
-| **总计** | **~87** | |
+| 链操作/UR | 7 | `ViewTypeToChainTypeSwitch`, `GetUrGenerator`, `GetSingleUrGenerator`, `IsMessageType`, `IsTonSignProof`, `IsCatalystVotingRegistration`, `GetAdaXPubType` |
+| ConnectWallet | 15 | `GetConnectWalletPathIndex/Set`, `GetConnectWalletAccountIndex/Set`, `GetConnectWalletNetwork/Set`, `GetWalletName`, `GetWalletNameByIndex`, `GetXrpAddressByIndex`, `GetAdaBaseAddressByXPub`, `GetKeplrData`, `GetAdaData`, `GetXrpToolkitData`, `GetTonkeeperWalletUr`, `GetFewchaData` |
+| SecretCache | 17 | `CacheGetPassword/Set`, `CacheGetMnemonic/Set`, `CacheSetPassphrase`, `CacheGetChecksum`, `CacheSetWalletIndex/Name`, `CacheGetNewPassword/Set`, `CacheGetDiceRollsLen`, `CacheSetEntropy`, `CacheCleanSecretCache`, `CacheSetSlip39Mnemonic/Get`, `CacheSetDiceRollHash`, `CacheSetDiceRollsLen` |
+| 状态/杂项 | 7 | `GetAccountSeed`, `GetAccountEntropy`, `GetFirstReceive/Set`, `AccountPublicHomeCoinGet`, `CheckSolPathSupport`, `GetHomeCoinList`, `GetZcashSFP`, `GetZcashUFVK` |
+| **宏** | **3** | `KOSMO_API_REQUEST_WALLET`, `KOSMO_API_REQUEST_DEVICE`, `KOSMO_API_REQUEST_ACCOUNT` |
+| **总计** | **81+3** | |
 
 ---
 
@@ -294,7 +297,7 @@ LVGL 开发者的世界（唯一允许的依赖：kosmo_api.h + kosmo_types.h + 
 | `account_public_info.h` | 11 | **0** ✅ | 完全消除 |
 | `bip39.h` | 6 | **0** ✅ | 完全消除 |
 | `rust.h` | 5 | **3** | 保留（类型定义） |
-| KosmoApi 函数总数 | 39 | **~87** | +48 |
+| KosmoApi 函数总数 | 39 | **81** | +48 |
 | LVGL 开发者需要知道的后端概念 | chain/wallet/keystore/account/rust | **仅 UREncodeResult** | |
 
 ### 剩余 3 个 rust.h 说明

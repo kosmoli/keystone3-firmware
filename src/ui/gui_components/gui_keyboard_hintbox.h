@@ -1,5 +1,4 @@
 #include "kosmo_api.h"
-#include "gui_model.h"
 #ifndef _GUI_KEYBOARD_HINTBOX_H
 #define _GUI_KEYBOARD_HINTBOX_H
 

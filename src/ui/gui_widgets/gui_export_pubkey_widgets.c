@@ -1,4 +1,4 @@
-#include "gui_chain.h"
+#include "gui_ur_macros.h"
 #include "gui_obj.h"
 #include "gui_export_pubkey_widgets.h"
 #include "gui_home_widgets.h"

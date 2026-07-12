@@ -6,7 +6,7 @@
 #include "gui_hintbox.h"
 #include "gui_obj.h"
 #include "gui_views.h"
-#include "gui_chain.h"
+#include "gui_ur_macros.h"
 #include "kosmo_api.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_lock_widgets.h"

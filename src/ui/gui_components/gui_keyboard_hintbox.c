@@ -14,7 +14,6 @@
 #include "gui_views.h"
 #include "gui_lock_widgets.h"
 #include "fingerprint_process.h"
-#include "gui_model.h"
 #include "usb_task.h"
 
 #ifndef COMPILE_SIMULATOR

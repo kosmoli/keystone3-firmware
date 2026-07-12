@@ -894,6 +894,29 @@ void KosmoApi_FreeSimpleResponseCChar(void *ptr)
     free_simple_response_c_char((PtrT_SimpleResponse_c_char)ptr);
 }
 
+int KosmoApi_CardanoGetAddress(const char *xPub, uint32_t index, uint8_t type, char *addrOut, uint32_t addrOutLen)
+{
+    SimpleResponse_c_char *result = NULL;
+    switch (type) {
+    case 1:
+        result = cardano_get_enterprise_address(xPub, 0, 1);
+        break;
+    case 2:
+        result = cardano_get_stake_address(xPub, 0, 1);
+        break;
+    default:
+        result = cardano_get_base_address(xPub, 0, 1);
+        break;
+    }
+    if (result == NULL || result->data == NULL) {
+        return -1;
+    }
+    strncpy(addrOut, result->data, addrOutLen - 1);
+    addrOut[addrOutLen - 1] = '0';
+    free_simple_response_c_char(result);
+    return 0;
+}
+
 void KosmoApi_FreeUrEncodeResult(void *ptr)
 {
     free_ur_encode_result((PtrT_UREncodeResult)ptr);

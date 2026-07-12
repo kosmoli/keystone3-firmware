@@ -1,4 +1,3 @@
-#include "rust.h"
 #include "gui_change_path_type_widgets.h"
 #include "kosmo_api.h"
 
@@ -408,24 +407,11 @@ static void GetChangePathLabelHint(char* hint)
 static void ModelGetADAAddress(uint32_t index, AddressDataItem_t *item, uint8_t type)
 {
     char *xPub = NULL, hdPath[BUFFER_SIZE_128] = {0};
-    SimpleResponse_c_char *result = NULL;
     xPub = KosmoApi_GetPublicKeyByPath(KOSMO_CHAIN_ADA, index, g_selectType);
     snprintf_s(hdPath, BUFFER_SIZE_128, "m/1852'/1815'/%u'", index);
-    switch (type) {
-    case 1:
-        result = cardano_get_enterprise_address(xPub, 0, 1);
-        break;
-    case 2:
-        result = cardano_get_stake_address(xPub, 0, 1);
-        break;
-    default:
-        result = cardano_get_base_address(xPub, 0, 1);
-        break;
-    }
     item->index = index;
-    strcpy_s(item->address, ADDRESS_MAX_LEN, result->data);
+    KosmoApi_CardanoGetAddress(xPub, 0, type, item->address, ADDRESS_MAX_LEN);
     strcpy_s(item->path, PATH_ITEM_MAX_LEN, hdPath);
-    KosmoApi_FreeSimpleResponseCChar(result);
 }
 
 static void GetADAPathItemSubTitle(char* subTitle, int index, uint32_t maxLen)

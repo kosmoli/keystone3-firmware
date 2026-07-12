@@ -293,6 +293,8 @@ typedef enum {
 /* ── BIP39 常量 ──────────────────────────────────────────── */
 #define KOSMO_BIP39_MAX_WORD_LEN  10
 #define MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX 4
+#define ADDRESS_MAX_LEN                     256
+#define PATH_ITEM_MAX_LEN                   32
 #define PASSWORD_MAX_LEN            (128)
 #define PASSPHRASE_MAX_LEN          (128)
 #define MNEMONIC_MAX_LEN            (33 * 10)

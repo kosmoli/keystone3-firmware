@@ -367,6 +367,11 @@ UREncodeResult *KosmoApi_GetFewchaData(bool isSui);
 
 UREncodeResult *KosmoApi_EthSignBatchTx(void *data, const uint8_t *seed, uint32_t seedLen);
 void KosmoApi_FreeSimpleResponseCChar(void *ptr);
+/* Cardano address generation (hides SimpleResponse_c_char)
+ * type: 0=base, 1=enterprise, 2=stake
+ * addrOut: caller-provided buffer, at least ADDRESS_MAX_LEN bytes
+ * Returns 0 on success, -1 on failure */
+int KosmoApi_CardanoGetAddress(const char *xPub, uint32_t index, uint8_t type, char *addrOut, uint32_t addrOutLen);
 void KosmoApi_FreeUrEncodeResult(void *ptr);
 void KosmoApi_FreeUrParseMultiResult(void *ptr);
 void KosmoApi_FreeUrParseResult(void *ptr);

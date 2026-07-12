@@ -557,7 +557,7 @@ static UREncodeResult *ModelGenerateSyncUR(void)
                     uint8_t entropy[64];
                     KosmoApi_GetAccountEntropy(KosmoApi_GetCurrentAccountIndex(), entropy, &entropyLen, password);
                     char *mnemonic = NULL;
-                    bip39_mnemonic_from_bytes(NULL, entropy, entropyLen, &mnemonic);
+                    KosmoApi_Bip39MnemonicFromBytes(entropy, entropyLen, &mnemonic);
                     SimpleResponse_c_char *ledger_bitbox02_response  = get_ledger_bitbox02_master_key(mnemonic, KosmoApi_GetPassphrase(KosmoApi_GetCurrentAccountIndex()));
                     char* ledgerBitbox02Key = ledger_bitbox02_response->data;
                     pubkey[i] = derive_bip32_ed25519_extended_pubkey(ledgerBitbox02Key, path);

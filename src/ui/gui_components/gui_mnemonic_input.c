@@ -11,7 +11,7 @@
 #include "gui_mnemonic_input.h"
 #include "slip39.h"
 #include "kosmo_api.h"
-#include "bip39.h"
+#include "kosmo_api.h"
 #include "sha256.h"
 #include "gui_setting_widgets.h"
 #include "secret_cache.h"
@@ -201,7 +201,7 @@ static void HandleInputType(MnemonicKeyBoard_t *mkb)
 
 void ImportSinglePhraseWords(MnemonicKeyBoard_t *mkb, KeyBoard_t *letterKb)
 {
-    size_t bufferSize = BIP39_MAX_WORD_LEN * mkb->wordCnt + mkb->wordCnt;
+    size_t bufferSize = KOSMO_BIP39_MAX_WORD_LEN * mkb->wordCnt + mkb->wordCnt;
     char *mnemonic = SRAM_MALLOC(bufferSize);
     memset_s(mnemonic, bufferSize, 0, bufferSize);
 

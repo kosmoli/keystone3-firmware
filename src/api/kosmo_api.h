@@ -254,6 +254,8 @@ int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK);
  */
 uint32_t KosmoChainToXPubType(KosmoChainType chain);
 
+
+
 /* ── 链操作工具函数 ──────────────────────────────────────── */
 
 /*
@@ -278,6 +280,11 @@ bool KosmoApi_IsCatalystVotingRegistration(uint8_t type);
  * ADA XPub 类型。
  */
 uint32_t KosmoApi_GetAdaXPubType(void);
+
+
+/* ── BIP39 ──────────────────────────────────────────────────── */
+
+int32_t KosmoApi_Bip39MnemonicFromBytes(const uint8_t *entropy, uint32_t entropyLen, char **outMnemonic);
 
 
 /* ── ConnectWallet 状态管理 ────────────────────────────── */

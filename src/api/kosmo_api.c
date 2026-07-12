@@ -739,11 +739,11 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     }
 }
 
+
 /* ═══════════════════════════════════════════════════════════
  * Phase 8: ConnectWallet 状态管理 + 地址生成包装
  * ═══════════════════════════════════════════════════════════ */
 
-#include "account_public_info.h"  /* ConnectWallet state functions */
 
 /* ── ConnectWallet 状态 ──────────────────────────────── */
 
@@ -840,4 +840,12 @@ bool KosmoApi_IsCatalystVotingRegistration(uint8_t type) {
 
 uint32_t KosmoApi_GetAdaXPubType(void) {
     return (uint32_t)GetAdaXPubType();
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 10: BIP39 包装
+ * ═══════════════════════════════════════════════════════════ */
+
+int32_t KosmoApi_Bip39MnemonicFromBytes(const uint8_t *entropy, uint32_t entropyLen, char **outMnemonic) {
+    return bip39_mnemonic_from_bytes(NULL, (uint8_t *)entropy, entropyLen, outMnemonic);
 }

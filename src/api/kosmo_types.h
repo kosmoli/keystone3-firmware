@@ -289,4 +289,7 @@ typedef enum {
     CHAIN_XMR,
     CHAIN_BUTT,
 } GuiChainCoinType;
+
+/* ── BIP39 常量 ──────────────────────────────────────────── */
+#define KOSMO_BIP39_MAX_WORD_LEN  10
 #endif /* _KOSMO_TYPES_H */

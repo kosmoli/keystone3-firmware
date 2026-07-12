@@ -8,7 +8,7 @@
 #include "gui_create_wallet_widgets.h"
 #include "kosmo_api.h"
 #include "user_memory.h"
-#include "bip39.h"
+#include "kosmo_api.h"
 #include "background_task.h"
 #include "gui_lock_widgets.h"
 #include "motor_manager.h"
@@ -193,7 +193,7 @@ static void MnemonicConfirmHandler(lv_event_t *e)
         }
 
         if (g_currId == g_phraseCnt) {
-            char *confirmMnemonic = SRAM_MALLOC(BIP39_MAX_WORD_LEN * g_phraseCnt + 1);
+            char *confirmMnemonic = SRAM_MALLOC(KOSMO_BIP39_MAX_WORD_LEN * g_phraseCnt + 1);
             confirmMnemonic[0] = 0;
             for (i = 0; i < g_phraseCnt; i++) {
                 j = (g_pressedBtn[i] - 1) + (g_pressedBtn[i] - 1) / 3;
@@ -207,7 +207,7 @@ static void MnemonicConfirmHandler(lv_event_t *e)
             } else {
                 g_noticeHintBox = GuiCreateErrorCodeWindow(ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET, &g_noticeHintBox, NULL);
             }
-            memset_s(confirmMnemonic, BIP39_MAX_WORD_LEN * g_phraseCnt + 1, 0, BIP39_MAX_WORD_LEN * g_phraseCnt + 1);
+            memset_s(confirmMnemonic, KOSMO_BIP39_MAX_WORD_LEN * g_phraseCnt + 1, 0, KOSMO_BIP39_MAX_WORD_LEN * g_phraseCnt + 1);
             SRAM_FREE(confirmMnemonic);
         }
     }

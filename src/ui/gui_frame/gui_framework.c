@@ -3,10 +3,71 @@
 #include "gui_api.h"
 #include "screen_manager.h"
 #include "gui_model.h"
+#include "kosmo_api.h"
 #include "kosmo_types.h"
 #ifndef COMPILE_SIMULATOR
 #include "user_msg.h"
 #endif
+
+/* ── Phase 20: Bridge callbacks ────────────────────────────
+ *
+ * These callbacks registered with KosmoApi translate backend results
+ * back into frontend signals for the view-stack dispatch system.
+ * This is the ONLY place where KosmoApi results become signals.
+ */
+
+/* Persistent storage for bridge callback data (survives function return) */
+static uint16_t s_bridgeOriginalParam;
+
+/* VerifyPassword bridge: reads resultSignal from data, emits to view stack.
+ * Data layout: { resultSignal:u16, originalParam:u16, errorCount:u16 }
+ * View expectations:
+ *   SIG_VERIFY_PASSWORD_PASS → param points to original signal (u16)
+ *   SIG_VERIFY_PASSWORD_FAIL → param points to PasswordVerifyResult_t { signal, errorCount }
+ */
+static void BridgeVerifyPasswordCallback(const KosmoResult *result)
+{
+    if (result->data != NULL && result->dataLen >= 3 * sizeof(uint16_t)) {
+        uint16_t *ctx = (uint16_t *)result->data;
+        uint16_t resultSignal = ctx[0];
+        uint16_t originalParam = ctx[1];
+        uint16_t errorCount = ctx[2];
+
+        if (result->errorCode == SUCCESS_CODE) {
+            /* Success: views expect pointer to original signal */
+            s_bridgeOriginalParam = originalParam;
+            GuiEmitSignal(resultSignal, &s_bridgeOriginalParam, sizeof(uint16_t));
+        } else {
+            /* Failure: views expect KosmoPasswordVerifyResult_t */
+            static KosmoPasswordVerifyResult_t s_bridgePwdResult;
+            s_bridgeOriginalParam = originalParam;
+            s_bridgePwdResult.errorCount = errorCount;
+            s_bridgePwdResult.signal = &s_bridgeOriginalParam;
+            GuiEmitSignal(resultSignal, (void *)&s_bridgePwdResult,
+                          sizeof(s_bridgePwdResult));
+        }
+    } else if (result->errorCode != SUCCESS_CODE) {
+        /* Special case: EXTENDED_PUBLIC_KEY_NOT_MATCH (data=NULL, error!=OK) */
+        GuiEmitSignal(SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH, NULL, 0);
+    }
+}
+
+/* RSA bridge: persistent callback, receives multiple stage notifications */
+static void BridgeRsaCallback(const KosmoResult *result)
+{
+    if (result->data != NULL && result->dataLen >= sizeof(uint16_t)) {
+        uint16_t stage = *(uint16_t *)result->data;
+        GuiEmitSignal(stage, NULL, 0);
+    }
+}
+
+/* Register bridge callbacks for all backend→frontend result types.
+ * Called once from GuiInitViewInit(). */
+void GuiFramework_RegisterBridgeCallbacks(void)
+{
+    KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD, BridgeVerifyPasswordCallback, true);
+    KosmoApi_RegisterCallback(KOSMO_REQ_RSA_GENERATE_KEYPAIR, BridgeRsaCallback, true);
+}
 
 /* DEFINES */
 #define OPENED_VIEW_MAX 20          // the litmit of views

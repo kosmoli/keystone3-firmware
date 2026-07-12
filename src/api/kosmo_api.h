@@ -47,6 +47,16 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb);
  */
 void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen);
 
+/*
+ * 注册结果回调（不触发 Model 函数）。
+ * 用于框架层在启动时注册 bridge callback。
+ *
+ * @param type        请求类型
+ * @param cb          回调函数
+ * @param persistent  true = 持久回调（不自动清除）
+ */
+void KosmoApi_RegisterCallback(KosmoRequestType type, KosmoCallback cb, bool persistent);
+
 /* ── 同步查询（状态读取）────────────────────────────── */
 
 /*

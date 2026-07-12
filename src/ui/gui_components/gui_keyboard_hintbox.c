@@ -57,7 +57,7 @@ static void KeyboardConfirmHandler(lv_event_t *e)
         if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
             KosmoApi_CacheSetPassword((char *)currText);
             GuiClearKeyboardInput(keyboardWidget);
-            {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, NULL);};
+            {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, keyboardWidget->verifyCallback);};
         }
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         GuiHideErrorLabel(keyboardWidget);
@@ -89,6 +89,7 @@ static KeyboardWidget_t *CreateKeyboardWidget()
     keyboardWidget->errLabel = NULL;
     static uint16_t sig = ENTER_PASSCODE_VERIFY_PASSWORD;
     keyboardWidget->sig = &sig;
+    keyboardWidget->verifyCallback = NULL;
     keyboardWidget->countDownTimer = NULL;
     keyboardWidget->timerCounter = SRAM_MALLOC(sizeof(uint8_t));
     *keyboardWidget->timerCounter = DEFAULT_TIMER_COUNTER;
@@ -101,6 +102,11 @@ static KeyboardWidget_t *CreateKeyboardWidget()
 void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig)
 {
     keyboardWidget->sig = sig;
+}
+
+void SetKeyboardWidgetCallback(KeyboardWidget_t *keyboardWidget, KosmoCallback cb)
+{
+    keyboardWidget->verifyCallback = cb;
 }
 
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self)
@@ -161,7 +167,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
                 keyboardWidget->currentNum = 0;
                 GuiClearKeyboardInput(keyboardWidget);
-                {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, NULL);};
+                {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.errorCount = *keyboardWidget->sig}}; KosmoApi_Request(&r, keyboardWidget->verifyCallback);};
             }
 
         }

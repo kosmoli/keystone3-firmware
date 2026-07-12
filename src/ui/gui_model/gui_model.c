@@ -1295,6 +1295,7 @@ static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen)
     if (ret != SUCCESS_CODE) {
         walletAmount = 0xFF;
     }
+    GuiEmitSignal(SIG_INIT_GET_ACCOUNT_NUMBER, &walletAmount, sizeof(walletAmount));
     KosmoApi_NotifyResult(KOSMO_REQ_GET_ACCOUNT, KOSMO_OK, &walletAmount, sizeof(walletAmount));
     SetLockScreen(enable);
     return SUCCESS_CODE;

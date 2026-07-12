@@ -57,7 +57,9 @@ static void KeyboardConfirmHandler(lv_event_t *e)
         if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
             KosmoApi_CacheSetPassword((char *)currText);
             GuiClearKeyboardInput(keyboardWidget);
-            keyboardWidget->onConfirm(keyboardWidget, NULL);
+            {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
+                              .verify_password = {.signalId = *keyboardWidget->sig}};
+             KosmoApi_Request(&r, NULL);}
         }
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         GuiHideErrorLabel(keyboardWidget);
@@ -89,7 +91,6 @@ static KeyboardWidget_t *CreateKeyboardWidget()
     keyboardWidget->errLabel = NULL;
     static uint16_t sig = ENTER_PASSCODE_VERIFY_PASSWORD;
     keyboardWidget->sig = &sig;
-    keyboardWidget->onConfirm = DefaultKeyboardVerifyConfirm;
     keyboardWidget->countDownTimer = NULL;
     keyboardWidget->timerCounter = SRAM_MALLOC(sizeof(uint8_t));
     *keyboardWidget->timerCounter = DEFAULT_TIMER_COUNTER;
@@ -99,52 +100,9 @@ static KeyboardWidget_t *CreateKeyboardWidget()
     return keyboardWidget;
 }
 
-/* Phase 20: Signal-forwarding callback (replaces old KOSMO_DEFAULT_VERIFY_CALLBACK).
- * Registered via KosmoApi_RegisterCallback, NOT stored on widget. */
-static uint16_t s_verifyOriginalParam;
-
-static void VerifySignalForwardCallback(const KosmoResult *result)
-{
-    if (result->data != NULL && result->dataLen >= 3 * sizeof(uint16_t)) {
-        uint16_t *ctx = (uint16_t *)result->data;
-        uint16_t resultSignal = ctx[0];
-        uint16_t originalParam = ctx[1];
-        uint16_t errorCount = ctx[2];
-
-        if (result->errorCode == SUCCESS_CODE) {
-            s_verifyOriginalParam = originalParam;
-            GuiEmitSignal(resultSignal, &s_verifyOriginalParam, sizeof(uint16_t));
-        } else {
-            static KosmoPasswordVerifyResult_t s_pwdResult;
-            s_verifyOriginalParam = originalParam;
-            s_pwdResult.errorCount = errorCount;
-            s_pwdResult.signal = &s_verifyOriginalParam;
-            GuiEmitSignal(resultSignal, (void *)&s_pwdResult, sizeof(s_pwdResult));
-        }
-    } else if (result->errorCode != SUCCESS_CODE) {
-        GuiEmitSignal(SIG_EXTENDED_PUBLIC_KEY_NOT_MATCH, NULL, 0);
-    }
-}
-
-void DefaultKeyboardVerifyConfirm(KeyboardWidget_t *self, KosmoCallback cb)
-{
-    UNUSED(cb);
-    KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD,
-                              VerifySignalForwardCallback, true);
-    KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
-                      .verify_password = {.signalId = *self->sig}};
-    KosmoApi_Request(&r, NULL);
-}
-
 void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig)
 {
     keyboardWidget->sig = sig;
-}
-
-void SetKeyboardWidgetOnConfirm(KeyboardWidget_t *keyboardWidget,
-                                void (*onConfirm)(KeyboardWidget_t *self, KosmoCallback cb))
-{
-    keyboardWidget->onConfirm = onConfirm;
 }
 
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self)
@@ -205,7 +163,9 @@ static void SetPinEventHandler(lv_event_t *e)
                 memset_s(g_pinBuf, sizeof(g_pinBuf), 0, sizeof(g_pinBuf));
                 keyboardWidget->currentNum = 0;
                 GuiClearKeyboardInput(keyboardWidget);
-                keyboardWidget->onConfirm(keyboardWidget, NULL);
+                {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
+                                  .verify_password = {.signalId = *keyboardWidget->sig}};
+                 KosmoApi_Request(&r, NULL);}
             }
 
         }

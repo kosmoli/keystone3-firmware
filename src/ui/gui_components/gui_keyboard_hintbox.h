@@ -20,7 +20,6 @@ typedef struct KeyboardWidget {
     lv_obj_t *switchLabel;
     uint8_t currentNum;
     uint16_t *sig;
-    void (*onConfirm)(struct KeyboardWidget *self, KosmoCallback cb);  /* Phase 20: parent controls confirm behavior */
     lv_timer_t *countDownTimer;
     uint8_t *timerCounter;
     lv_obj_t *errHintBox;
@@ -30,16 +29,7 @@ typedef struct KeyboardWidget {
 
 KeyboardWidget_t *GuiCreateKeyboardWidget(lv_obj_t *parent);
 KeyboardWidget_t *GuiCreateKeyboardWidgetView(lv_obj_t *parent, lv_event_cb_t buttonCb, uint16_t *signal);
-/*
- * Default onConfirm handler: registers a signal-forwarding callback with
- * KosmoApi and triggers VERIFY_PASSWORD. Any Widget can use this as a
- * drop-in onConfirm, or provide its own custom handler.
- */
-void DefaultKeyboardVerifyConfirm(KeyboardWidget_t *self, KosmoCallback cb);
-
 void SetKeyboardWidgetSig(KeyboardWidget_t *keyboardWidget, uint16_t *sig);
-void SetKeyboardWidgetOnConfirm(KeyboardWidget_t *keyboardWidget,
-                                void (*onConfirm)(struct KeyboardWidget *self, KosmoCallback cb));
 void SetKeyboardWidgetSelf(KeyboardWidget_t *keyboardWidget, KeyboardWidget_t **self);
 void SetKeyboardWidgetMode(uint8_t mode);
 uint8_t GetKeyboardWidgetMode(void);

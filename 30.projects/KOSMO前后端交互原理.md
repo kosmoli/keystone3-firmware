@@ -313,20 +313,19 @@ typedef struct {
 
 **问题**：`KeyboardConfirmHandler` 和 `GuiEnterPasscodeVerifyHandler` 直接调 `KosmoApi_Request`，组件层不应知道后端交互细节。
 
-**解决方案**：给 `KeyboardWidget_t` 和 `GuiEnterPasscodeItem_t` 增加 `onConfirm` 回调。
+**解决方案**：给 `KeyboardWidget_t` 和 `GuiEnterPasscodeItem_t` 增加 `onConfirm(self, cb)` 回调。组件只负责收集输入和缓存密码，确认后调用 `onConfirm`，由父 Widget 决定做什么。
 
 ```
 KeyboardConfirmHandler():
-    if (keyboardWidget->onConfirm != NULL) {
-        keyboardWidget->onConfirm(keyboardWidget);   ← 父 Widget 控制
-    } else {
-        KosmoApi_Request(VERIFY_PASSWORD, ...);       ← 默认兜底
-    }
+    KosmoApi_CacheSetPassword(密码)
+    keyboardWidget->onConfirm(keyboardWidget, NULL)   ← 委托给父 Widget
 ```
 
-父 Widget 通过 `SetKeyboardWidgetOnConfirm` / `GuiSetEnterPasscodeOnConfirm` 设置自定义确认逻辑。不设置时保留默认的密码验证行为，向后兼容。
+默认实现 `DefaultKeyboardVerifyConfirm` / `DefaultPasscodeVerifyConfirm` 保留了原有的密码验证行为（注册信号转发 callback + 触发 KosmoApi），向后兼容。
 
-**效果**：组件层的 `KosmoApi_Request` 变为可选的默认行为，不再是硬编码依赖。
+父 Widget 通过 `SetKeyboardWidgetOnConfirm` / `GuiSetEnterPasscodeOnConfirm` 提供自定义实现。
+
+**效果**：组件层完全不持有 callback，不直接调 KosmoApi_Request。回调的所有权归父 Widget。
 
 ### Issue 2：各 Widget 应提供自定义 callback 替代默认信号转发 ⬜ 渐进式
 

@@ -9,7 +9,7 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 800
 
-#include "rust.h"
+typedef struct UREncodeResult UREncodeResult;
 #include "lvgl.h"
 
 typedef UREncodeResult *(*GenerateUR)(void);

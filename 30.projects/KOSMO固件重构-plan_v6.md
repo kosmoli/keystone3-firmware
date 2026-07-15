@@ -212,7 +212,7 @@ gui_model.c 是纯粹的中间层：1704 行代码，70 个 KosmoApi_NotifyResul
 | v5 Phase 18 | ✅ 完成 | Widget → KosmoApi 迁移 |
 | v5 Phase 19 | ✅ 完成 | Component → KosmoApi 迁移 |
 | v5 Phase 20 | ✅ 完成 | gui_model.c EmitSignal → KosmoApi_NotifyResult |
-| **v6 Phase 21** | **⬜ 待执行** | **消除 gui_model.c** |
+| **v6 Phase 21** | **✅ 完成** | **消除 gui_model.c（+1500 行搬入 kosmo_api.c）** |
 
 Phase 21 完成后，前端对后端的依赖将完全收敛到 `kosmo_api.h` 一个头文件，架构层数从 3 层压缩到 2 层。
 

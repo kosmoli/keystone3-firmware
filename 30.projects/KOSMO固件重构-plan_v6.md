@@ -215,3 +215,23 @@ gui_model.c 是纯粹的中间层：1704 行代码，70 个 KosmoApi_NotifyResul
 | **v6 Phase 21** | **⬜ 待执行** | **消除 gui_model.c** |
 
 Phase 21 完成后，前端对后端的依赖将完全收敛到 `kosmo_api.h` 一个头文件，架构层数从 3 层压缩到 2 层。
+
+---
+
+## 执行记录（2026-07-15）
+
+| Phase | 状态 | 关键变化 |
+|---|---|---|
+| 21.0 | ✅ | AsyncExecute 机制：模拟器同步、硬件 FreeRTOS 异步 |
+| 21.1 | ✅ | KosmoApi_Request → Model* + AsyncExecute；33 个 GuiModel* 包装删除 |
+| 21.2 | ✅ | 19 个文件 gui_model.h include 移除；3 个文件添加显式 include |
+| 21.3 | ✅ | 全部 Model*/Mode* 搬入 kosmo_api.c（992→2492 行）；gui_model/ 目录删除 |
+| 21.4 | ✅ | gui_model.c/h/internal.h 删除；CMakeLists 清理 |
+| 21.5 | ✅ | 笔记更新 |
+
+**最终编译**：0 error，模拟器二进制 build/simulator/simulator (44.5MB)
+
+**架构变化**：
+- 层数：3 层 → 2 层
+- 后端头文件：Widget 层只需 kosmo_api.h
+- net 代码行数：-230 行（删除的冗余大于新增的整合）

@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "gui_views.h"
+#include "kosmo_api.h"
 #include "gui_status_bar.h"
 #include "gui_keyboard.h"
 #include "gui_button.h"
@@ -42,7 +43,8 @@ static void CountDownTimerHandler(lv_timer_t *timer)
 static void GuiEnterSystemHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_bootNotMatchCont)
-    GuiModeGetAccount();
+    KosmoRequest req = { .type = KOSMO_REQ_GET_ACCOUNT };
+    KosmoApi_Request(&req, NULL);
 }
 
 void GuiBootVersionNotMatchWidget(void)

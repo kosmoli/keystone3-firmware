@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
+#include "kosmo_types.h"
 #include "gui_views.h"
 #include "gui_eth_batch_tx_widgets.h"
 #include "gui_lock_widgets.h"

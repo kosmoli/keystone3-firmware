@@ -20,7 +20,6 @@
 #include "user_fatfs.h"
 #include "log_print.h"
 #include "rsa.h"
-#include "gui_model.h"
 
 #define PUB_KEY_MAX_LENGTH                  1024 + 1
 #define VERSION_MAX_LENGTH                  64

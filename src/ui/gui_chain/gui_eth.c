@@ -1,6 +1,5 @@
 #include "gui_analyze.h"
 #include "account_public_info.h"
-#include "gui_model.h"
 #include "gui_qr_hintbox.h"
 #include "screen_manager.h"
 #include "user_sqlite3.h"

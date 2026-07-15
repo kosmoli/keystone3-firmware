@@ -6,7 +6,6 @@
 #include "kosmo_api.h"
 #include "gui_status_bar.h"
 #include "kosmo_api.h"
-#include "gui_model.h"
 #include "kosmo_api.h"
 #include "gui_enter_passcode.h"
 #include "kosmo_api.h"
@@ -79,7 +78,8 @@ static int32_t GuiInitViewInit(void *param)
     //     GuiBootVersionNotMatchWidget();
     //     return SUCCESS_CODE;
     // }
-    GuiModeGetAccount();
+    KosmoRequest req = { .type = KOSMO_REQ_GET_ACCOUNT };
+    KosmoApi_Request(&req, NULL);
     return SUCCESS_CODE;
 }
 

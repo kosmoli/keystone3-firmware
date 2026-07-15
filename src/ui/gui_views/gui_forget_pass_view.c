@@ -1,6 +1,5 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
 #include "gui_views.h"
 #include "gui_enter_passcode.h"
 #include "gui_forget_pass_widgets.h"

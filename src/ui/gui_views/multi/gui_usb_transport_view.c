@@ -1,6 +1,5 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
 #include "gui_views.h"
 #include "gui_usb_transport_widgets.h"
 

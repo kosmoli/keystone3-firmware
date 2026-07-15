@@ -5,7 +5,6 @@
 #include "user_memory.h"
 #include "draw_on_lcd.h"
 #include "sha256.h"
-#include "gui_model.h"
 #include "cmsis_os2.h"
 #include "drv_qspi_flash.h"
 

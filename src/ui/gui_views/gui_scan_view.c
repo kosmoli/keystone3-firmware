@@ -1,7 +1,7 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
 #include "gui_views.h"
+#include "rust.h"
 #include "gui_scan_widgets.h"
 #include "gui_lock_widgets.h"
 #include "gui_pending_hintbox.h"

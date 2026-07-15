@@ -3,7 +3,6 @@
 #include "gui_views.h"
 #include "gui_firmware_update_widgets.h"
 #include "gui_status_bar.h"
-#include "gui_model.h"
 #include "gui_lock_widgets.h"
 
 int32_t GuiFirmwareUpdateViewEventProcess(void *self, uint16_t usEvent, void *param, uint16_t usLen)

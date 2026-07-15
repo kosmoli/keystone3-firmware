@@ -83,7 +83,6 @@ set(GUI_INCLUDE_PATH
     src/ui/gui_widgets
     src/ui/gui_widgets/setting
     src/ui/lv_i18n
-    src/ui/gui_model
     src/ui/gui_analyze
     src/ui/gui_chain
     src/ui/gui_components
@@ -183,7 +182,6 @@ file(GLOB_RECURSE GUI
     "src/ui/gui_frame/*.c"
     "src/ui/gui_widgets/setting/*.c"
     "src/ui/lv_i18n/*.c"
-    "src/ui/gui_model/*.c"
     "src/ui/gui_components/*.c"
     "src/api/*.c"
 )
@@ -324,6 +322,9 @@ else()
         ${CRYPTO}
         ${UTILS}
         ${CRYPTO_SLIP39}
+    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     add_dependencies(${PROJECT_NAME} rust_c)
     target_link_libraries(${PROJECT_NAME} PRIVATE SDL2 ${CMAKE_SOURCE_DIR}/ui_simulator/lib/rust-builds/librust_c.a)

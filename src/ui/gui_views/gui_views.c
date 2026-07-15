@@ -3,7 +3,6 @@
 #include "gui_views.h"
 #include "gui_setup_widgets.h"
 #include "gui_qr_code.h"
-#include "gui_model.h"
 #include "gui_hintbox.h"
 #include "gui_lock_widgets.h"
 #include "gui_keyboard.h"

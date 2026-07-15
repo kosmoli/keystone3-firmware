@@ -313,19 +313,24 @@ typedef struct {
 
 **问题**：`KeyboardConfirmHandler` 和 `GuiEnterPasscodeVerifyHandler` 直接调 `KosmoApi_Request`，组件层不应知道后端交互细节。
 
-**解决方案**：给 `KeyboardWidget_t` 和 `GuiEnterPasscodeItem_t` 增加 `onConfirm(self, cb)` 回调。组件只负责收集输入和缓存密码，确认后调用 `onConfirm`，由父 Widget 决定做什么。
+**最终方案**：组件确实调 `KosmoApi_Request`，但这是合理的——`KosmoApi_Request` 是前端唯一与后端通信的入口，组件作为"确认动作的触发者"调用它完全正当。
 
+关键改变：**回调管理从组件中移除**。组件不持有任何 callback，只做两件事：
+1. `KosmoApi_CacheSetPassword` — 缓存密码
+2. `KosmoApi_Request(&req, NULL)` — 发起请求
+
+父 Widget 在创建组件之前通过 `KosmoApi_RegisterCallback` 注册自己的 callback：
+
+```c
+// gui_lock_widgets.c — 父 Widget
+KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD, LockScreenCallback, true);
+g_verifyLock = GuiCreateEnterPasscode(..., ENTER_PASSCODE_VERIFY_PIN);
 ```
-KeyboardConfirmHandler():
-    KosmoApi_CacheSetPassword(密码)
-    keyboardWidget->onConfirm(keyboardWidget, NULL)   ← 委托给父 Widget
-```
 
-默认实现 `DefaultKeyboardVerifyConfirm` / `DefaultPasscodeVerifyConfirm` 保留了原有的密码验证行为（注册信号转发 callback + 触发 KosmoApi），向后兼容。
-
-父 Widget 通过 `SetKeyboardWidgetOnConfirm` / `GuiSetEnterPasscodeOnConfirm` 提供自定义实现。
-
-**效果**：组件层完全不持有 callback，不直接调 KosmoApi_Request。回调的所有权归父 Widget。
+**效果**：
+- 组件层：纯输入收集器，不持有 callback，不管理回调
+- Widget 层：通过 `KosmoApi_RegisterCallback` / `KosmoApi_Request` 完全控制回调
+- 任何 Widget 都能用自己的 callback，不依赖特定组件 API
 
 ### Issue 2：各 Widget 应提供自定义 callback 替代默认信号转发 ⬜ 渐进式
 
@@ -339,11 +344,30 @@ KeyboardConfirmHandler():
 - 尚无 Widget 实际使用自定义 callback
 
 **迁移路径**（逐个 Widget 推进）：
-1. 锁屏验证（gui_lock_widgets.c）→ `LockScreenVerifyCallback`：直接处理解锁/错误显示
-2. 交易签名（gui_transaction_detail_widgets.c）→ `TxSignVerifyCallback`：直接处理签名流程
-3. 批量签名（gui_eth_batch_tx_widgets.c）→ `BatchTxVerifyCallback`
-4. 设置页密码（gui_setting_widgets.c）→ `SettingVerifyCallback`
-5. RSA 密码验证（gui_connect_wallet_widgets.c）→ `RsaVerifyCallback`
+
+父 Widget 在创建 keyboard/passcode 组件前注册自己的 callback：
+
+```c
+// 示例：锁屏 Widget
+static void LockScreenCallback(const KosmoResult *result) {
+    if (result->errorCode == SUCCESS_CODE) {
+        GuiFrameOpenView(&g_homeView);  // 直接跳转，不经过信号
+    } else {
+        // 显示错误次数
+    }
+}
+
+// 创建组件前注册 callback
+KosmoApi_RegisterCallback(KOSMO_REQ_VERIFY_PASSWORD, LockScreenCallback, true);
+g_verifyLock = GuiCreateEnterPasscode(..., ENTER_PASSCODE_VERIFY_PIN);
+```
+
+迁移清单：
+1. 锁屏验证（gui_lock_widgets.c）→ `LockScreenCallback`
+2. 交易签名（gui_transaction_detail_widgets.c）→ `TxSignCallback`
+3. 批量签名（gui_eth_batch_tx_widgets.c）→ `BatchTxCallback`
+4. 设置页密码（gui_setting_widgets.c）→ `SettingCallback`
+5. RSA 密码验证（gui_connect_wallet_widgets.c）→ `RsaCallback`
 6. 其他调用点...
 
 每个 Widget 迁移后，对应的 View 层信号 handler 可以删除。

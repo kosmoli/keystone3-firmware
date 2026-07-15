@@ -1,6 +1,5 @@
 #include "gui.h"
 #include "gui_obj.h"
-#include "gui_model.h"
 #include "gui_views.h"
 #include "gui_transaction_signature_widgets.h"
 #include "gui_lock_widgets.h"

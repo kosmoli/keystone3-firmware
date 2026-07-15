@@ -3,7 +3,6 @@
 #include "gui_views.h"
 #include "gui_standard_receive_widgets.h"
 #include "gui_pending_hintbox.h"
-#include "gui_model.h"
 
 static int32_t GuiStandardReceiveViewInit(uint8_t chain)
 {

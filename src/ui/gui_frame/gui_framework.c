@@ -2,7 +2,6 @@
 #include "gui_views.h"
 #include "gui_api.h"
 #include "screen_manager.h"
-#include "gui_model.h"
 #include "kosmo_types.h"
 #ifndef COMPILE_SIMULATOR
 #include "user_msg.h"

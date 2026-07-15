@@ -13,7 +13,7 @@
 #include "device_setting.h"
 #include "drv_aw32001.h"
 #include "lv_i18n_api.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 
 int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint16_t usLen)
 {
@@ -54,7 +54,10 @@ int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
         }
         SetCurrentAccountIndex();
         GuiFpRecognizeResult(true);
-        GuiModeGetWalletDesc();
+        {
+            KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+            KosmoApi_Request(&req, NULL);
+        }
     case SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS:
     case SIG_VERIFY_PASSWORD_PASS:
         GuiLockScreenClearFirstUnlock();

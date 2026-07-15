@@ -10,6 +10,7 @@
 
 #include "kosmo_api.h"
 #include <string.h>
+#include "stdlib.h"
 
 /* ── 后端头文件（只有这里能 include）────────────────── */
 
@@ -17,6 +18,7 @@
 #include "account_manager.h"
 #include "keystore.h"
 #include "bip39.h"
+#include "slip39.h"
 #include "wordlist.h"
 #include "gui_wallet.h"
 #include "gui_xrp.h"
@@ -24,15 +26,141 @@
 #include "rust.h"
 #include "gui_status_bar.h"
 #include "secret_cache.h"
-
-/* Phase 2: gui_model.h 的 GuiModel* 函数作为异步分发目标。
- * Phase 4 完成后将移除此依赖，逻辑直接内联到本文件。 */
-#include "gui_model.h"
+#include "gui.h"
+#include "gui_views.h"
+#include "gui_api.h"
+#include "gui_obj.h"
+#include "bip39_english.h"
+#include "user_memory.h"
+#include "log_print.h"
+#include "background_task.h"
+#include "fetch_sensitive_data_task.h"
+#include "gui_setting_widgets.h"
+#include "gui_chain.h"
+#include "user_utils.h"
+#include "device_setting.h"
+#include "presetting.h"
+#include "ui_display_task.h"
+#include "motor_manager.h"
+#include "gui_animating_qrcode.h"
+#include "screen_manager.h"
+#include "qrdecode_task.h"
+#include "assert.h"
+#include "version.h"
+#include "user_delay.h"
 
 #ifndef COMPILE_SIMULATOR
-#include "user_memory.h"
-#include "gui_views.h"
+#include "sha256.h"
+#include "user_msg.h"
+#include "general_msg.h"
+#include "cmsis_os.h"
+#include "fingerprint_process.h"
+#include "user_fatfs.h"
+#include "mhscpu_qspi.h"
+#include "safe_mem_lib.h"
+#include "usb_task.h"
+#include "drv_mpu.h"
+#else
+#include "simulator_model.h"
 #endif
+
+/* ── Constants (from gui_model.h / gui_model.c) ─────────── */
+
+#define MAX_LOGIN_PASSWORD_ERROR_COUNT  10
+#define MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX 4
+
+#define SECTOR_SIZE                         4096
+#define APP_ADDR                            (0x1001000 + 0x80000)   //108 1000
+#define APP_CHECK_START_ADDR                (0x1400000)
+#define APP_END_ADDR                        (0x2000000)
+#define SD_CARD_OTA_FILE_PATH               "0:/keystone3.bin"
+#define INTERNAL_STORAGE_OTA_FILE_PATH      "1:/keystone3.bin"
+
+#define MODEL_WRITE_SE_HEAD                 do {                                \
+        ret = CHECK_BATTERY_LOW_POWER();                                        \
+        CHECK_ERRCODE_BREAK("save low power", ret);                             \
+        ret = GetBlankAccountIndex(&newAccount);                                \
+        CHECK_ERRCODE_BREAK("get blank account", ret);                          \
+        ret = GetExistAccountNum(&accountCnt);                                  \
+        CHECK_ERRCODE_BREAK("get exist account", ret);                          \
+        printf("before accountCnt = %d\n", accountCnt);
+
+#define MODEL_WRITE_SE_END(reqType)                                             \
+        ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());    \
+        CHECK_ERRCODE_BREAK("login error", ret);                                \
+        GetExistAccountNum(&accountCnt);                                        \
+        printf("after accountCnt = %d\n", accountCnt);                          \
+    } while (0);                                                                \
+    if (ret == SUCCESS_CODE) {                                                  \
+        ClearSecretCache();                                                     \
+        KosmoApi_NotifyResult(reqType, SUCCESS_CODE, NULL, 0);                  \
+    } else {                                                                            \
+        KosmoApi_NotifyResult(reqType, ret, NULL, 0);                          \
+    }
+
+/* ── Model* globals (from gui_model.c) ──────────────────── */
+
+static KosmoPasswordVerifyResult_t g_passwordVerifyResult;
+static bool g_stopCalChecksum = false;
+static UREncodeResult *g_urResult = NULL;
+static PtrT_TransactionCheckResult g_checkResult = NULL;
+
+#ifdef COMPILE_SIMULATOR
+int32_t AsyncExecute(BackgroundAsyncFunc_t func, const void *inData, uint32_t inDataLen)
+{
+    func(inData, inDataLen);
+    return SUCCESS_CODE;
+}
+
+int32_t AsyncExecuteRunnable(BackgroundAsyncFuncWithRunnable_t func, const void *inData, uint32_t inDataLen, BackgroundAsyncRunnable_t runnable)
+{
+    func(inData, inDataLen, runnable);
+    return SUCCESS_CODE;
+}
+#endif
+
+/* ── Model* forward declarations ────────────────────────── */
+
+static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen);
+static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen);
+static int32_t ModelDelAllWallet(const void *inData, uint32_t inDataLen);
+static int32_t ModelWritePassphrase(const void *inData, uint32_t inDataLen);
+static int32_t ModelChangeAccountPass(const void *inData, uint32_t inDataLen);
+static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen);
+static int32_t ModelGenerateEntropy(const void *inData, uint32_t inDataLen);
+static int32_t ModelGenerateEntropyWithDiceRolls(const void *inData, uint32_t inDataLen);
+static int32_t ModelBip39CalWriteEntropyAndSeed(const void *inData, uint32_t inDataLen);
+static int32_t ModelWriteEntropyAndSeed(const void *inData, uint32_t inDataLen);
+static int32_t ModelBip39VerifyMnemonic(const void *inData, uint32_t inDataLen);
+static int32_t ModelGenerateSlip39Entropy(const void *inData, uint32_t inDataLen);
+static int32_t ModelGenerateSlip39EntropyWithDiceRolls(const void *inData, uint32_t inDataLen);
+static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t inDataLen);
+static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen);
+static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen);
+static int32_t ModeControlQrDecode(const void *inData, uint32_t inDataLen);
+static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen);
+static int32_t ModelComparePubkey(MnemonicType mnemonicType, uint8_t *ems, uint8_t emsLen, uint16_t id, bool eb, uint8_t ie, uint8_t *index);
+static int32_t ModelBip39ForgetPass(const void *inData, uint32_t inDataLen);
+static int32_t ModelSlip39ForgetPass(const void *inData, uint32_t inDataLen);
+static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen);
+static int32_t ModelWriteLastLockDeviceTime(const void *inData, uint32_t inDataLen);
+static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen);
+static int32_t ModelURGenerateQRCode(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t getUR);
+static int32_t ModelCalculateCheckSum(const void *indata, uint32_t inDataLen);
+static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen);
+static int32_t ModelURUpdate(const void *inData, uint32_t inDataLen);
+static int32_t ModelURClear(const void *inData, uint32_t inDataLen);
+static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen);
+static int32_t ModelTransactionCheckResultClear(const void *inData, uint32_t inDataLen);
+static int32_t ModelParseTransaction(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t parseTransactionFunc);
+static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen);
+static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen);
+static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen);
+static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen);
+static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen);
+static void ModelStopCalculateCheckSum(void);
+static bool ModelGetPassphraseQuickAccess(void);
+int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 
 /* ── ChainType 映射表 ───────────────────────────────── */
 
@@ -580,195 +708,232 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     switch (request->type) {
     /* ── 助记词 / 钱包创建 ─────────────────────────── */
     case KOSMO_REQ_BIP39_GENERATE_ENTROPY: {
-        GuiModelBip39UpdateMnemonic(request->bip39_generate.wordCnt);
+        static uint32_t s_mnemonicNum;
+        s_mnemonicNum = request->bip39_generate.wordCnt;
+        AsyncExecute(ModelGenerateEntropy, &s_mnemonicNum, sizeof(s_mnemonicNum));
         return KOSMO_OK;
     }
     case KOSMO_REQ_BIP39_WRITE_SE: {
-        Bip39Data_t d = { .wordCnt = request->bip39_write_se.wordCnt,
-                          .forget = request->bip39_write_se.forget };
-        GuiModelBip39CalWriteSe(d);
+        static Bip39Data_t s_bip39Data;
+        s_bip39Data.wordCnt = request->bip39_write_se.wordCnt;
+        s_bip39Data.forget = request->bip39_write_se.forget;
+        AsyncExecute(ModelBip39CalWriteEntropyAndSeed, &s_bip39Data, sizeof(s_bip39Data));
         return KOSMO_OK;
     }
     case KOSMO_REQ_BIP39_VERIFY_MNEMONIC: {
-        GuiModelBip39RecoveryCheck(request->bip39_verify.wordCnt);
+        static uint8_t s_wordsCnt;
+        s_wordsCnt = request->bip39_verify.wordCnt;
+        AsyncExecute(ModelBip39VerifyMnemonic, &s_wordsCnt, sizeof(s_wordsCnt));
         return KOSMO_OK;
     }
     case KOSMO_REQ_BIP39_UPDATE_MNEMONIC: {
-        GuiModelBip39UpdateMnemonic(request->bip39_update.wordCnt);
+        static uint32_t s_mnemonicNum;
+        s_mnemonicNum = request->bip39_update.wordCnt;
+        AsyncExecute(ModelGenerateEntropy, &s_mnemonicNum, sizeof(s_mnemonicNum));
         return KOSMO_OK;
     }
     case KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE: {
-        GuiModelBip39UpdateMnemonicWithDiceRolls(request->bip39_update_dice.wordCnt);
+        static uint32_t s_mnemonicNum;
+        s_mnemonicNum = request->bip39_update_dice.wordCnt;
+        AsyncExecute(ModelGenerateEntropyWithDiceRolls, &s_mnemonicNum, sizeof(s_mnemonicNum));
         return KOSMO_OK;
     }
     case KOSMO_REQ_BIP39_FORGET_PASSWORD: {
-        GuiModelBip39ForgetPassword(request->bip39_forget.wordCnt);
+        static uint8_t s_wordsCnt;
+        s_wordsCnt = request->bip39_forget.wordCnt;
+        AsyncExecute(ModelBip39ForgetPass, &s_wordsCnt, sizeof(s_wordsCnt));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_GENERATE_ENTROPY: {
-        Slip39Data_t d = { .threShold = request->slip39_generate.threshold,
-                           .memberCnt = request->slip39_generate.memberCnt,
-                           .wordCnt = request->slip39_generate.wordCnt,
-                           .forget = request->slip39_generate.forget };
-        GuiModelSlip39UpdateMnemonic(d);
+        static Slip39Data_t s_slip39;
+        s_slip39.threShold = request->slip39_generate.threshold;
+        s_slip39.memberCnt = request->slip39_generate.memberCnt;
+        s_slip39.wordCnt = request->slip39_generate.wordCnt;
+        s_slip39.forget = request->slip39_generate.forget;
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        AsyncExecute(ModelGenerateSlip39Entropy, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_WRITE_SE: {
-        GuiModelSlip39WriteSe(request->slip39_write_se.wordCnt);
+        static uint8_t s_wordsCnt;
+        s_wordsCnt = request->slip39_write_se.wordCnt;
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        AsyncExecute(ModelSlip39WriteEntropy, &s_wordsCnt, sizeof(s_wordsCnt));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_CAL_WRITE_SE: {
-        Slip39Data_t d = { .threShold = request->slip39_cal_write.threshold,
-                           .memberCnt = request->slip39_cal_write.memberCnt,
-                           .wordCnt = request->slip39_cal_write.wordCnt,
-                           .forget = request->slip39_cal_write.forget };
-        GuiModelSlip39CalWriteSe(d);
+        static Slip39Data_t s_slip39;
+        s_slip39.threShold = request->slip39_cal_write.threshold;
+        s_slip39.memberCnt = request->slip39_cal_write.memberCnt;
+        s_slip39.wordCnt = request->slip39_cal_write.wordCnt;
+        s_slip39.forget = request->slip39_cal_write.forget;
+        AsyncExecute(ModelSlip39CalWriteEntropyAndSeed, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_UPDATE_MNEMONIC: {
-        Slip39Data_t d = { .threShold = request->slip39_update.threshold,
-                           .memberCnt = request->slip39_update.memberCnt,
-                           .wordCnt = request->slip39_update.wordCnt };
-        GuiModelSlip39UpdateMnemonic(d);
+        static Slip39Data_t s_slip39;
+        s_slip39.threShold = request->slip39_update.threshold;
+        s_slip39.memberCnt = request->slip39_update.memberCnt;
+        s_slip39.wordCnt = request->slip39_update.wordCnt;
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        AsyncExecute(ModelGenerateSlip39Entropy, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE: {
-        Slip39Data_t d = { .threShold = request->slip39_update_dice.threshold,
-                           .memberCnt = request->slip39_update_dice.memberCnt,
-                           .wordCnt = request->slip39_update_dice.wordCnt };
-        GuiModelSlip39UpdateMnemonicWithDiceRolls(d);
+        static Slip39Data_t s_slip39;
+        s_slip39.threShold = request->slip39_update_dice.threshold;
+        s_slip39.memberCnt = request->slip39_update_dice.memberCnt;
+        s_slip39.wordCnt = request->slip39_update_dice.wordCnt;
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        AsyncExecute(ModelGenerateSlip39EntropyWithDiceRolls, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_FORGET_PASSWORD: {
-        Slip39Data_t d = { .threShold = request->slip39_forget.threshold,
-                           .memberCnt = request->slip39_forget.memberCnt,
-                           .wordCnt = request->slip39_forget.wordCnt,
-                           .forget = request->slip39_forget.forget };
-        GuiModelSlip39ForgetPassword(d);
+        static Slip39Data_t s_slip39;
+        s_slip39.threShold = request->slip39_forget.threshold;
+        s_slip39.memberCnt = request->slip39_forget.memberCnt;
+        s_slip39.wordCnt = request->slip39_forget.wordCnt;
+        s_slip39.forget = request->slip39_forget.forget;
+        AsyncExecute(ModelSlip39ForgetPass, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_WRITE_SE: {
-        GuiModelWriteSe();
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        AsyncExecute(ModelWriteEntropyAndSeed, NULL, 0);
         return KOSMO_OK;
     }
 
     /* ── 账户管理 ─────────────────────────────────── */
     case KOSMO_REQ_GET_ACCOUNT: {
-        GuiModeGetAccount();
+        AsyncExecute(ModeGetAccount, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_GET_WALLET_DESC: {
-        GuiModeGetWalletDesc();
+        AsyncExecute(ModeGetWalletDesc, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_SAVE_WALLET_DESC: {
-        WalletDesc_t w = { .iconIndex = request->save_wallet_desc.iconIndex };
-        strncpy(w.name, request->save_wallet_desc.name, WALLET_NAME_MAX_LEN);
-        w.name[WALLET_NAME_MAX_LEN] = '\0';
-        GuiModelSettingSaveWalletDesc(&w);
+        static WalletDesc_t s_walletDesc;
+        s_walletDesc.iconIndex = request->save_wallet_desc.iconIndex;
+        strncpy(s_walletDesc.name, request->save_wallet_desc.name, WALLET_NAME_MAX_LEN);
+        s_walletDesc.name[WALLET_NAME_MAX_LEN] = '\0';
+        AsyncExecute(ModelSaveWalletDesc, &s_walletDesc, sizeof(s_walletDesc));
         return KOSMO_OK;
     }
     case KOSMO_REQ_DEL_WALLET_DESC: {
-        GuiModelSettingDelWalletDesc();
+        AsyncExecute(ModelDelWallet, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_DEL_ALL_WALLET_DESC: {
-        GuiModelLockedDeviceDelAllWalletDesc();
+        AsyncExecute(ModelDelAllWallet, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_WRITE_PASSPHRASE: {
-        GuiModelSettingWritePassphrase();
+        AsyncExecute(ModelWritePassphrase, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_CHANGE_PASSWORD: {
-        GuiModelChangeAccountPassWord();
+        AsyncExecute(ModelChangeAccountPass, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_VERIFY_PASSWORD: {
-        uint16_t param = request->verify_password.signalId;
-        GuiModelVerifyAccountPassWord(&param);
+        static uint16_t s_param;
+        s_param = request->verify_password.signalId;
+        AsyncExecute(ModelVerifyAccountPass, &s_param, sizeof(s_param));
         return KOSMO_OK;
     }
     case KOSMO_REQ_WRITE_LOCK_TIME: {
-        GuiModelWriteLastLockDeviceTime(request->uint32_param.value);
+        static uint32_t s_lockTime;
+        s_lockTime = request->uint32_param.value;
+        AsyncExecute(ModelWriteLastLockDeviceTime, &s_lockTime, sizeof(s_lockTime));
         return KOSMO_OK;
     }
 
     /* ── 系统操作 ─────────────────────────────────── */
     case KOSMO_REQ_CALCULATE_CHECKSUM: {
-        GuiModelCalculateCheckSum();
+        SetPageLockScreen(false);
+        AsyncExecute(ModelCalculateCheckSum, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_STOP_CHECKSUM: {
-        GuiModelStopCalculateCheckSum();
+        SetPageLockScreen(true);
+        ModelStopCalculateCheckSum();
         return KOSMO_OK;
     }
     case KOSMO_REQ_CALCULATE_SHA256: {
-        GuiModelCalculateBinSha256();
+        SetPageLockScreen(false);
+        AsyncExecute(ModelCalculateBinSha256, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_FORMAT_SD_CARD: {
-        GuiModelFormatMicroSd();
+        SetPageLockScreen(false);
+        AsyncExecute(ModelFormatMicroSd, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_COPY_SD_CARD_OTA: {
-        GuiModelCopySdCardOta();
+        AsyncExecute(ModelCopySdCardOta, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_UPDATE_BOOT: {
-        GuiModelUpdateBoot();
+        AsyncExecute(ModelUpdateBoot, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_CALCULATE_WEB_AUTH_CODE: {
-        GuiModelCalculateWebAuthCode(request->raw_ptr.ptr);
+        AsyncExecuteWithPtr(ModelCalculateWebAuthCode, request->raw_ptr.ptr);
         return KOSMO_OK;
     }
     case KOSMO_REQ_CONTROL_QR_DECODE: {
-        GuiModeControlQrDecode(request->bool_param.enable);
+        static bool s_en;
+        s_en = request->bool_param.enable;
+        AsyncExecute(ModeControlQrDecode, &s_en, sizeof(s_en));
         return KOSMO_OK;
     }
 
     /* ── UR 操作 ──────────────────────────────────── */
     case KOSMO_REQ_UR_GENERATE_QR: {
         /* GenerateUR 函数指针通过 raw_ptr 传入 */
-        GuiModelURGenerateQRCode((GenerateUR)request->raw_ptr.ptr);
+        AsyncExecuteRunnable(ModelURGenerateQRCode, NULL, 0,
+                             (BackgroundAsyncRunnable_t)request->raw_ptr.ptr);
         return KOSMO_OK;
     }
     case KOSMO_REQ_UR_UPDATE: {
-        GuiModelURUpdate();
+        AsyncExecute(ModelURUpdate, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_UR_CLEAR: {
-        GuiModelURClear();
+        AsyncExecute(ModelURClear, NULL, 0);
         return KOSMO_OK;
     }
 
     /* ── 交易 ─────────────────────────────────────── */
     case KOSMO_REQ_CHECK_TRANSACTION: {
-        GuiModelCheckTransaction((ViewType)request->view_type.viewType);
+        static ViewType s_viewType;
+        s_viewType = (ViewType)request->view_type.viewType;
+        AsyncExecute(ModelCheckTransaction, &s_viewType, sizeof(s_viewType));
         return KOSMO_OK;
     }
     case KOSMO_REQ_CLEAR_CHECK_RESULT: {
-        GuiModelTransactionCheckResultClear();
+        AsyncExecute(ModelTransactionCheckResultClear, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_PARSE_TRANSACTION: {
         /* ReturnVoidPointerFunc 通过 raw_ptr 传入 */
-        GuiModelParseTransaction((ReturnVoidPointerFunc)request->raw_ptr.ptr);
+        AsyncExecuteRunnable(ModelParseTransaction, NULL, 0,
+                             (BackgroundAsyncRunnable_t)request->raw_ptr.ptr);
         return KOSMO_OK;
     }
     case KOSMO_REQ_PARSE_TRANSACTION_RAW: {
-        GuiModelParseTransactionRawData();
+        AsyncExecute(ModelParseTransactionRawData, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY: {
-        GuiModelTransactionParseRawDataDelay();
+        AsyncExecute(ModelTransactionParseRawDataDelay, NULL, 0);
         return KOSMO_OK;
     }
 
     /* ── RSA ──────────────────────────────────────── */
     case KOSMO_REQ_RSA_GENERATE_KEYPAIR: {
-        GuiModelRsaGenerateKeyPair();
+        AsyncExecute(ModelRsaGenerateKeyPair, NULL, 0);
         return KOSMO_OK;
     }
 
@@ -948,4 +1113,1380 @@ void *KosmoApi_ParseDeriveContextHash(void *ur)
 void *KosmoApi_ParseQrHardwareCall(void *ur)
 {
     return parse_qr_hardware_call((PtrUR)ur);
+}
+
+/* =================================================================
+ * Model and Mode execution functions (merged from gui_model.c in Phase 21.3)
+ * ================================================================= */
+
+static void ModelStopCalculateCheckSum(void)
+{
+    g_stopCalChecksum = true;
+}
+
+// bip39 generate
+static int32_t ModelGenerateEntropy(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = ERR_GENERAL_FAIL;
+    char *mnemonic = NULL;
+    uint8_t entropy[32];
+    uint32_t mnemonicNum = 0, entropyLen = 0;
+
+    if (inData == NULL) {
+        goto cleanup;
+    }
+    mnemonicNum = *((const uint32_t *)inData);
+    if (mnemonicNum == 24) {
+        entropyLen = 32;
+    } else if (mnemonicNum == 12) {
+        entropyLen = 16;
+    } else {
+        ret = ERR_GENERAL_FAIL;
+        goto cleanup;
+    }
+    const char *pwd = SecretCacheGetNewPassword();
+    if (pwd == NULL || strnlen_s(pwd, PASSWORD_MAX_LEN) == 0) {
+        ret = ERR_GENERAL_FAIL;
+        goto cleanup;
+    }
+
+    do {
+        ret = GenerateEntropy(entropy, entropyLen, pwd);
+        CHECK_ERRCODE_BREAK("generate entropy", ret);
+
+        ret = bip39_mnemonic_from_bytes(NULL, entropy, entropyLen, &mnemonic);
+        CHECK_ERRCODE_BREAK("generate mnemonic", ret);
+
+        SecretCacheSetEntropy(entropy, entropyLen);
+        SecretCacheSetMnemonic(mnemonic);
+    } while (0);
+
+cleanup:
+    if (mnemonic != NULL) {
+        memset_s(mnemonic, strnlen_s(mnemonic, MNEMONIC_MAX_LEN), 0, strnlen_s(mnemonic, MNEMONIC_MAX_LEN));
+        SRAM_FREE(mnemonic);
+    }
+    if (ret != SUCCESS_CODE) {
+        // This error path should theoretically not be reached if entropy generation and mnemonic creation work correctly
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, ret, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, SUCCESS_CODE, NULL, 0);
+    }
+    CLEAR_ARRAY(entropy);
+    SetLockScreen(enable);
+    return ret;
+}
+
+static int32_t ModelGenerateEntropyWithDiceRolls(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = SUCCESS_CODE;
+    char *mnemonic = NULL;
+    uint8_t entropy[32];
+    uint8_t *hash = NULL;
+    uint32_t mnemonicNum, entropyLen;
+    mnemonicNum = *((uint32_t *)inData);
+
+    do {
+        if (mnemonicNum != 12 && mnemonicNum != 24) {
+            ret = ERR_GENERAL_FAIL;
+            break;
+        }
+        if (mnemonicNum == 24 && SecretCacheGetDiceRollsLen() < 100) {
+            ret = ERR_GENERAL_FAIL;
+            break;
+        }
+        entropyLen = (mnemonicNum == 24) ? 32 : 16;
+        hash = SecretCacheGetDiceRollHash();
+        memcpy_s(entropy, sizeof(entropy), hash, entropyLen);
+        SecretCacheSetEntropy(entropy, entropyLen);
+
+        ret = bip39_mnemonic_from_bytes(NULL, entropy, entropyLen, &mnemonic);
+        CHECK_ERRCODE_BREAK("generate mnemonic", ret);
+
+        SecretCacheSetMnemonic(mnemonic);
+    } while (0);
+
+    if (mnemonic != NULL) {
+        size_t mlen = strnlen_s(mnemonic, MNEMONIC_MAX_LEN);
+        memset_s(mnemonic, mlen, 0, mlen);
+        SRAM_FREE(mnemonic);
+    }
+    if (ret == SUCCESS_CODE) {
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, SUCCESS_CODE, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC_DICE, ret, NULL, 0);
+    }
+    CLEAR_ARRAY(entropy);
+    SetLockScreen(enable);
+    return ret;
+}
+
+static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen)
+{
+    UserDelay(100);
+    KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION_RAW, KOSMO_OK, NULL, 0);
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen)
+{
+    KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION_RAW_DELAY, KOSMO_OK, NULL, 0);
+    return SUCCESS_CODE;
+}
+
+// Generate bip39 wallet writes
+static int32_t ModelWriteEntropyAndSeed(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret;
+    uint8_t *entropy, *entropyCheck;
+    uint32_t entropyLen;
+    uint8_t newAccount;
+    uint8_t accountCnt;
+    size_t entropyOutLen;
+
+    entropy = SecretCacheGetEntropy(&entropyLen);
+    entropyCheck = SRAM_MALLOC(entropyLen);
+    ret = bip39_mnemonic_to_bytes(NULL, SecretCacheGetMnemonic(), entropyCheck, entropyLen, &entropyOutLen);
+    if (memcmp(entropyCheck, entropy, entropyLen) != 0) {
+        memset_s(entropyCheck, entropyLen, 0, entropyLen);
+        SRAM_FREE(entropyCheck);
+        SetLockScreen(enable);
+        return 0;
+    }
+    memset_s(entropyCheck, entropyLen, 0, entropyLen);
+    SRAM_FREE(entropyCheck);
+    MODEL_WRITE_SE_HEAD
+    ret = ModelComparePubkey(MNEMONIC_TYPE_BIP39, NULL, 0, 0, false, 0, NULL);
+    CHECK_ERRCODE_BREAK("duplicated entropy", ret);
+    ret = CreateNewAccount(newAccount, entropy, entropyLen, SecretCacheGetNewPassword());
+    ClearAccountPassphrase(newAccount);
+    if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
+        CHECK_ERRCODE_BREAK("set passphrase error", ret);
+        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+    }
+    MODEL_WRITE_SE_END(KOSMO_REQ_WRITE_SE)
+    SetLockScreen(enable);
+    return 0;
+}
+
+// Import of mnemonic words for bip39
+static int32_t ModelBip39CalWriteEntropyAndSeed(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = SUCCESS_CODE;
+    uint8_t *entropy = NULL;
+    size_t entropyInLen;
+    size_t entropyOutLen;
+    Bip39Data_t *bip39Data = (Bip39Data_t *)inData;
+    uint8_t newAccount = 0;
+    uint8_t accountCnt = 0;
+    AccountInfo_t accountInfo = {0};
+
+    entropyInLen = bip39Data->wordCnt * 16 / 12;
+    entropy = SRAM_MALLOC(entropyInLen);
+
+    MODEL_WRITE_SE_HEAD
+    ret = bip39_mnemonic_to_bytes(NULL, SecretCacheGetMnemonic(), entropy, entropyInLen, &entropyOutLen);
+    CHECK_ERRCODE_BREAK("mnemonic error", ret);
+    if (bip39Data->forget) {
+        ret = ModelComparePubkey(MNEMONIC_TYPE_BIP39, NULL, 0, 0, false, 0, &newAccount);
+        CHECK_ERRCODE_BREAK("mnemonic not match", !ret);
+    } else {
+        ret = ModelComparePubkey(MNEMONIC_TYPE_BIP39, NULL, 0, 0, false, 0, NULL);
+        CHECK_ERRCODE_BREAK("mnemonic repeat", ret);
+    }
+    if (bip39Data->forget) {
+        ret = GetAccountInfo(newAccount, &accountInfo);
+        CHECK_ERRCODE_BREAK("get account info error", ret);
+    }
+    ret = CreateNewAccount(newAccount, entropy, (uint8_t)entropyOutLen, SecretCacheGetNewPassword());
+    CHECK_ERRCODE_BREAK("save entropy error", ret);
+    ClearAccountPassphrase(newAccount);
+    if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
+        CHECK_ERRCODE_BREAK("set passphrase error", ret);
+        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+    }
+    ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
+    CHECK_ERRCODE_BREAK("login error", ret);
+    UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
+    if (bip39Data->forget) {
+        SetWalletName(accountInfo.walletName);
+        SetWalletIconIndex(accountInfo.iconIndex);
+        LogoutCurrentAccount();
+        CloseUsb();
+    }
+    GetExistAccountNum(&accountCnt);
+}
+while (0);
+if (ret == SUCCESS_CODE)
+{
+    ClearSecretCache();
+    KosmoApi_NotifyResult(KOSMO_REQ_BIP39_WRITE_SE, SUCCESS_CODE, NULL, 0);
+} else
+{
+    KosmoApi_NotifyResult(KOSMO_REQ_BIP39_WRITE_SE, ret, NULL, 0);
+}
+memset_s(entropy, entropyInLen, 0, entropyInLen);
+memset_s(&accountInfo, sizeof(accountInfo), 0, sizeof(accountInfo));
+SRAM_FREE(entropy);
+SetLockScreen(enable);
+return 0;
+}
+
+// Auxiliary word verification for bip39
+static int32_t ModelBip39VerifyMnemonic(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = SUCCESS_CODE;
+    SimpleResponse_c_char *xPubResult;
+    uint8_t seed[64];
+
+    do {
+        ret = bip39_mnemonic_to_seed(SecretCacheGetMnemonic(), NULL, seed, 64, NULL);
+        xPubResult = get_extended_pubkey_by_seed(seed, 64, "M/49'/0'/0'");
+        if (xPubResult->error_code != 0) {
+            free_simple_response_c_char(xPubResult);
+            break;
+        }
+        CLEAR_ARRAY(seed);
+        char *xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC);
+        if (!strcmp(xpub, xPubResult->data)) {
+            ret = SUCCESS_CODE;
+        } else {
+            ret = ERR_GENERAL_FAIL;
+        }
+        free_simple_response_c_char(xPubResult);
+    } while (0);
+    ClearSecretCache();
+    if (ret != SUCCESS_CODE) {
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_VERIFY_MNEMONIC, ret, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_VERIFY_MNEMONIC, SUCCESS_CODE, NULL, 0);
+    }
+    SetLockScreen(enable);
+    return 0;
+}
+
+// Auxiliary word verification for bip39
+static int32_t ModelBip39ForgetPass(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = SUCCESS_CODE;
+    do {
+        ret = CHECK_BATTERY_LOW_POWER();
+        CHECK_ERRCODE_BREAK("save low power", ret);
+        ret = ModelComparePubkey(MNEMONIC_TYPE_BIP39, NULL, 0, 0, false, 0, NULL);
+        if (ret != SUCCESS_CODE) {
+            // Mnemonic doesn't match wallet → password reset allowed
+            KosmoApi_NotifyResult(KOSMO_REQ_BIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
+            SetLockScreen(enable);
+            return ret;
+        }
+        ret = ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET;
+    } while (0);
+    KosmoApi_NotifyResult(KOSMO_REQ_BIP39_FORGET_PASSWORD, ret, NULL, 0);
+    SetLockScreen(enable);
+    return ret;
+}
+
+static int32_t ModelURGenerateQRCode(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t getUR)
+{
+    GenerateUR func = (GenerateUR)getUR;
+    g_urResult = func();
+    if (g_urResult->error_code == 0) {
+        // printf("%s\r\n", g_urResult->data);
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, KOSMO_OK, g_urResult->data, strnlen_s(g_urResult->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+    } else {
+        char *message = g_urResult->error_message != NULL ? g_urResult->error_message : "";
+        printf("error message: %s\r\n", message);
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, ERR_GENERAL_FAIL, message, strnlen_s(message, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+    }
+    return SUCCESS_CODE;
+}
+
+static bool ShouldUseCyclicPart(void)
+{
+    if (g_urResult == NULL) return false;
+    if (strnlen_s(g_urResult->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) < 6) return false;
+    if (strncmp(g_urResult->data, "ur:xmr", 6) == 0 || strncmp(g_urResult->data, "UR:XMR", 6) == 0) {
+        return true;
+    }
+    return false;
+}
+
+static int32_t ModelURUpdate(const void *inData, uint32_t inDataLen)
+{
+    if (g_urResult == NULL) return SUCCESS_CODE;
+    if (g_urResult->is_multi_part) {
+        UREncodeMultiResult *result = NULL;
+        if (ShouldUseCyclicPart()) {
+            result = get_next_cyclic_part(g_urResult->encoder);
+        } else {
+            result = get_next_part(g_urResult->encoder);
+        }
+        if (result->error_code == 0) {
+            // printf("%s\r\n", result->data);
+            KosmoApi_NotifyResult(KOSMO_REQ_UR_UPDATE, KOSMO_OK, result->data, strnlen_s(result->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
+        } else {
+            //TODO: deal with error
+        }
+        free_ur_encode_muilt_result(result);
+    }
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelURClear(const void *inData, uint32_t inDataLen)
+{
+    if (g_urResult != NULL) {
+        free_ur_encode_result(g_urResult);
+        g_urResult = NULL;
+    }
+    return SUCCESS_CODE;
+}
+
+// Compare the generated extended public key
+static int32_t ModelComparePubkey(MnemonicType mnemonicType, uint8_t *ems, uint8_t emsLen, uint16_t id, bool eb, uint8_t ie, uint8_t *index)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    bool bip39 = mnemonicType == MNEMONIC_TYPE_BIP39;
+    bool slip39 = mnemonicType == MNEMONIC_TYPE_SLIP39;
+    uint8_t seed[64] = {0};
+    int ret = SUCCESS_CODE;
+    uint8_t existIndex = 0;
+
+    do {
+        SimpleResponse_c_char *xPubResult;
+        if (bip39) {
+            ret = bip39_mnemonic_to_seed(SecretCacheGetMnemonic(), NULL, seed, 64, NULL);
+            CHECK_ERRCODE_BREAK("bip39_mnemonic_to_seed", ret);
+            xPubResult = get_extended_pubkey_by_seed(seed, 64, "M/49'/0'/0'");
+        }
+        if (slip39) {
+            ret = Slip39GetSeed(ems, seed, emsLen, "", ie, eb, id);
+            CHECK_ERRCODE_BREAK("Slip39GetSeed", ret);
+            xPubResult = get_extended_pubkey_by_seed(seed, emsLen, "M/49'/0'/0'");
+        }
+
+        CHECK_CHAIN_BREAK(xPubResult);
+        CLEAR_ARRAY(seed);
+        existIndex = SpecifiedXPubExist(xPubResult->data);
+        if (index != NULL) {
+            *index = existIndex;
+        }
+        if (existIndex != 0xFF) {
+            ret = ERR_KEYSTORE_MNEMONIC_REPEAT;
+        } else {
+            ret = SUCCESS_CODE;
+        }
+        free_simple_response_c_char(xPubResult);
+    } while (0);
+    SetLockScreen(enable);
+    return ret;
+}
+
+static int32_t Slip39CreateGenerate(Slip39Data_t *slip39, bool isDiceRoll, KosmoRequestType requestType)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = ERR_GENERAL_FAIL;
+    uint8_t entropy[32] = {0}, ems[32] = {0};
+    uint32_t entropyLen = 0;
+    uint16_t id = 0;
+    uint8_t ie = 0;
+    bool eb = false;
+    char *wordsList[SLIP39_MAX_MEMBER];
+
+    if (slip39 == NULL) {
+        goto cleanup;
+    }
+    if (!(slip39->wordCnt == SLIP39_MNEMONIC_20_WORDS || slip39->wordCnt == SLIP39_MNEMONIC_33_WORDS)) {
+        goto cleanup;
+    }
+    if (slip39->memberCnt == 0 || slip39->threShold == 0 || slip39->threShold > slip39->memberCnt || slip39->memberCnt > SLIP39_MAX_MEMBER) {
+        goto cleanup;
+    }
+
+    entropyLen = (slip39->wordCnt == SLIP39_MNEMONIC_20_WORDS) ? 16 : 32;
+
+    if (isDiceRoll) {
+        const uint8_t *dice = SecretCacheGetDiceRollHash();
+        if (dice == NULL) goto cleanup;
+        if (slip39->wordCnt == SLIP39_MNEMONIC_33_WORDS && SecretCacheGetDiceRollsLen() < 100) {
+            goto cleanup;
+        }
+        memcpy_s(entropy, sizeof(entropy), dice, entropyLen);
+    } else {
+        const char *pwd = SecretCacheGetNewPassword();
+        if (pwd == NULL || strnlen_s(pwd, PASSWORD_MAX_LEN) == 0) {
+            goto cleanup;
+        }
+        ret = GenerateEntropy(entropy, entropyLen, pwd);
+        if (ret != SUCCESS_CODE) {
+            goto cleanup;
+        }
+    }
+
+    ret = GetSlip39MnemonicsWords(entropy, ems, slip39->wordCnt, slip39->memberCnt, slip39->threShold, wordsList, &id, &eb, &ie);
+    if (ret != SUCCESS_CODE) {
+        goto cleanup_words;
+    }
+
+    SecretCacheSetEntropy(entropy, entropyLen);
+    SecretCacheSetEms(ems, entropyLen);
+    SecretCacheSetIdentifier(id);
+    SecretCacheSetIteration(ie);
+    SecretCacheSetExtendable(eb);
+    for (int i = 0; i < slip39->memberCnt; i++) {
+        SecretCacheSetSlip39Mnemonic(wordsList[i], i);
+    }
+    KosmoApi_NotifyResult(requestType, SUCCESS_CODE, NULL, 0);
+
+cleanup_words:
+    for (int i = 0; i < slip39->memberCnt; i++) {
+        if (wordsList[i] != NULL) {
+            memset_s(wordsList[i], strlen(wordsList[i]), 0, strlen(wordsList[i]));
+            SRAM_FREE(wordsList[i]);
+        }
+    }
+cleanup:
+    if (ret != SUCCESS_CODE) {
+        KosmoApi_NotifyResult(requestType, ret, NULL, 0);
+    }
+    CLEAR_ARRAY(ems);
+    CLEAR_ARRAY(entropy);
+    SetLockScreen(enable);
+    return ret;
+}
+
+// slip39 generate
+static int32_t ModelGenerateSlip39Entropy(const void *inData, uint32_t inDataLen)
+{
+    return Slip39CreateGenerate((Slip39Data_t *)inData, false, KOSMO_REQ_SLIP39_UPDATE_MNEMONIC);
+}
+
+// slip39 generate
+static int32_t ModelGenerateSlip39EntropyWithDiceRolls(const void *inData, uint32_t inDataLen)
+{
+    return Slip39CreateGenerate((Slip39Data_t *)inData, true, KOSMO_REQ_SLIP39_UPDATE_MNEMONIC_DICE);
+}
+
+// Generate slip39 wallet writes
+static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    uint8_t *entropy = NULL;
+    uint8_t *ems = NULL;
+    uint32_t entropyLen = 0;
+    uint8_t newAccount = 0;
+    uint8_t accountCnt = 0;
+    uint16_t id = 0;
+    uint8_t ie = 0;
+    bool eb = false;
+    uint8_t msCheck[32] = {0}, emsCheck[32] = {0};
+    uint8_t threShold = 0;
+    uint8_t wordCnt = *(uint8_t *)inData;
+    int ret;
+
+    ems = SecretCacheGetEms(&entropyLen);
+    entropy = SecretCacheGetEntropy(&entropyLen);
+    id = SecretCacheGetIdentifier();
+    eb = SecretCacheGetExtendable();
+    ie = SecretCacheGetIteration();
+
+    MODEL_WRITE_SE_HEAD
+    if (wordCnt != SLIP39_MNEMONIC_20_WORDS && wordCnt != SLIP39_MNEMONIC_33_WORDS) {
+        ret = ERR_KEYSTORE_MNEMONIC_INVALID;
+        break;
+    }
+    ret = Slip39CheckFirstWordList(SecretCacheGetSlip39Mnemonic(0), wordCnt, &threShold);
+    char *words[threShold];
+    for (int i = 0; i < threShold; i++) {
+        words[i] = SecretCacheGetSlip39Mnemonic(i);
+    }
+    ret = Slip39GetMasterSecret(threShold, wordCnt, emsCheck, msCheck, words, &id, &eb, &ie);
+    if ((ret != SUCCESS_CODE) || (memcmp(msCheck, entropy, entropyLen) != 0) || (memcmp(emsCheck, ems, entropyLen) != 0)) {
+        ret = ERR_KEYSTORE_MNEMONIC_INVALID;
+        break;
+    }
+    CLEAR_ARRAY(emsCheck);
+    CLEAR_ARRAY(msCheck);
+    ret = ModelComparePubkey(MNEMONIC_TYPE_SLIP39, ems, entropyLen, id, eb, ie, NULL);
+    CHECK_ERRCODE_BREAK("duplicated entropy", ret);
+    ret = CreateNewSlip39Account(newAccount, ems, entropy, entropyLen, SecretCacheGetNewPassword(), SecretCacheGetIdentifier(), SecretCacheGetExtendable(), SecretCacheGetIteration());
+    CHECK_ERRCODE_BREAK("save slip39 entropy error", ret);
+    ClearAccountPassphrase(newAccount);
+    if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
+        CHECK_ERRCODE_BREAK("set passphrase error", ret);
+        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+    }
+    MODEL_WRITE_SE_END(KOSMO_REQ_SLIP39_WRITE_SE)
+
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// Import of mnemonic words for slip39
+static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+
+    uint8_t *entropy;
+    uint8_t entropyLen;
+    int32_t ret;
+    uint16_t id;
+    uint8_t ie;
+    bool eb;
+    uint8_t newAccount;
+    uint8_t accountCnt;
+    Slip39Data_t *slip39 = (Slip39Data_t *)inData;
+    AccountInfo_t accountInfo;
+
+    entropyLen = (slip39->wordCnt == 20) ? 16 : 32;
+    entropy = SRAM_MALLOC(entropyLen);
+    uint8_t ems[32] = {0};
+    uint8_t emsBak[32] = {0};
+
+    char *words[slip39->threShold];
+    for (int i = 0; i < slip39->threShold; i++) {
+        words[i] = SecretCacheGetSlip39Mnemonic(i);
+    }
+
+    MODEL_WRITE_SE_HEAD
+    ret = Slip39GetMasterSecret(slip39->threShold, slip39->wordCnt, ems, entropy, words, &id, &eb, &ie);
+    if (ret != SUCCESS_CODE) {
+        printf("get master secret error\n");
+        break;
+    }
+    memcpy_s(emsBak, sizeof(emsBak), ems, entropyLen);
+
+    if (slip39->forget) {
+        ret = ModelComparePubkey(MNEMONIC_TYPE_SLIP39, ems, entropyLen, id, eb, ie, &newAccount);
+        CHECK_ERRCODE_BREAK("mnemonic not match", !ret);
+    } else {
+        ret = ModelComparePubkey(MNEMONIC_TYPE_SLIP39, ems, entropyLen, id, eb, ie, NULL);
+        CHECK_ERRCODE_BREAK("mnemonic repeat", ret);
+    }
+    printf("before accountCnt = %d\n", accountCnt);
+    if (slip39->forget) {
+        GetAccountInfo(newAccount, &accountInfo);
+    }
+    ret = CreateNewSlip39Account(newAccount, emsBak, entropy, entropyLen, SecretCacheGetNewPassword(), id, eb, ie);
+    CHECK_ERRCODE_BREAK("save slip39 entropy error", ret);
+    ClearAccountPassphrase(newAccount);
+    if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
+        CHECK_ERRCODE_BREAK("set passphrase error", ret);
+        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+    }
+    ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
+    CHECK_ERRCODE_BREAK("login error", ret);
+    UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
+    if (slip39->forget) {
+        SetWalletName(accountInfo.walletName);
+        SetWalletIconIndex(accountInfo.iconIndex);
+        LogoutCurrentAccount();
+        CloseUsb();
+    }
+    CLEAR_ARRAY(ems);
+    CLEAR_ARRAY(emsBak);
+    GetExistAccountNum(&accountCnt);
+    printf("after accountCnt = %d\n", accountCnt);
+}
+while (0);
+if (ret == SUCCESS_CODE)
+{
+    ClearSecretCache();
+    KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_CAL_WRITE_SE, SUCCESS_CODE, NULL, 0);
+} else
+{
+    KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_CAL_WRITE_SE, ret, NULL, 0);
+}
+SRAM_FREE(entropy);
+SetLockScreen(enable);
+return SUCCESS_CODE;
+}
+
+static int32_t ModelSlip39ForgetPass(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = SUCCESS_CODE;
+#ifndef COMPILE_SIMULATOR
+    uint8_t *entropy;
+    uint8_t entropyLen;
+    uint16_t id;
+    uint8_t ie;
+    bool eb;
+    Slip39Data_t *slip39 = (Slip39Data_t *)inData;
+
+    entropyLen = (slip39->wordCnt == 20) ? 16 : 32;
+    entropy = SRAM_MALLOC(entropyLen);
+    uint8_t ems[32] = {0};
+
+    char *words[slip39->threShold];
+    for (int i = 0; i < slip39->threShold; i++) {
+        words[i] = SecretCacheGetSlip39Mnemonic(i);
+    }
+
+    do {
+        ret = CHECK_BATTERY_LOW_POWER();
+        CHECK_ERRCODE_BREAK("save low power", ret);
+        ret = Slip39GetMasterSecret(slip39->threShold, slip39->wordCnt, ems, entropy, words, &id, &eb, &ie);
+        if (ret != SUCCESS_CODE) {
+            printf("get master secret error\n");
+            break;
+        }
+        ret = ModelComparePubkey(MNEMONIC_TYPE_SLIP39, ems, entropyLen, id, eb, ie, NULL);
+        if (ret != SUCCESS_CODE) {
+            // Mnemonic doesn't match wallet → password reset allowed
+            KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
+            SetLockScreen(enable);
+            return ret;
+        }
+        ret = ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET;
+    } while (0);
+    KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, ret, NULL, 0);
+
+    SRAM_FREE(entropy);
+#else
+    KosmoApi_NotifyResult(KOSMO_REQ_SLIP39_FORGET_PASSWORD, SUCCESS_CODE, NULL, 0);
+#endif
+    SetLockScreen(enable);
+    return ret;
+}
+
+// save wallet desc
+static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    WalletDesc_t *wallet = (WalletDesc_t *)inData;
+    SetWalletName(wallet->name);
+    SetWalletIconIndex(wallet->iconIndex);
+
+    KosmoApi_NotifyResult(KOSMO_REQ_SAVE_WALLET_DESC, SUCCESS_CODE, NULL, 0);
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// del wallet
+static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret;
+    uint8_t accountIndex = GetCurrentAccountIndex();
+    UpdateFingerSignFlag(accountIndex, false);
+    CloseUsb();
+    ret = DestroyAccount(accountIndex);
+    if (ret == SUCCESS_CODE) {
+        // reset address index in receive page
+        {
+            void GuiResetCurrentUtxoAddressIndex(uint8_t index);
+            GuiResetCurrentUtxoAddressIndex(accountIndex);
+            void GuiResetCurrentEthAddressIndex(uint8_t index);
+            void GuiResetCurrentStandardAddressIndex(uint8_t index);
+            void GuiResetCurrentMultiAccountsCache(uint8_t index);
+            GuiResetCurrentEthAddressIndex(accountIndex);
+            GuiResetCurrentStandardAddressIndex(accountIndex);
+            GuiResetCurrentMultiAccountsCache(accountIndex);
+        }
+
+        uint8_t accountNum;
+        GetExistAccountNum(&accountNum);
+        if (accountNum == 0) {
+            FpWipeManageInfo();
+            SetSetupStep(0);
+            SaveDeviceSettings();
+            ResetBootParam();
+            g_reboot = true;
+            uint8_t mode = 0; // 0 = setup mode (last wallet deleted)
+            KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, SUCCESS_CODE, &mode, sizeof(mode));
+        } else {
+            uint8_t mode = 1; // 1 = normal delete
+            KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, SUCCESS_CODE, &mode, sizeof(mode));
+        }
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_DEL_WALLET_DESC, ret, NULL, 0);
+    }
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// del all wallet
+static int32_t ModelDelAllWallet(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+#ifndef COMPILE_SIMULATOR
+    WipeDevice();
+    SystemReboot();
+#else
+    KosmoApi_NotifyResult(KOSMO_REQ_DEL_ALL_WALLET_DESC, SUCCESS_CODE, NULL, 0);
+#endif
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// write passphrase
+static int32_t ModelWritePassphrase(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    int32_t ret = 0;
+    if (CheckPassphraseSame(GetCurrentAccountIndex(), SecretCacheGetPassphrase())) {
+        KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, SUCCESS_CODE, NULL, 0);
+    } else {
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetPassword());
+        if (ret == SUCCESS_CODE) {
+            KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, SUCCESS_CODE, NULL, 0);
+            ClearSecretCache();
+        } else {
+            KosmoApi_NotifyResult(KOSMO_REQ_WRITE_PASSPHRASE, ret, NULL, 0);
+        }
+        ClearSecretCache();
+    }
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// reset wallet password
+static int32_t ModelChangeAccountPass(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+#ifndef COMPILE_SIMULATOR
+    int32_t ret;
+
+    ret = VerifyCurrentAccountPassword(SecretCacheGetPassword());
+    ret = ChangePassword(GetCurrentAccountIndex(), SecretCacheGetNewPassword(), SecretCacheGetPassword());
+    UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
+    if (ret == SUCCESS_CODE) {
+        KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, SUCCESS_CODE, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, ret, NULL, 0);
+    }
+
+    ClearSecretCache();
+#else
+    uint8_t *entropy;
+    uint8_t entropyLen;
+    int32_t ret;
+    uint8_t *accountIndex = (uint8_t *)inData;
+
+    KosmoApi_NotifyResult(KOSMO_REQ_CHANGE_PASSWORD, SUCCESS_CODE, NULL, 0);
+#endif
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// calculate auth code
+static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+#ifndef COMPILE_SIMULATOR
+    uint8_t *key = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
+    if (key == NULL) {
+        char *authCode = "";
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
+        SetLockScreen(enable);
+        return SUCCESS_CODE;
+    }
+    int32_t ret = GetWebAuthRsaKey(key);
+    if (ret != SUCCESS_CODE) {
+        memset_s(key, WEB_AUTH_RSA_KEY_LEN, 0, WEB_AUTH_RSA_KEY_LEN);
+        SRAM_FREE(key);
+        char *authCode = "";
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, ret, authCode, strlen(authCode) + 1);
+        SetLockScreen(enable);
+        return SUCCESS_CODE;
+    }
+    char *authCode = calculate_auth_code(inData, key, 512, &key[512], 512);
+    bool shouldFreeAuthCode = authCode != NULL;
+    memset_s(key, WEB_AUTH_RSA_KEY_LEN, 0, WEB_AUTH_RSA_KEY_LEN);
+    SRAM_FREE(key);
+    if (authCode == NULL) {
+        authCode = "";
+    }
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
+    if (shouldFreeAuthCode) {
+        free_ptr_string(authCode);
+    }
+#else
+    uint8_t *entropy;
+    uint8_t entropyLen;
+    int32_t ret;
+    uint8_t *accountIndex = (uint8_t *)inData;
+
+    char *authCode = "12345Yyq";
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
+#endif
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+static uint16_t ModelVerifyPassSuccess(uint16_t *param)
+{
+    int32_t ret = SUCCESS_CODE;
+    uint8_t walletAmount;
+    uint16_t resultSignal = SIG_VERIFY_PASSWORD_PASS;
+    switch (*param) {
+    case DEVICE_SETTING_ADD_WALLET:
+        GetExistAccountNum(&walletAmount);
+        if (walletAmount == 3) {
+            resultSignal = SIG_SETTING_ADD_WALLET_AMOUNT_LIMIT;
+        } else {
+            resultSignal = SIG_VERIFY_PASSWORD_PASS;
+        }
+        break;
+    case SIG_SETTING_WRITE_PASSPHRASE:
+        resultSignal = SIG_SETTING_WRITE_PASSPHRASE_VERIFY_PASS;
+        SetPageLockScreen(false);
+        if (SecretCacheGetPassphrase() == NULL) {
+            SecretCacheSetPassphrase("");
+        }
+        ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetPassword());
+        SetPageLockScreen(true);
+        if (ret == SUCCESS_CODE) {
+            resultSignal = SIG_SETTING_WRITE_PASSPHRASE_PASS;
+            ClearSecretCache();
+        } else {
+            resultSignal = SIG_SETTING_WRITE_PASSPHRASE_FAIL;
+        }
+        break;
+    case SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE:
+        resultSignal = SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS;
+        break;
+    case SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD:
+        resultSignal = SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_PASS;
+        break;
+    default:
+        resultSignal = SIG_VERIFY_PASSWORD_PASS;
+        break;
+    }
+    return resultSignal;
+}
+
+static uint16_t ModelVerifyPassFailed(uint16_t *param)
+{
+    uint16_t signal = SIG_VERIFY_PASSWORD_FAIL;
+    switch (*param) {
+    case SIG_LOCK_VIEW_VERIFY_PIN:
+    case SIG_LOCK_VIEW_SCREEN_GO_HOME_PASS:
+        g_passwordVerifyResult.errorCount = GetLoginPasswordErrorCount();
+        printf("gui model get login error count %d \n", g_passwordVerifyResult.errorCount);
+        assert(g_passwordVerifyResult.errorCount <= MAX_LOGIN_PASSWORD_ERROR_COUNT);
+        if (g_passwordVerifyResult.errorCount == MAX_LOGIN_PASSWORD_ERROR_COUNT) {
+            UnlimitedVibrate(SUPER_LONG);
+        } else {
+            UnlimitedVibrate(LONG);
+        }
+        break;
+    case SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD:
+        signal = SIG_SETUP_RSA_PRIVATE_KEY_RSA_VERIFY_PASSWORD_FAIL;
+        g_passwordVerifyResult.errorCount = GetCurrentPasswordErrorCount();
+        printf("gui model get current error count %d \n", g_passwordVerifyResult.errorCount);
+        assert(g_passwordVerifyResult.errorCount <= MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX);
+        if (g_passwordVerifyResult.errorCount == MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX) {
+            UnlimitedVibrate(SUPER_LONG);
+        } else {
+            UnlimitedVibrate(LONG);
+        }
+        break;
+    default:
+        g_passwordVerifyResult.errorCount = GetCurrentPasswordErrorCount();
+        printf("gui model get current error count %d \n", g_passwordVerifyResult.errorCount);
+        assert(g_passwordVerifyResult.errorCount <= MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX);
+        if (g_passwordVerifyResult.errorCount == MAX_CURRENT_PASSWORD_ERROR_COUNT_SHOW_HINTBOX) {
+            UnlimitedVibrate(SUPER_LONG);
+        } else {
+            UnlimitedVibrate(LONG);
+        }
+        break;
+    }
+    g_passwordVerifyResult.signal = param;
+    return signal;
+}
+
+// verify wallet password
+static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    static bool firstVerify = true;
+    SetLockScreen(false);
+    uint8_t accountIndex;
+    int32_t ret;
+    uint16_t *param = (uint16_t *)inData;
+
+    // Unlock screen
+    if (SIG_LOCK_VIEW_VERIFY_PIN == *param || SIG_LOCK_VIEW_SCREEN_GO_HOME_PASS == *param) {
+        ret = VerifyPasswordAndLogin(&accountIndex, SecretCacheGetPassword());
+        if (ret == ERR_KEYSTORE_EXTEND_PUBLIC_KEY_NOT_MATCH) {
+            KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ret, NULL, 0);
+            SetLockScreen(enable);
+            return ret;
+        } else if (ret == SUCCESS_CODE) {
+            ModeGetWalletDesc(NULL, 0);
+        }
+    } else {
+        ret = VerifyCurrentAccountPassword(SecretCacheGetPassword());
+    }
+
+    if (SIG_LOCK_VIEW_VERIFY_PIN == *param && firstVerify && ModelGetPassphraseQuickAccess()) {
+        *param = SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE;
+        firstVerify = false;
+    }
+
+    // some scene would need clear secret after check
+    if (*param != SIG_SETTING_CHANGE_PASSWORD &&
+            *param != SIG_SETTING_WRITE_PASSPHRASE &&
+            *param != SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE &&
+            *param != SIG_FINGER_SET_SIGN_TRANSITIONS &&
+            *param != SIG_FINGER_REGISTER_ADD_SUCCESS &&
+            *param != SIG_SIGN_TRANSACTION_WITH_PASSWORD &&
+            *param != SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD &&
+            *param != SIG_MULTISIG_WALLET_IMPORT_VERIFY_PASSWORD &&
+            *param != SIG_MULTISIG_WALLET_DELETE_VERIFY_PASSWORD &&
+            *param != SIG_HARDWARE_CALL_DERIVE_PUBKEY &&
+            *param != SIG_INIT_CONNECT_USB &&
+            !strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) &&
+            !GuiCheckIfViewOpened(&g_createWalletView) &&
+            !ModelGetPassphraseQuickAccess()) {
+        ClearSecretCache();
+    }
+    SetLockScreen(enable);
+    uint16_t resultSignal;
+    if (ret == SUCCESS_CODE) {
+        resultSignal = ModelVerifyPassSuccess(param);
+    } else {
+        resultSignal = ModelVerifyPassFailed(param);
+    }
+    static struct {
+        uint16_t resultSignal;
+        uint16_t originalParam;
+        uint16_t errorCount;
+    } s_verifyContext;
+    s_verifyContext.resultSignal = resultSignal;
+    s_verifyContext.originalParam = *param;
+    s_verifyContext.errorCount = g_passwordVerifyResult.errorCount;
+    KosmoApi_NotifyResult(KOSMO_REQ_VERIFY_PASSWORD, ret,
+                          &s_verifyContext, sizeof(s_verifyContext));
+    return SUCCESS_CODE;
+}
+
+// get wallet amount
+static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    static uint8_t walletAmount;
+    int32_t ret;
+
+    ret = GetExistAccountNum(&walletAmount);
+    if (ret != SUCCESS_CODE) {
+        walletAmount = 0xFF;
+    }
+    KosmoApi_NotifyResult(KOSMO_REQ_GET_ACCOUNT, KOSMO_OK, &walletAmount, sizeof(walletAmount));
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// get wallet desc
+static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    static WalletDesc_t wallet;
+    if (GetCurrentAccountIndex() > 2) {
+        SetLockScreen(enable);
+        return SUCCESS_CODE;
+    }
+    wallet.iconIndex = GetWalletIconIndex();
+    strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, GetWalletName());
+    KosmoApi_NotifyResult(KOSMO_REQ_GET_WALLET_DESC, KOSMO_OK, &wallet, sizeof(wallet));
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+// stop/start qr decode
+static int32_t ModeControlQrDecode(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    bool *en = (bool *)inData;
+#ifndef COMPILE_SIMULATOR
+    UserDelay(100);
+    if (en) {
+        PubValueMsg(QRDECODE_MSG_START, 0);
+    } else {
+        PubValueMsg(QRDECODE_MSG_STOP, 0);
+    }
+#else
+    if (en) {
+        read_qrcode();
+    }
+#endif
+    SetLockScreen(enable);
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelWriteLastLockDeviceTime(const void *inData, uint32_t inDataLen)
+{
+    bool enable = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+
+    uint32_t time = *(uint32_t*)inData;
+    SetLastLockDeviceTime(time);
+
+    SetLockScreen(enable);
+
+    /* Phase 3 PoC：通过 callback 通知 UI 层完成 */
+    KosmoApi_NotifyResult(KOSMO_REQ_WRITE_LOCK_TIME, KOSMO_OK, NULL, 0);
+
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen)
+{
+#ifndef COMPILE_SIMULATOR
+    static uint8_t walletAmount;
+    SetPageLockScreen(false);
+    int32_t ret = FatfsFileCopy(SD_CARD_OTA_FILE_PATH, INTERNAL_STORAGE_OTA_FILE_PATH);
+    if (ret == SUCCESS_CODE) {
+        GetExistAccountNum(&walletAmount);
+        if (walletAmount == 0) {
+            SetSetupStep(4);
+            SaveDeviceSettings();
+        }
+        NVIC_SystemReset();
+    } else {
+        SetPageLockScreen(true);
+        KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
+    }
+#else
+    KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
+#endif
+    return SUCCESS_CODE;
+}
+
+static bool CheckNeedDelay(ViewType viewType)
+{
+    return viewType == ZcashTx;
+}
+
+static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
+{
+#ifdef BUILD_PRODUCTION
+#ifndef COMPILE_SIMULATOR
+    osDelay(1000);
+    static uint8_t walletAmount;
+    SetPageLockScreen(false);
+    int32_t ret = UpdateBootFromFlash();
+    SetPageLockScreen(true);
+    if (ret == SUCCESS_CODE) {
+        NVIC_SystemReset();
+        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, ERR_GENERAL_FAIL, NULL, 0);
+    }
+#else
+    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
+#endif
+#else
+    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
+#endif
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen)
+{
+    ViewType viewType = *((ViewType *)inData);
+    if (CheckNeedDelay(viewType)) {
+        UserDelay(100);
+    }
+    g_checkResult = CheckUrResult(viewType);
+    if (g_checkResult != NULL && g_checkResult->error_code == 0) {
+        KosmoApi_NotifyResult(KOSMO_REQ_CHECK_TRANSACTION, KOSMO_OK, g_checkResult, sizeof(g_checkResult));
+    } else {
+        printf("transaction check fail, error code: %d, error msg: %s\r\n", g_checkResult->error_code, g_checkResult->error_message);
+        KosmoApi_NotifyResult(KOSMO_REQ_CHECK_TRANSACTION, ERR_GENERAL_FAIL, g_checkResult, sizeof(g_checkResult));
+    }
+
+    return SUCCESS_CODE;
+}
+
+
+static int32_t ModelTransactionCheckResultClear(const void *inData, uint32_t inDataLen)
+{
+    if (g_checkResult != NULL) {
+        free_TransactionCheckResult(g_checkResult);
+        g_checkResult = NULL;
+    }
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelParseTransaction(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t parseTransactionFunc)
+{
+    ReturnVoidPointerFunc func = (ReturnVoidPointerFunc)parseTransactionFunc;
+    SetPageLockScreen(false);
+    // There is no need to release here, the parsing results will be released when exiting the details page.
+    TransactionParseResult_DisplayTx *parsedResult = (TransactionParseResult_DisplayTx *)func();
+    if (parsedResult != NULL && parsedResult->error_code == 0 && parsedResult->data != NULL) {
+        KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION, KOSMO_OK, parsedResult, sizeof(parsedResult));
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_PARSE_TRANSACTION, ERR_GENERAL_FAIL, parsedResult, sizeof(parsedResult));
+    }
+    SetPageLockScreen(true);
+    return SUCCESS_CODE;
+}
+
+static const uint8_t APP_END_MAGIC_NUMBER[] = {'m', 'h', '1', '9', '0', '3', 'a', 'p', 'p', 'e', 'n', 'd'};
+static uint32_t BinarySearchLastNonFFSector(void)
+{
+    size_t APP_END_MAGIC_NUMBER_SIZE = sizeof(APP_END_MAGIC_NUMBER);
+    uint8_t *buffer = SRAM_MALLOC(SECTOR_SIZE);
+    uint32_t startIndex = (APP_CHECK_START_ADDR - APP_ADDR) / SECTOR_SIZE;
+    uint32_t endIndex = (APP_END_ADDR - APP_ADDR) / SECTOR_SIZE;
+
+    uint8_t percent = 1;
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
+
+    for (int i = startIndex + 1; i < endIndex; i++) {
+        if (g_stopCalChecksum == true) {
+            SRAM_FREE(buffer);
+            return SUCCESS_CODE;
+        }
+        memcpy_s(buffer, SECTOR_SIZE, (uint32_t *)(APP_ADDR + i * SECTOR_SIZE), SECTOR_SIZE);
+        if ((i - startIndex) % 200 == 0) {
+            percent++;
+            KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
+        }
+        if (memcmp(buffer, APP_END_MAGIC_NUMBER, APP_END_MAGIC_NUMBER_SIZE) == 0) {
+            if (CheckAllFF(&buffer[APP_END_MAGIC_NUMBER_SIZE], SECTOR_SIZE - APP_END_MAGIC_NUMBER_SIZE)) {
+                SRAM_FREE(buffer);
+                return i;
+            }
+        }
+    }
+    SRAM_FREE(buffer);
+    return -1;
+}
+
+static int32_t ModelCalculateCheckSum(const void *indata, uint32_t inDataLen)
+{
+#ifndef COMPILE_SIMULATOR
+    g_stopCalChecksum = false;
+    uint8_t buffer[4096] = {0};
+    uint8_t hash[32] = {0};
+    int num = BinarySearchLastNonFFSector();
+    ASSERT(num >= 0);
+    if (g_stopCalChecksum == true) {
+        return SUCCESS_CODE;
+    }
+    struct sha256_ctx ctx;
+    sha256_init(&ctx);
+    uint8_t percent = 0;
+    for (int i = 0; i <= num; i++) {
+        if (g_stopCalChecksum == true) {
+            return SUCCESS_CODE;
+        }
+        memset_s(buffer, SECTOR_SIZE, 0, SECTOR_SIZE);
+        memcpy_s(buffer, sizeof(buffer), (uint32_t *)(APP_ADDR + i * SECTOR_SIZE), SECTOR_SIZE);
+        sha256_update(&ctx, buffer, SECTOR_SIZE);
+        if (percent != i * 100 / num) {
+            percent = i * 100 / num;
+            if (percent != 100 && percent >= 10) {
+                KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
+            }
+        }
+    }
+    sha256_done(&ctx, (struct sha256 *)hash);
+    memset_s(buffer, SECTOR_SIZE, 0, SECTOR_SIZE);
+    percent = 100;
+    SetPageLockScreen(true);
+    SecretCacheSetChecksum(hash);
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
+#else
+    uint8_t percent = 100;
+    char *hash = "131b3a1e9314ba076f8e459a1c4c6713eeb38862f3eb6f9371360aa234cdde1f";
+    SecretCacheSetChecksum(hash);
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_CHECKSUM, KOSMO_OK, &percent, sizeof(percent));
+#endif
+    return SUCCESS_CODE;
+}
+
+#define FATFS_SHA256_BUFFER_SIZE              4096
+static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen)
+{
+    uint8_t percent;
+#ifndef COMPILE_SIMULATOR
+    g_stopCalChecksum = false;
+    FIL fp;
+    uint8_t *data = NULL;
+    uint32_t fileSize, actualSize, copyOffset, totalSize = 0;
+    uint8_t oldPercent = 0;
+    FRESULT res;
+    struct sha256_ctx ctx;
+    sha256_init(&ctx);
+    unsigned char hash[32];
+    do {
+        res = f_open(&fp, SD_CARD_OTA_BIN_PATH, FA_OPEN_EXISTING | FA_READ);
+        if (res) {
+            return res;
+        }
+        fileSize = f_size(&fp);
+        data = SRAM_MALLOC(FATFS_SHA256_BUFFER_SIZE);
+        for (copyOffset = 0; copyOffset <= fileSize; copyOffset += FATFS_SHA256_BUFFER_SIZE) {
+            if (!SdCardInsert() || (g_stopCalChecksum == true)) {
+                res = ERR_GENERAL_FAIL;
+                break;
+            }
+
+            res = f_read(&fp, data, FATFS_SHA256_BUFFER_SIZE, &actualSize);
+            if (res) {
+                FatfsError(res);
+                break;
+            }
+            sha256_update(&ctx, data, actualSize);
+            totalSize += actualSize;
+
+            uint8_t percent = totalSize * 100 / fileSize;
+            if (oldPercent != percent) {
+                printf("==========copy %d%%==========\n", percent);
+                oldPercent = percent;
+                if (percent != 100 && percent >= 2) {
+                    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
+                }
+            }
+        }
+    } while (0);
+
+    if (res == FR_OK) {
+        sha256_done(&ctx, (struct sha256 *)hash);
+        for (int i = 0; i < sizeof(hash); i++) {
+            printf("%02x", hash[i]);
+        }
+        SecretCacheSetChecksum(hash);
+        percent = 100;
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, ERR_GENERAL_FAIL, NULL, 0);
+    }
+    SRAM_FREE(data);
+    f_close(&fp);
+    SetPageLockScreen(true);
+#else
+    percent = 100;
+    char *hash = "131b3a1e9314ba076f8e459a1c4c6713eeb38862f3eb6f9371360aa234cdde1f";
+    SecretCacheSetChecksum(hash);
+    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
+#endif
+    return SUCCESS_CODE;
+}
+
+static bool ModelGetPassphraseQuickAccess(void)
+{
+#ifdef COMPILE_SIMULATOR
+    return false;
+#else
+    if (PassphraseExist(GetCurrentAccountIndex()) == false && GetPassphraseQuickAccess() == true && GetPassphraseMark() == true) {
+        return true;
+    } else {
+        return false;
+    }
+#endif
+}
+
+static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)
+{
+    int ret = FormatSdFatfs();
+    if (ret != SUCCESS_CODE) {
+        KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, ERR_GENERAL_FAIL, NULL, 0);
+    } else {
+        KosmoApi_NotifyResult(KOSMO_REQ_FORMAT_SD_CARD, KOSMO_OK, NULL, 0);
+    }
+    SetPageLockScreen(true);
+
+    return SUCCESS_CODE;
+}
+
+
+static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen)
+{
+    UNUSED(inData);
+    UNUSED(inDataLen);
+    return RsaGenerateKeyPair(true, KOSMO_REQ_RSA_GENERATE_KEYPAIR);
+}
+
+int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
+{
+    bool lockState = IsPreviousLockScreenEnable();
+    SetLockScreen(false);
+    if (needEmitSignal) {
+        uint16_t stage = SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_START;
+        KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
+    }
+
+    int32_t ret = SUCCESS_CODE;
+    uint8_t seed[SEED_LEN] = {0};
+    SimpleResponse_u8* secret = NULL;
+
+    do {
+        int len = GetMnemonicType() == MNEMONIC_TYPE_BIP39 ? sizeof(seed) : GetCurrentAccountEntropyLen();
+
+        ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
+        CHECK_ERRCODE_BREAK("get account seed", ret);
+
+        secret = generate_arweave_secret(seed, len);
+        CHECK_ERRCODE_BREAK("generate arweave secret", secret->error_code);
+
+        ret = FlashWriteRsaPrimes(secret->data);
+        CHECK_ERRCODE_BREAK("flash write rsa primes", ret);
+
+        if (needEmitSignal) {
+            uint16_t stage = SIG_SETUP_RSA_PRIVATE_KEY_GENERATE_ADDRESS;
+            KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
+        }
+
+        ret = AccountPublicInfoSwitch(GetCurrentAccountIndex(), SecretCacheGetPassword(), true);
+        CHECK_ERRCODE_BREAK("account public info switch", ret);
+
+        RecalculateManageWalletState();
+    } while (0);
+
+    if (needEmitSignal) {
+        uint16_t stage;
+        if (ret == SUCCESS_CODE) {
+            stage = SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD_PASS;
+            KosmoApi_NotifyResult(requestType, SUCCESS_CODE, &stage, sizeof(stage));
+        } else {
+            stage = SIG_SETUP_RSA_PRIVATE_KEY_WRITE_FAIL;
+            KosmoApi_NotifyResult(requestType, ret, &stage, sizeof(stage));
+        }
+        stage = SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING;
+        KosmoApi_NotifyResult(requestType, KOSMO_OK, &stage, sizeof(stage));
+    }
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    if (secret != NULL) {
+        free_simple_response_u8(secret);
+    }
+    SetLockScreen(lockState);
+    ClearLockScreenTime();
+    return ret;
 }

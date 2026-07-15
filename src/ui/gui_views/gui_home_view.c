@@ -1,5 +1,5 @@
 #include "gui.h"
-#include "gui_model.h"
+#include "kosmo_api.h"
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "gui_home_widgets.h"
@@ -10,7 +10,10 @@
 static int32_t GuiHomeViewInit(void)
 {
     GuiHomeAreaInit();
-    GuiModeGetWalletDesc();
+    {
+        KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+        KosmoApi_Request(&req, NULL);
+    }
     return SUCCESS_CODE;
 }
 
@@ -40,7 +43,8 @@ int32_t GuiHomeViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
     case GUI_EVENT_REFRESH:
         GuiHomeRefresh();
         if (param != NULL) {
-            GuiModeGetWalletDesc();
+            KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+            KosmoApi_Request(&req, NULL);
         }
         break;
     case SIG_SETUP_VIEW_TILE_PREV:

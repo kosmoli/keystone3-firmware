@@ -49,220 +49,7 @@ bool NeedUpdateBoot(void);
 extern bool g_reboot;
 
 #undef GUI_ANALYZE_OBJ_SURPLUS
-#if defined(CYPHERPUNK_VERSION) && defined(WEB3_VERSION)
-/* KOSMO_VERSION: merged cypherpunk + web3 */
-#define GUI_ANALYZE_OBJ_SURPLUS \
-    { \
-        REMAPVIEW_ZCASH, \
-        PC_SIMULATOR_PATH "/page_zcash.json", \
-        GuiGetZcashGUIData, \
-        NULL, \
-        FreeZcashMemory, \
-    }, \
-    { \
-        REMAPVIEW_XMR_OUTPUT, \
-        PC_SIMULATOR_PATH "/page_xmr_output.json", \
-        GuiGetMoneroOutputData, \
-        NULL, \
-        FreeMoneroMemory, \
-    }, \
-    { \
-        REMAPVIEW_XMR_UNSIGNED, \
-        PC_SIMULATOR_PATH "/page_xmr_unsigned.json", \
-        GuiGetMoneroUnsignedTxData, \
-        NULL, \
-        FreeMoneroMemory, \
-    }, \
-    { \
-        REMAPVIEW_ETH, \
-        PC_SIMULATOR_PATH "/page_eth.json", \
-        GuiGetEthData, \
-        GetEthTransType, \
-        FreeEthMemory, \
-    }, \
-    { \
-        REMAPVIEW_ETH_PERSONAL_MESSAGE, \
-        PC_SIMULATOR_PATH "/page_eth_person.json", \
-        GuiGetEthPersonalMessage, \
-        GetEthPersonalMessageType, \
-        FreeEthMemory, \
-    }, \
-    { \
-        REMAPVIEW_ETH_TYPEDDATA, \
-        PC_SIMULATOR_PATH "/page_eth_type.json", \
-        GuiGetEthTypeData, \
-        NULL, \
-        FreeEthMemory, \
-    }, \
-    { \
-        REMAPVIEW_TRX, \
-        PC_SIMULATOR_PATH "/page_trx.json", \
-        GuiGetTrxData, \
-        NULL, \
-        FreeTrxMemory, \
-    }, \
-    { \
-        REMAPVIEW_TRX_PERSONAL_MESSAGE, \
-        PC_SIMULATOR_PATH "/page_trx_person.json", \
-        GuiGetTrxPersonalMessage, \
-        GetTrxPersonalMessageType, \
-        FreeTrxMemory, \
-    }, \
-    { \
-        REMAPVIEW_TRX_SWAP, \
-        PC_SIMULATOR_PATH "/page_trx_swap.json", \
-        GuiGetTrxData, \
-        NULL, \
-        FreeTrxMemory, \
-    }, \
-    { \
-        REMAPVIEW_COSMOS, \
-        PC_SIMULATOR_PATH "/page_cosmos.json", \
-        GuiGetCosmosData, \
-        GuiGetCosmosTmpType, \
-        FreeCosmosMemory, \
-    }, \
-    { \
-        REMAPVIEW_SUI, \
-        PC_SIMULATOR_PATH "/page_sui.json", \
-        GuiGetSuiData, \
-        NULL, \
-        FreeSuiMemory, \
-    }, \
-    { \
-        REMAPVIEW_IOTA, \
-        PC_SIMULATOR_PATH "/page_iota.json", \
-        GuiGetIotaData, \
-        NULL, \
-        FreeIotaMemory, \
-    }, \
-    { \
-        REMAPVIEW_IOTA_SIGN_MESSAGE_HASH, \
-        PC_SIMULATOR_PATH "/page_iota_sign_hash.json", \
-        GuiGetIotaSignMessageHashData, \
-        NULL, \
-        FreeIotaMemory, \
-    }, \
-    { \
-        REMAPVIEW_SUI_SIGN_MESSAGE_HASH, \
-        PC_SIMULATOR_PATH "/page_sui_sign_hash.json", \
-        GuiGetSuiSignMessageHashData, \
-        NULL, \
-        FreeSuiMemory \
-    }, \
-    { \
-        REMAPVIEW_SOL, \
-        PC_SIMULATOR_PATH "/page_sol.json", \
-        GuiGetSolData, \
-        NULL, \
-        FreeSolMemory, \
-    }, \
-    { \
-        REMAPVIEW_SOL_MESSAGE, \
-        PC_SIMULATOR_PATH "/page_sol_message.json", \
-        GuiGetSolMessageData, \
-        GetSolMessageType, \
-        FreeSolMemory, \
-    }, \
-    { \
-        REMAPVIEW_APT, \
-        PC_SIMULATOR_PATH "/page_eth.json", \
-        GuiGetAptosData, \
-        NULL, \
-        FreeAptosMemory, \
-    }, \
-    { \
-        REMAPVIEW_ADA, \
-        PC_SIMULATOR_PATH "/page_ada.json", \
-        GuiGetAdaData, \
-        NULL, \
-        FreeAdaMemory, \
-    }, \
-    { \
-        REMAPVIEW_ADA_SIGN_TX_HASH, \
-        PC_SIMULATOR_PATH "/page_sign_ada_tx_hash.json", \
-        GuiGetAdaSignTxHashData, \
-        NULL, \
-        FreeAdaMemory \
-    }, \
-    { \
-        REMAPVIEW_ADA_SIGN_DATA, \
-        PC_SIMULATOR_PATH "/page_ada_sign_data.json", \
-        GuiGetAdaSignDataData, \
-        NULL, \
-        FreeAdaSignDataMemory, \
-    }, \
-    { \
-        REMAPVIEW_ADA_CATALYST, \
-        PC_SIMULATOR_PATH "/page_ada_catalyst.json", \
-        GuiGetAdaCatalyst, \
-        NULL, \
-        FreeAdaCatalystMemory, \
-    }, \
-    { \
-        REMAPVIEW_XRP, \
-        PC_SIMULATOR_PATH "/page_xrp.json", \
-        GuiGetXrpData, \
-        NULL, \
-        FreeXrpMemory, \
-    }, \
-    { \
-        REMAPVIEW_AR, \
-        PC_SIMULATOR_PATH "/page_ar.json", \
-        GuiGetArData, \
-        NULL, \
-        FreeArMemory, \
-    }, \
-    { \
-        REMAPVIEW_AR_MESSAGE, \
-        PC_SIMULATOR_PATH "/page_ar_message.json", \
-        GuiGetArData, \
-        NULL, \
-        FreeArMemory, \
-    }, \
-    { \
-        REMAPVIEW_STELLAR, \
-        PC_SIMULATOR_PATH "/page_stellar.json", \
-        GuiGetStellarData, \
-        NULL, \
-        FreeStellarMemory, \
-    }, \
-    { \
-        REMAPVIEW_STELLAR_HASH, \
-        PC_SIMULATOR_PATH "/page_stellar_hash.json", \
-        GuiGetStellarData, \
-        NULL, \
-        FreeStellarMemory, \
-    }, \
-    { \
-        REMAPVIEW_AR_DATAITEM, \
-        PC_SIMULATOR_PATH "/page_ar_data_item.json", \
-        GuiGetArData, \
-        NULL, \
-        FreeArMemory, \
-    }, \
-    { \
-        REMAPVIEW_TON, \
-        PC_SIMULATOR_PATH "/page_ton.json", \
-        GuiGetTonGUIData, \
-        NULL, \
-        FreeArMemory, \
-    }, \
-    { \
-        REMAPVIEW_TON_SIGNPROOF, \
-        PC_SIMULATOR_PATH "/page_ton_proof.json", \
-        GuiGetTonProofGUIData, \
-        NULL, \
-        FreeArMemory, \
-    }, \
-    { \
-        REMAPVIEW_AVAX, \
-        PC_SIMULATOR_PATH "/page_avax.json", \
-        GuiGetAvaxGUIData, \
-        NULL, \
-        FreeAvaxMemory, \
-    }
-#elif defined(CYPHERPUNK_VERSION)
+#ifdef CYPHERPUNK_VERSION
 #define GUI_ANALYZE_OBJ_SURPLUS \
     { \
         REMAPVIEW_ZCASH, \
@@ -285,7 +72,9 @@ extern bool g_reboot;
         NULL, \
         FreeMoneroMemory, \
     }
-#elif defined(WEB3_VERSION)
+#endif
+
+#ifdef WEB3_VERSION
 #define GUI_ANALYZE_OBJ_SURPLUS           \
     { \
         REMAPVIEW_ETH, \
@@ -475,7 +264,7 @@ extern bool g_reboot;
         GuiGetAvaxGUIData, \
         NULL, \
         FreeAvaxMemory, \
-    }, \
+    },\
     { \
         REMAPVIEW_ZCASH, \
         PC_SIMULATOR_PATH "/page_zcash.json", \

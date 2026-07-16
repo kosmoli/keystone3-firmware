@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 {
     (void)argc; /*Unused*/
     (void)argv; /*Unused*/
+    setbuf(stdout, NULL);
 
     printf("start");
 

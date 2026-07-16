@@ -624,7 +624,10 @@ void DestoryNavBarWidget(NavBarWidget_t *navBarWidget)
 {
     if (navBarWidget != NULL) {
         if (navBarWidget->navBar != NULL && lv_obj_is_valid(navBarWidget->navBar)) {
-            lv_obj_del(navBarWidget->navBar);
+            lv_obj_t *parent = lv_obj_get_parent(navBarWidget->navBar);
+            if (parent != NULL && lv_obj_is_valid(parent)) {
+                lv_obj_del(navBarWidget->navBar);
+            }
         }
 
         SRAM_FREE(navBarWidget);

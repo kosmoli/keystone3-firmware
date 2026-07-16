@@ -42,7 +42,14 @@ void UpdatePageContentZone(PageWidget_t *pageWidget)
 void DestroyPageContentZone(PageWidget_t *pageWidget)
 {
     if (pageWidget != NULL && pageWidget->contentZone != NULL && lv_obj_is_valid(pageWidget->contentZone)) {
-        lv_obj_del(pageWidget->contentZone);
+        // Safety: check parent is also valid before deleting child.
+        // During cascade close, a sibling delete can leave this object in a
+        // half-destroyed state where lv_obj_is_valid returns true but
+        // lv_obj_del would segfault.
+        lv_obj_t *parent = lv_obj_get_parent(pageWidget->contentZone);
+        if (parent != NULL && lv_obj_is_valid(parent)) {
+            lv_obj_del(pageWidget->contentZone);
+        }
         pageWidget->contentZone = NULL;
     }
 }
@@ -53,10 +60,12 @@ void DestroyPageWidget(PageWidget_t *pageWidget)
         DestoryNavBarWidget(pageWidget->navBarWidget);
         DestroyPageContentZone(pageWidget);
         if (pageWidget->page != NULL && lv_obj_is_valid(pageWidget->page)) {
-            lv_obj_del(pageWidget->page);
+            lv_obj_t *parent = lv_obj_get_parent(pageWidget->page);
+            if (parent != NULL && lv_obj_is_valid(parent)) {
+                lv_obj_del(pageWidget->page);
+            }
             pageWidget->page = NULL;
         }
-
         SRAM_FREE(pageWidget);
     }
 }

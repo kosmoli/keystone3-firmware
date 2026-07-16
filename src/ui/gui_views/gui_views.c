@@ -185,6 +185,19 @@ void GuiSDCardExportHandler(lv_event_t *e)
     return;
 }
 
+static void GuiWriteSeResultSuccessDeferred(void *unused)
+{
+    (void)unused;
+    // Skip GuiCloseToTargetView — cascade close corrupts sibling LVGL objects.
+    // Just open lock+home on top of the existing view stack.
+    GuiFrameOpenViewWithParam(&g_lockView, NULL, 0);
+    GuiLockScreenHidden();
+    GuiFrameOpenView(&g_homeView);
+    GuiUpdateOldAccountIndex();
+    GuiEmitSignal(SIG_CLEAR_HOME_PAGE_INDEX, NULL, 0);
+    GuiEmitSignal(GUI_EVENT_REFRESH, NULL, 0);
+}
+
 void GuiWriteSeResult(bool en, int32_t errCode)
 {
     GuiStopCircleAroundAnimation();
@@ -197,13 +210,11 @@ void GuiWriteSeResult(bool en, int32_t errCode)
         strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, GetCurrentKbWalletName());
         GuiNvsBarSetWalletName(GetCurrentKbWalletName());
         GuiNvsBarSetWalletIcon(GuiGetEmojiIconImg());
-        GuiCloseToTargetView(&g_initView);
-        GuiFrameOpenViewWithParam(&g_lockView, NULL, 0);
-        GuiLockScreenHidden();
-        GuiFrameOpenView(&g_homeView);
-        GuiUpdateOldAccountIndex();
-        GuiEmitSignal(SIG_CLEAR_HOME_PAGE_INDEX, NULL, 0);
-        GuiEmitSignal(GUI_EVENT_REFRESH, NULL, 0);
+        // Defer view stack operations to next event loop iteration.
+        // GuiWriteSeResult is called from a callback chain (WriteSECallback →
+        // GuiApiEmitSignal → GuiSinglePhraseViewEventProcess). Destroying the
+        // view stack synchronously here corrupts the caller's context.
+        lv_async_call(GuiWriteSeResultSuccessDeferred, NULL);
     } else {
         lv_event_cb_t cb = CloseCurrentUserDataHandler;
         const char *titleText = _("error_box_invalid_seed_phrase");

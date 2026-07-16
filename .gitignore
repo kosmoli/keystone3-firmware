@@ -15,3 +15,4 @@ pyenv
 *.rustfmt.toml
 /tools/boot.sig
 /targetbuild_sim/
+simulator

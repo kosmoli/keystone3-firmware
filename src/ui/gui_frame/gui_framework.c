@@ -146,9 +146,10 @@ int32_t GuiFrameOpenViewWithParam(GUI_VIEW *view, void *param, uint16_t usLen)
 int32_t GuiCloseCurrentWorkingView(void)
 {
     g_viewCnt--;
+    GUI_VIEW *closingView = g_workingView;
     GuiViewHandleEvent(g_workingView, GUI_EVENT_OBJ_DEINIT, NULL, 0);
-    printf("close view %s freeHeap %d\n", GuiFrameIdToName(g_workingView->id), xPortGetFreeHeapSize());
-    g_workingView->isActive = false;
+    printf("close view %s freeHeap %d\n", GuiFrameIdToName(closingView->id), xPortGetFreeHeapSize());
+    closingView->isActive = false;
     g_workingView = g_workingView->previous;
     g_workingView->isActive = true;
     printf("refresh view %s freeHeap %d\n", GuiFrameIdToName(g_workingView->id), xPortGetFreeHeapSize());

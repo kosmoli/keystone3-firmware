@@ -55,7 +55,7 @@ file(GLOB_RECURSE UTILS
     "src/managers/se_manager.c"
 )
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}) 
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build) 
 SET(CMAKE_CXX_FLAGS "-O3")
 
 include_directories(

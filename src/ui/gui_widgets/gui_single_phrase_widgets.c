@@ -95,7 +95,11 @@ static void UpdatePhraseHandler(lv_event_t *e)
 
 static void WriteSECallback(const KosmoResult *result)
 {
-    GuiWriteSeResult(result->errorCode == SUCCESS_CODE, result->errorCode);
+    if (result->errorCode == SUCCESS_CODE) {
+        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_SUCCESS, NULL, 0);
+    } else {
+        GuiApiEmitSignal(SIG_CREAT_SINGLE_PHRASE_WRITE_SE_FAIL, (void *)&result->errorCode, sizeof(int32_t));
+    }
 }
 
 static void WriteSE()
@@ -208,7 +212,8 @@ static void MnemonicConfirmHandler(lv_event_t *e)
                     strcat(confirmMnemonic, " ");
                 }
             }
-            if (strcmp(confirmMnemonic, KosmoApi_CacheGetMnemonic()) == 0) {
+            const char *cached = KosmoApi_CacheGetMnemonic();
+            if (strcmp(confirmMnemonic, cached) == 0) {
                 GuiEmitSignal(SIG_SETUP_VIEW_TILE_NEXT, NULL, 0);
             } else {
                 g_noticeHintBox = GuiCreateErrorCodeWindow(ERR_KEYSTORE_MNEMONIC_NOT_MATCH_WALLET, &g_noticeHintBox, NULL);
@@ -405,7 +410,6 @@ int8_t GuiSinglePhraseNextTile(const char *passphrase)
             SetMidBtnLabel(g_pageWidget->navBarWidget, NVS_BAR_MID_LABEL, _("Passphrase"));
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_QUESTION_MARK, OpenPassphraseTutorialHandler, NULL);
         } else {
-            g_singlePhraseTileView.currentTile++;
             SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_LEFT_BUTTON_BUTT, NULL, NULL);
             SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
             WriteSE();

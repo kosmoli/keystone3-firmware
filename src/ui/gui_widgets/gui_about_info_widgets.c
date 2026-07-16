@@ -365,6 +365,8 @@ static void ChecksumProgressCallback(const KosmoResult *result) {
 void GuiStopFirmwareCheckSumHandler(lv_event_t *e)
 {
     { KosmoRequest req = { .type = KOSMO_REQ_STOP_CHECKSUM }; KosmoApi_Request(&req, NULL); }
+    KosmoApi_ClearCallback(KOSMO_REQ_CALCULATE_CHECKSUM);
+    KosmoApi_ClearCallback(KOSMO_REQ_CALCULATE_SHA256);
     void **param = lv_event_get_user_data(e);
     if (param != NULL) {
         lv_obj_t *obj = *param;

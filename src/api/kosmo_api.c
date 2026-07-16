@@ -207,15 +207,18 @@ uint32_t KosmoChainToXPubType(KosmoChainType chain)
 
 /* ── 内部状态 ───────────────────────────────────────── */
 
-static KosmoCallback g_pendingCallbacks[KOSMO_REQ_NUM];
-static bool g_persistentCallbacks[KOSMO_REQ_NUM];
+typedef struct {
+    KosmoCallback callback;
+    bool persistent;
+} KosmoCallbackSlot;
+
+static KosmoCallbackSlot g_callbackSlots[KOSMO_REQ_NUM];
 
 /* ── 初始化 ─────────────────────────────────────────── */
 
 void KosmoApi_Init(void)
 {
-    memset(g_pendingCallbacks, 0, sizeof(g_pendingCallbacks));
-    memset(g_persistentCallbacks, 0, sizeof(g_persistentCallbacks));
+    memset(g_callbackSlots, 0, sizeof(g_callbackSlots));
 }
 
 /* ── 异步请求 ───────────────────────────────────────── */
@@ -225,16 +228,15 @@ void KosmoApi_Init(void)
  *
  * Model* 函数完成操作后调用此函数，触发 UI 层注册的 callback。
  * 替代原来的 GuiApiEmitSignal() 全局广播。
- *
- * Phase 3 PoC：当前仅 WRITE_LOCK_TIME 使用。逐步扩展到所有请求类型。
  */
 void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen)
 {
     if (type >= KOSMO_REQ_NUM) return;
 
-    KosmoCallback cb = g_pendingCallbacks[type];
-    if (!g_persistentCallbacks[type]) {
-        g_pendingCallbacks[type] = NULL; /* 一次性：非持久 callback 清除 */
+    KosmoCallbackSlot *slot = &g_callbackSlots[type];
+    KosmoCallback cb = slot->callback;
+    if (!slot->persistent) {
+        slot->callback = NULL; /* 一次性：非持久 callback 清除 */
     }
 
     if (cb != NULL) {
@@ -253,15 +255,15 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
 void KosmoApi_RegisterCallback(KosmoRequestType type, KosmoCallback cb, bool persistent)
 {
     if (type >= KOSMO_REQ_NUM) return;
-    g_pendingCallbacks[type] = cb;
-    g_persistentCallbacks[type] = persistent;
+    g_callbackSlots[type].callback = cb;
+    g_callbackSlots[type].persistent = persistent;
 }
 
 void KosmoApi_ClearCallback(KosmoRequestType type)
 {
     if (type >= KOSMO_REQ_NUM) return;
-    g_pendingCallbacks[type] = NULL;
-    g_persistentCallbacks[type] = false;
+    g_callbackSlots[type].callback = NULL;
+    g_callbackSlots[type].persistent = false;
 }
 
 /* ── 同步查询：账户 ─────────────────────────────────── */
@@ -701,8 +703,8 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 
     /* 存储 callback（cb=NULL 时保留已有 callback，不清除） */
     if (request->type < KOSMO_REQ_NUM && cb != NULL) {
-        g_pendingCallbacks[request->type] = cb;
-        g_persistentCallbacks[request->type] = request->persistent;
+        g_callbackSlots[request->type].callback = cb;
+        g_callbackSlots[request->type].persistent = request->persistent;
     }
 
     switch (request->type) {
@@ -1169,10 +1171,9 @@ cleanup:
         SRAM_FREE(mnemonic);
     }
     if (ret != SUCCESS_CODE) {
-        // This error path should theoretically not be reached if entropy generation and mnemonic creation work correctly
-        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, ret, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC, ret, NULL, 0);
     } else {
-        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_GENERATE_ENTROPY, SUCCESS_CODE, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_BIP39_UPDATE_MNEMONIC, SUCCESS_CODE, NULL, 0);
     }
     CLEAR_ARRAY(entropy);
     SetLockScreen(enable);
@@ -2077,11 +2078,7 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
     } else {
         resultSignal = ModelVerifyPassFailed(param);
     }
-    static struct {
-        uint16_t resultSignal;
-        uint16_t originalParam;
-        uint16_t errorCount;
-    } s_verifyContext;
+    KosmoVerifyResult s_verifyContext;
     s_verifyContext.resultSignal = resultSignal;
     s_verifyContext.originalParam = *param;
     s_verifyContext.errorCount = g_passwordVerifyResult.errorCount;

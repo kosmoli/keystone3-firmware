@@ -184,6 +184,14 @@ typedef struct {
     uint32_t dataLen;              /* 数据长度 */
 } KosmoResult;
 
+/* ── 密码验证结果（KOSMO_REQ_VERIFY_PASSWORD 专用）────── */
+
+typedef struct {
+    uint16_t resultSignal;   /* 前端信号 ID（SIG_VERIFY_PASSWORD_PASS 等） */
+    uint16_t originalParam;  /* 原始请求参数（密码验证类型） */
+    uint16_t errorCount;     /* 错误次数 */
+} KosmoVerifyResult;
+
 /* ── 回调类型 ───────────────────────────────────────── */
 
 typedef void (*KosmoCallback)(const KosmoResult *result);

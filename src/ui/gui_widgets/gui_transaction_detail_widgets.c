@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "gui_api.h"
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "gui_enter_passcode.h"
@@ -252,7 +253,7 @@ void GuiSignDealFingerRecognize(void *param)
     }
     if (errCode == FP_SUCCESS_CODE) {
         lv_img_set_src(g_fpErrorImg, &imgYellowFinger);
-        {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.signalId = passCodeType}}; KosmoApi_Request(&r, NULL);}
+        {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD, .verify_password = {.signalId = passCodeType}}; KosmoApi_Request(&r, VerifyPasswordCallback);}
         g_fingerSignErrCount = 0;
     } else {
         g_fingerSignErrCount++;

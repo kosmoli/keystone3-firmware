@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "gui.h"
+#include "gui_api.h"
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "gui_led.h"
@@ -59,7 +60,7 @@ static void KeyboardConfirmHandler(lv_event_t *e)
             GuiClearKeyboardInput(keyboardWidget);
             {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
                               .verify_password = {.signalId = *keyboardWidget->sig}};
-             KosmoApi_Request(&r, NULL);}
+             KosmoApi_Request(&r, VerifyPasswordCallback);}
         }
     } else if (code == LV_EVENT_VALUE_CHANGED) {
         GuiHideErrorLabel(keyboardWidget);
@@ -165,7 +166,7 @@ static void SetPinEventHandler(lv_event_t *e)
                 GuiClearKeyboardInput(keyboardWidget);
                 {KosmoRequest r = {.type = KOSMO_REQ_VERIFY_PASSWORD,
                                   .verify_password = {.signalId = *keyboardWidget->sig}};
-                 KosmoApi_Request(&r, NULL);}
+                 KosmoApi_Request(&r, VerifyPasswordCallback);}
             }
 
         }

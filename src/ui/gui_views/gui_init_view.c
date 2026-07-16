@@ -1,57 +1,45 @@
 #include "gui_obj.h"
 #include "kosmo_api.h"
+#include "gui_api.h"
 #include "gui_views.h"
-#include "kosmo_api.h"
 #include "gui_style.h"
-#include "kosmo_api.h"
 #include "gui_status_bar.h"
-#include "kosmo_api.h"
-#include "kosmo_api.h"
 #include "gui_enter_passcode.h"
-#include "kosmo_api.h"
 #include "gui_pop_message_box.h"
-#include "kosmo_api.h"
 #include "gui_power_option_widgets.h"
-#include "kosmo_api.h"
 #include "gui_init_widgets.h"
-#include "kosmo_api.h"
 #include "gui_firmware_process_widgets.h"
-#include "kosmo_api.h"
 #include "gui_usb_connection_widgets.h"
-#include "kosmo_api.h"
 #include "gui_low_battery_widgets.h"
-#include "kosmo_api.h"
 #include "gui_nft_screen_widgets.h"
-#include "kosmo_api.h"
 #include "gui_firmware_update_deny_widgets.h"
-#include "kosmo_api.h"
 #include "gui_trans_nft_process_widgets.h"
-#include "kosmo_api.h"
 #include "gui_firmware_update_widgets.h"
-#include "kosmo_api.h"
 #include "gui_lock_widgets.h"
-#include "kosmo_api.h"
 #include "presetting.h"
-#include "kosmo_api.h"
 #include "anti_tamper.h"
-#include "kosmo_api.h"
 #include "gui_global_resources.h"
-#include "kosmo_api.h"
 #include "gui_about_info_widgets.h"
-#include "kosmo_api.h"
-#include "kosmo_api.h"
 #include "gui_setup_widgets.h"
-#include "kosmo_api.h"
 #include "device_setting.h"
-#include "kosmo_api.h"
 #include "drv_aw32001.h"
-#include "kosmo_api.h"
 #include "usb_task.h"
-#include "kosmo_api.h"
 #include "ui_display_task.h"
-#include "kosmo_api.h"
 #include "version.h"
-#include "kosmo_api.h"
+
+/*
+ * OnGetAccountCallback — KOSMO_REQ_GET_ACCOUNT 结果回调
+ *
+ * 后端 ModeGetAccount 完成后，KosmoApi_NotifyResult 调用此回调。
+ * 通过 GuiApiEmitSignal 将结果转发给 UI 线程，让 init_view / setting_view 处理。
+ * 这是前端代码，调用 GuiApiEmitSignal 不违反前后端解耦。
+ */
+static void OnGetAccountCallback(const KosmoResult *result)
+{
+    if (result == NULL || result->data == NULL) return;
+    uint8_t walletNum = *(uint8_t *)result->data;
+    GuiApiEmitSignal(SIG_INIT_GET_ACCOUNT_NUMBER, &walletNum, sizeof(walletNum));
+}
 
 static int32_t GuiInitViewInit(void *param)
 {
@@ -63,6 +51,7 @@ static int32_t GuiInitViewInit(void *param)
     GuiStyleInit();
     GuiStatusBarInit();
     GlobalResourcesInit();
+
     if (GetFactoryResult() == false) {
         GuiFrameOpenView(&g_inactiveView);
         return SUCCESS_CODE;
@@ -79,7 +68,7 @@ static int32_t GuiInitViewInit(void *param)
     //     return SUCCESS_CODE;
     // }
     KosmoRequest req = { .type = KOSMO_REQ_GET_ACCOUNT };
-    KosmoApi_Request(&req, NULL);
+    KosmoApi_Request(&req, OnGetAccountCallback);
     return SUCCESS_CODE;
 }
 

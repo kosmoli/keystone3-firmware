@@ -26,6 +26,10 @@ enum {
 int32_t GuiApiEmitSignal(uint16_t signal, void *param, uint16_t usLen);
 int32_t GuiApiEmitSignalWithValue(uint16_t signal, uint32_t value);
 
+/* 密码验证通用 callback，所有发起 KOSMO_REQ_VERIFY_PASSWORD 的 Widget 复用 */
+#include "kosmo_types.h"
+void VerifyPasswordCallback(const KosmoResult *result);
+
 typedef struct {
     uint16_t signal;
     uint8_t param[0];

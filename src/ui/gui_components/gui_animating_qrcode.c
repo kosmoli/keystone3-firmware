@@ -121,6 +121,8 @@ void GuiAnimatingQRCodeDestroyTimer()
         g_timer = NULL;
     }
     {KosmoRequest r = {.type = KOSMO_REQ_UR_CLEAR}; KosmoApi_Request(&r, NULL);};
+    KosmoApi_ClearCallback(KOSMO_REQ_UR_UPDATE);
+    KosmoApi_ClearCallback(KOSMO_REQ_UR_GENERATE_QR);
     g_onSuccess = NULL;
     g_onFail = NULL;
 

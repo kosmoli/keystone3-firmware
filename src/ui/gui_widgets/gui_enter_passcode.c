@@ -1,4 +1,5 @@
 #include "gui_enter_passcode.h"
+#include "gui_api.h"
 #include "gui_obj.h"
 #include "gui_led.h"
 #include "gui_views.h"
@@ -129,7 +130,7 @@ static void SetPinEventHandler(lv_event_t *e)
                     GuiLockScreenShowVerifyLoading(g_userParam);
                     {KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
                                          .verify_password = { .signalId = *(uint16_t *)g_userParam }};
-                     KosmoApi_Request(&req, NULL);}
+                     KosmoApi_Request(&req, VerifyPasswordCallback);}
                     break;
                 case ENTER_PASSCODE_SET_PIN:
                     if (CheckPasswordExisted(g_pinBuf, index)) {
@@ -203,7 +204,7 @@ static void SetPassWordHandler(lv_event_t *e)
                     GuiLockScreenShowVerifyLoading(g_userParam);
                     {KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
                                          .verify_password = { .signalId = *(uint16_t *)g_userParam }};
-                     KosmoApi_Request(&req, NULL);}
+                     KosmoApi_Request(&req, VerifyPasswordCallback);}
                 }
             }
             lv_textarea_set_text(ta, "");

@@ -1,4 +1,6 @@
 #include "gui_api.h"
+#include "kosmo_api.h"
+#include "gui_views.h"
 
 #ifdef COMPILE_SIMULATOR
 #include "gui_framework.h"
@@ -56,4 +58,16 @@ int32_t GuiApiEmitSignalWithValue(uint16_t signal, uint32_t value)
     SRAM_FREE(msg);
 #endif
     return SUCCESS_CODE;
+}
+
+/* 密码验证通用 callback */
+void VerifyPasswordCallback(const KosmoResult *result)
+{
+    if (result == NULL || result->data == NULL) return;
+    KosmoVerifyResult *verify = (KosmoVerifyResult *)result->data;
+    if (verify->resultSignal == SIG_VERIFY_PASSWORD_FAIL) {
+        GuiApiEmitSignal(verify->resultSignal, &verify->errorCount, sizeof(verify->errorCount));
+    } else {
+        GuiApiEmitSignal(verify->resultSignal, &verify->originalParam, sizeof(verify->originalParam));
+    }
 }

@@ -118,6 +118,8 @@ const static CoinWalletInfo_t g_coinWalletBtn[] = {
     {CHAIN_TGD, "", &coinTgd},
     {CHAIN_DOT, "", &coinDot},
     {CHAIN_ZCASH, "", &coinZec},
+
+    {CHAIN_ZCASH, "", &coinZec},
     {CHAIN_XMR, "", &coinXmr},
 };
 

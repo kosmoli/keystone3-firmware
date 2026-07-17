@@ -441,7 +441,7 @@ void GuiStandardReceiveRefresh(void)
         snprintf(title, sizeof(title), _("receive_coin_fmt"), GetCoinCardByIndex(g_chainCard)->coin);
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_CLOSE, CloseTimerCurrentViewHandler, NULL);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_BAR_SKIP, JumpToAccountHandler, NULL);
-        GuiUpdateStatusCoinButton(g_pageWidget->navBarWidget->midBtn, title, GetCoinCardByIndex(g_chainCard)->icon);
+        SetCoinWallet(g_pageWidget->navBarWidget, g_chainCard, title);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, HasMoreBtn() ? NVS_BAR_MORE_INFO : NVS_RIGHT_BUTTON_BUTT, MoreHandler, NULL);
         RefreshQrCode();
         break;

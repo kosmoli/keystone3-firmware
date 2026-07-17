@@ -208,7 +208,7 @@ void GuiMultiAccountsReceiveRefresh(void)
     case RECEIVE_TILE_QRCODE:
         snprintf(title, sizeof(title), _("receive_coin_fmt"), GetCoinCardByIndex(g_chainCard)->coin);
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_CLOSE, CloseTimerCurrentViewHandler, NULL);
-        SetCoinWallet(g_pageWidget->navBarWidget, g_chainCard, title);
+        GuiUpdateStatusCoinButton(g_pageWidget->navBarWidget->midBtn, title, GetCoinCardByIndex(g_chainCard)->icon);
         SetNavBarRightBtn(g_pageWidget->navBarWidget, HasMoreBtn() ? NVS_BAR_MORE_INFO : NVS_RIGHT_BUTTON_BUTT, MoreHandler, NULL);
         RefreshQrCode();
         break;

@@ -18,6 +18,7 @@
 #include "lv_i18n_api.h"
 #include "gui_api.h"
 #include "drv_gd25qxx.h"
+#include "ui_async.h"
 
 #define LVGL_FAST_TICK_MS                   5
 #define LVGL_IDLE_TICK_MS                   100
@@ -99,6 +100,7 @@ static void UiDisplayTask(void *argument)
     }
     GuiFrameOpenView(&g_initView);
     SetLcdBright(GetBright());
+    ui_async_mailbox_init();
     while (1) {
         RefreshLvglTickMode();
         ret = osMessageQueueGet(g_uiQueue, &rcvMsg, NULL, g_dynamicTick);
@@ -183,6 +185,7 @@ static void UiDisplayTask(void *argument)
             SRAM_FREE(rcvMsg.buffer);
         }
         if (g_lvglHandlerEnable) {
+            ui_async_mailbox_poll();
             lv_timer_handler();
             GuiLetterKbStatusError();
         }

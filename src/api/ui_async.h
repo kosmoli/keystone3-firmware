@@ -1,0 +1,56 @@
+#ifndef UI_ASYNC_H
+#define UI_ASYNC_H
+
+#include <stdint.h>
+
+/*
+ * ui_async — 后端→前端异步事件投递机制
+ *
+ * 后端代码通过 ui_post_rpc_callback() 或 ui_post_notification() 将事件
+ * 投递到 g_ui_async_mailbox 队列，UI 线程在主循环中消费并执行。
+ *
+ * 替代后端直接调用 GuiApiEmitSignal() 的跨线程越界调用。
+ */
+
+/* 事件类型 */
+typedef enum {
+    UI_EVENT_RPC_CALLBACK_READY,   /* 后端请求 UI 线程执行 RPC callback */
+    UI_EVENT_NOTIFICATION,         /* 后端主动通知（电量/USB/SD卡/指纹等） */
+} ui_event_type_t;
+
+/* 异步事件帧 */
+typedef struct {
+    ui_event_type_t type;
+    union {
+        struct {
+            void (*callback)(void *data);
+            void *data;
+        } rpc;
+        struct {
+            uint16_t signal;       /* 复用现有 signal ID */
+            uint32_t value;        /* 数据值（≤4 字节，值拷贝） */
+        } notify;
+    };
+} ui_async_event_t;
+
+/*
+ * 初始化 UI 异步邮箱队列。
+ * 在 UI 任务启动时调用一次。
+ */
+void ui_async_mailbox_init(void);
+
+/*
+ * 投递 RPC callback 到 UI 线程执行。
+ * 后端 Model* 函数完成工作后调用此函数，替代直接调用 callback。
+ * callback 将在 UI 线程上下文中执行，可安全调用 LVGL 函数。
+ */
+void ui_post_rpc_callback(void (*cb)(void *data), void *data);
+
+/*
+ * 投递硬件事件通知到 UI 线程。
+ * 替代后端直接调用 GuiApiEmitSignalWithValue(signal, value)。
+ * signal 复用现有 signal ID，前端视图栈遍历分发不变。
+ */
+void ui_post_notification(uint16_t signal, uint32_t value);
+
+#endif /* UI_ASYNC_H */

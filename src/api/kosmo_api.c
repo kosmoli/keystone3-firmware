@@ -9,6 +9,7 @@
  */
 
 #include "kosmo_api.h"
+#include "ui_async.h"
 #include <string.h>
 #include "stdlib.h"
 
@@ -60,6 +61,8 @@
 #include "safe_mem_lib.h"
 #include "usb_task.h"
 #include "drv_mpu.h"
+#include "FreeRTOS.h"
+#include "portable.h"
 #else
 #include "simulator_model.h"
 #endif
@@ -223,11 +226,41 @@ void KosmoApi_Init(void)
 
 /* ── 异步请求 ───────────────────────────────────────── */
 
+#ifndef COMPILE_SIMULATOR
+/*
+ * FreeRTOS 路径：KosmoApi_NotifyResult 的异步投递上下文。
+ * 堆分配 KosmoResult + 数据拷贝，确保 UI 线程消费时数据仍有效。
+ */
+typedef struct {
+    KosmoCallback cb;
+    KosmoResult result;
+    uint8_t *dataCopy;   /* 堆拷贝的数据（可能为 NULL） */
+} KosmoAsyncResultCtx;
+
+/*
+ * UI 线程执行：调用 callback 然后释放堆内存。
+ */
+static void kosmo_result_dispatch(void *arg)
+{
+    KosmoAsyncResultCtx *ctx = (KosmoAsyncResultCtx *)arg;
+    ctx->result.data = ctx->dataCopy; /* 恢复 data 指针 */
+    ctx->cb(&ctx->result);
+    if (ctx->dataCopy != NULL) {
+        vPortFree(ctx->dataCopy);
+    }
+    vPortFree(ctx);
+}
+#endif /* !COMPILE_SIMULATOR */
+
 /*
  * KosmoApi_NotifyResult() — 后端结果回调入口
  *
  * Model* 函数完成操作后调用此函数，触发 UI 层注册的 callback。
  * 替代原来的 GuiApiEmitSignal() 全局广播。
+ *
+ * [Phase 2] FreeRTOS: 通过 ui_post_rpc_callback 投递到 UI 线程执行，
+ *            堆拷贝数据保证生命周期安全。
+ *            模拟器: 保持同步执行（同线程）。
  */
 void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen)
 {
@@ -239,15 +272,40 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
         slot->callback = NULL; /* 一次性：非持久 callback 清除 */
     }
 
-    if (cb != NULL) {
-        KosmoResult result = {
-            .requestType = type,
-            .errorCode = errorCode,
-            .data = data,
-            .dataLen = dataLen,
-        };
-        cb(&result);
+    if (cb == NULL) return;
+
+#ifndef COMPILE_SIMULATOR
+    /* FreeRTOS: 堆分配上下文，投递到 UI 线程 */
+    KosmoAsyncResultCtx *ctx = pvPortMalloc(sizeof(KosmoAsyncResultCtx));
+    if (ctx == NULL) return;
+
+    ctx->cb = cb;
+    ctx->result.requestType = type;
+    ctx->result.errorCode = errorCode;
+    ctx->result.dataLen = dataLen;
+    ctx->result.data = NULL;
+    ctx->dataCopy = NULL;
+
+    if (data != NULL && dataLen > 0) {
+        ctx->dataCopy = pvPortMalloc(dataLen);
+        if (ctx->dataCopy == NULL) {
+            vPortFree(ctx);
+            return;
+        }
+        memcpy(ctx->dataCopy, data, dataLen);
     }
+
+    ui_post_rpc_callback(kosmo_result_dispatch, ctx);
+#else
+    /* 模拟器: 同步执行（同线程，无跨线程问题） */
+    KosmoResult result = {
+        .requestType = type,
+        .errorCode = errorCode,
+        .data = data,
+        .dataLen = dataLen,
+    };
+    cb(&result);
+#endif
 }
 
 /* KosmoApi_Request 实现在文件末尾（Phase 2 分发逻辑） */

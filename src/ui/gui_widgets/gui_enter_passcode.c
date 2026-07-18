@@ -68,6 +68,7 @@ static void SetPinEventHandler(lv_event_t *e)
     if (code == LV_EVENT_RELEASED) {
         Vibrate(SLIGHT);
         GuiEnterPasscodeItem_t *item = g_passParam.setpinParam;
+        if (item == NULL) return;
 #ifndef COMPILE_SIMULATOR
         if (!g_isHandle && item->mode == ENTER_PASSCODE_VERIFY_PIN) {
             return;
@@ -167,6 +168,7 @@ static void SetPassWordHandler(lv_event_t *e)
     static bool delayErrFlag = false;
     static lv_obj_t *lenLabel = NULL;
     GuiEnterPasscodeItem_t *item = g_passParam.setpinParam;
+    if (item == NULL) return;
     if (code == LV_EVENT_READY) {
         const char *currText = lv_textarea_get_text(ta);
         if (item->mode == ENTER_PASSCODE_SET_PASSWORD && strnlen_s(currText, CREATE_PIN_NUM) < CREATE_PIN_NUM) {
@@ -338,6 +340,7 @@ void PassWordPinSwitch(GuiEnterPasscodeItem_t *item)
 static void PassWordPinSwitchHandler(lv_event_t *e)
 {
     GuiEnterPasscodeItem_t *item = g_passParam.setpinParam;
+    if (item == NULL) return;
     PassWordPinSwitch(item);
 }
 
@@ -689,6 +692,7 @@ void GuiDelEnterPasscode(void *obj, void *param)
         // item->pinCont = NULL;
         SRAM_FREE(item);
     }
+    g_passParam.setpinParam = NULL;
 }
 
 void GuiEnterPassCodeStatus(GuiEnterPasscodeItem_t *item, bool en)

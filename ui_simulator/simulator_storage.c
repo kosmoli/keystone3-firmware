@@ -295,7 +295,7 @@ int32_t SimulatorLoadAccountSecret(uint8_t accountIndex, AccountSecret_t *accoun
     cJSON *passwordJson = cJSON_GetObjectItem(rootJson, "password");
     if (passwordJson == NULL || strcmp(passwordJson->valuestring, password) != 0) {
         cJSON_Delete(rootJson);
-        return ret;
+        return ERR_KEYSTORE_PASSWORD_ERR;
     }
     GetJsonArrayData(rootJson, accountSecret->entropy, ENTROPY_MAX_LEN, "entropy");
     GetJsonArrayData(rootJson, accountSecret->seed, SEED_LEN, "seed");
@@ -442,6 +442,11 @@ int32_t SE_HmacEncryptWrite(const uint8_t *data, uint8_t page)
     }
     if (page == account * PAGE_NUM_PER_ACCOUNT + PAGE_INDEX_IV) {
         // ModifyJsonArrayData(rootJson, data, 32, "iv");
+        // When destroying account, data is all zeros - remove password field
+        // so SimulatorGetAccountNum no longer counts this slot
+        if (CheckEntropy(data, 32) == false) {
+            cJSON_DeleteItemFromObject(rootJson, "password");
+        }
     } else if (page == account *  PAGE_NUM_PER_ACCOUNT + PAGE_INDEX_ENTROPY_OR_TON_ENTROPY_H32) {
         // ModifyJsonArrayData(rootJson, data, 32, "entropy");
     } else if (page == account *  PAGE_NUM_PER_ACCOUNT + PAGE_INDEX_SEED_H32) {

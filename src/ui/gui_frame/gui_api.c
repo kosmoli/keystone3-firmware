@@ -66,7 +66,11 @@ void VerifyPasswordCallback(const KosmoResult *result)
     if (result == NULL || result->data == NULL) return;
     KosmoVerifyResult *verify = (KosmoVerifyResult *)result->data;
     if (verify->resultSignal == SIG_VERIFY_PASSWORD_FAIL) {
-        GuiApiEmitSignal(verify->resultSignal, &verify->errorCount, sizeof(verify->errorCount));
+        KosmoPasswordVerifyResult_t pwResult = {
+            .signal = &verify->originalParam,
+            .errorCount = verify->errorCount
+        };
+        GuiApiEmitSignal(verify->resultSignal, &pwResult, sizeof(pwResult));
     } else {
         GuiApiEmitSignal(verify->resultSignal, &verify->originalParam, sizeof(verify->originalParam));
     }

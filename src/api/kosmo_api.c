@@ -2110,7 +2110,9 @@ static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen)
     bool enable = IsPreviousLockScreenEnable();
     SetLockScreen(false);
     static WalletDesc_t wallet;
-    if (GetCurrentAccountIndex() > 2) {
+    uint8_t accountNum = 0;
+    GetExistAccountNum(&accountNum);
+    if (accountNum == 0 || GetCurrentAccountIndex() > 2) {
         SetLockScreen(enable);
         return SUCCESS_CODE;
     }

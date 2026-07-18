@@ -17,6 +17,7 @@
 #include "usb_task.h"
 #include "anti_tamper.h"
 #include "device_setting.h"
+#include "ui_async.h"
 
 static void BackgroundTask(void *argument);
 static void RebootTimerFunc(void *argument);
@@ -89,16 +90,16 @@ static void BackgroundTask(void *argument)
             }
             if (GetUsbDetectState() == false) {
                 CloseUsb();
-                GuiApiEmitSignalWithValue(SIG_INIT_USB_CONNECTION, 0);
-                GuiApiEmitSignalWithValue(SIG_INIT_PULLOUT_USB, 0);
+                ui_post_notification(SIG_INIT_USB_CONNECTION, 0);
+                ui_post_notification(SIG_INIT_PULLOUT_USB, 0);
             } else if (GetUSBSwitch()) {
 #if (USB_POP_WINDOW_ENABLE == 0)
                 OpenUsb();
 #else
-                GuiApiEmitSignalWithValue(SIG_INIT_USB_CONNECTION, 1);
+                ui_post_notification(SIG_INIT_USB_CONNECTION, 1);
 #endif
             }
-            GuiApiEmitSignal(SIG_INIT_BATTERY, &battState, sizeof(battState));
+            ui_post_notification(SIG_INIT_BATTERY, (uint32_t)battState);
         }
         break;
         case BACKGROUND_MSG_RESET: {
@@ -113,7 +114,7 @@ static void BackgroundTask(void *argument)
                     battState |= 0x8000;
                 }
                 //printf("send battState=0x%04X\r\n", battState);
-                GuiApiEmitSignal(SIG_INIT_BATTERY, &battState, sizeof(battState));
+                ui_post_notification(SIG_INIT_BATTERY, (uint32_t)battState);
             }
         }
         break;
@@ -131,11 +132,11 @@ static void BackgroundTask(void *argument)
                     ret = MountSdFatfs();
                     uint32_t freeSize = FatfsGetSize("0:");
                     if (freeSize > 0) {
-                        GuiApiEmitSignalWithValue(SIG_INIT_SDCARD_CHANGE, sdCardState);
+                        ui_post_notification(SIG_INIT_SDCARD_CHANGE, sdCardState);
                     }
                 } else {
                     UnMountSdFatfs();
-                    GuiApiEmitSignalWithValue(SIG_INIT_SDCARD_CHANGE, sdCardState);
+                    ui_post_notification(SIG_INIT_SDCARD_CHANGE, sdCardState);
                 }
             }
         }

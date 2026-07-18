@@ -76,7 +76,7 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
 {
     static uint8_t walletNum;
     static uint16_t lockParam = SIG_LOCK_VIEW_VERIFY_PIN;
-    uint16_t battState;
+    uint32_t battState;
     uint32_t rcvValue;
 
     switch (usEvent) {
@@ -101,7 +101,7 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
         }
         break;
     case SIG_INIT_BATTERY:
-        battState = *(uint16_t *)param;
+        battState = *(uint32_t *)param;
         //printf("rcv battState=0x%04X\r\n", battState);
         GuiStatusBarSetBattery(battState & 0xFF, (battState & 0x8000) != 0);
         break;

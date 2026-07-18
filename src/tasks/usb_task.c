@@ -16,6 +16,7 @@
 #include "gui_setup_widgets.h"
 #include "low_power.h"
 #include "account_manager.h"
+#include "ui_async.h"
 
 static void UsbTask(void *argument);
 void ClearUSBRequestId(void);
@@ -72,7 +73,7 @@ static void UsbTask(void *argument)
             }
             break;
             case USB_MSG_SET_STATE: {
-                GuiApiEmitSignal(SIG_INIT_USB_STATE_CHANGE, NULL, 0);
+                ui_post_notification(SIG_INIT_USB_STATE_CHANGE, 0);
             }
             break;
             case USB_MSG_INIT: {

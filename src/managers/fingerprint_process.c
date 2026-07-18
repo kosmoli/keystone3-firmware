@@ -27,6 +27,7 @@
 #include "screen_manager.h"
 #include "low_power.h"
 #include "se_manager.h"
+#include "ui_async.h"
 
 /* DEFINES */
 #define FINGERPRINT_REG_MAX_TIMES               (18)
@@ -331,7 +332,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
 
         if (GuiLockScreenIsTop()) {
             if (g_fpManager.unlockFlag) {
-                GuiApiEmitSignal(SIG_VERIFY_FINGER_PASS, NULL, 0);
+                ui_post_notification(SIG_VERIFY_FINGER_PASS, 0);
             }
         } else {
             GuiApiEmitSignal(SIG_FINGER_RECOGNIZE_RESPONSE, &result, sizeof(result));
@@ -341,7 +342,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
         GetFpErrorMessage(result);
         printf("recognize failed\n");
         if (GuiLockScreenIsTop() && g_fpManager.unlockFlag) {
-            GuiApiEmitSignal(SIG_VERIFY_FINGER_FAIL, NULL, 0);
+            ui_post_notification(SIG_VERIFY_FINGER_FAIL, 0);
         } else {
             GuiApiEmitSignal(SIG_FINGER_RECOGNIZE_RESPONSE, &result, sizeof(result));
         }

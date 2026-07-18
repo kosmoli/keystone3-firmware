@@ -8,6 +8,7 @@
 #include "gui_views.h"
 #include "gui_api.h"
 #include "device_setting.h"
+#include "ui_async.h"
 
 static volatile uint32_t g_shutdownTick;
 static volatile uint32_t g_shutdownTimeOut;
@@ -33,7 +34,7 @@ void SetShowPowerOffPage(bool isShow)
 static void PowerOption(void)
 {
     if (g_isShowPowerOptionPage) {
-        GuiApiEmitSignalWithValue(SIG_INIT_POWER_OPTION, 1);
+        ui_post_notification(SIG_INIT_POWER_OPTION, 1);
     }
 }
 

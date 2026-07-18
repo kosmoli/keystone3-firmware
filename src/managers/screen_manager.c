@@ -15,6 +15,7 @@
 #include "gui_lock_widgets.h"
 #include "account_manager.h"
 #include "fingerprint_process.h"
+#include "ui_async.h"
 
 #define LOCK_SCREEN_TICK                                    1000
 #define LOCK_SCREEN_TIME_OUT                                60 * 1000
@@ -57,7 +58,7 @@ void SetLockScreen(bool enable)
     g_lockScreenEnable = enable;
     if (enable) {
         LcdBacklightOn();
-        GuiApiEmitSignal(SIG_STATUS_BAR_REFRESH, NULL, 0);
+        ui_post_notification(SIG_STATUS_BAR_REFRESH, 0);
     }
 }
 
@@ -118,7 +119,7 @@ static void LockScreen(void)
     ClearLockScreenTime();
     ClearShutdownTime();
     LcdBacklightOff();
-    GuiApiEmitSignal(SIG_INIT_CLOSE_CURRENT_MSG_BOX, NULL, 0);
+    ui_post_notification(SIG_INIT_CLOSE_CURRENT_MSG_BOX, 0);
     GetExistAccountNum(&accountNum);
     if (accountNum > 0 && !g_lockTimeState) {
         LogoutCurrentAccount();

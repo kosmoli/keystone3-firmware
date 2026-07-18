@@ -433,6 +433,10 @@ void GuiLockScreenTurnOnHandler(lv_event_t *e)
 
 void GuiLockScreenInit(void *param)
 {
+    static uint16_t lockParam = SIG_LOCK_VIEW_VERIFY_PIN;
+    if (param == NULL) {
+        param = &lockParam;
+    }
     g_pageWidget = CreatePageWidget();
     g_verifyLock = GuiCreateEnterPasscode(g_pageWidget->contentZone, NULL, param, ENTER_PASSCODE_VERIFY_PIN);
     GuiEmitSignal(SIG_LOCK_VIEW_SCREEN_GO_LOCK_DEVICE_PASS, NULL, 0);

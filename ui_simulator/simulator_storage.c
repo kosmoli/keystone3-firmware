@@ -442,10 +442,14 @@ int32_t SE_HmacEncryptWrite(const uint8_t *data, uint8_t page)
     }
     if (page == account * PAGE_NUM_PER_ACCOUNT + PAGE_INDEX_IV) {
         // ModifyJsonArrayData(rootJson, data, 32, "iv");
-        // When destroying account, data is all zeros - remove password field
+        // When destroying account, data is all zeros - remove password and entropy fields
         // so SimulatorGetAccountNum no longer counts this slot
+        // and GetBlankAccountIndex can find it as empty
         if (CheckEntropy(data, 32) == false) {
             cJSON_DeleteItemFromObject(rootJson, "password");
+            cJSON_DeleteItemFromObject(rootJson, "entropy");
+            cJSON_DeleteItemFromObject(rootJson, "seed");
+            cJSON_DeleteItemFromObject(rootJson, "slip39_ems");
         }
     } else if (page == account *  PAGE_NUM_PER_ACCOUNT + PAGE_INDEX_ENTROPY_OR_TON_ENTROPY_H32) {
         // ModifyJsonArrayData(rootJson, data, 32, "entropy");

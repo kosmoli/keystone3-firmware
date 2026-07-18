@@ -126,13 +126,16 @@ static void SetPinEventHandler(lv_event_t *e)
                 }
 
                 switch (item->mode) {
-                case ENTER_PASSCODE_VERIFY_PIN:
+                case ENTER_PASSCODE_VERIFY_PIN: {
                     KosmoApi_CacheSetPassword(g_pinBuf);
                     GuiLockScreenShowVerifyLoading(g_userParam);
+                    static uint16_t defaultSignal = SIG_LOCK_VIEW_VERIFY_PIN;
+                    uint16_t signalId = (g_userParam != NULL) ? *(uint16_t *)g_userParam : defaultSignal;
                     {KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
-                                         .verify_password = { .signalId = *(uint16_t *)g_userParam }};
+                                         .verify_password = { .signalId = signalId }};
                      KosmoApi_Request(&req, VerifyPasswordCallback);}
                     break;
+                }
                 case ENTER_PASSCODE_SET_PIN:
                     if (CheckPasswordExisted(g_pinBuf, index)) {
                         UnlimitedVibrate(LONG);
@@ -204,8 +207,10 @@ static void SetPassWordHandler(lv_event_t *e)
                 if (strnlen_s(currText, PASSWORD_MAX_LEN) > 0) {
                     KosmoApi_CacheSetPassword((char *)currText);
                     GuiLockScreenShowVerifyLoading(g_userParam);
+                    static uint16_t defaultSignal = SIG_LOCK_VIEW_VERIFY_PIN;
+                    uint16_t signalId = (g_userParam != NULL) ? *(uint16_t *)g_userParam : defaultSignal;
                     {KosmoRequest req = { .type = KOSMO_REQ_VERIFY_PASSWORD,
-                                         .verify_password = { .signalId = *(uint16_t *)g_userParam }};
+                                         .verify_password = { .signalId = signalId }};
                      KosmoApi_Request(&req, VerifyPasswordCallback);}
                 }
             }
@@ -686,10 +691,14 @@ void GuiDelEnterPasscode(void *obj, void *param)
 {
     GuiEnterPasscodeItem_t *item = obj;
     if (item != NULL) {
-        // lv_obj_del(item->pinCont);
-        // item->pinCont = NULL;
-        // lv_obj_del(item->passWdCont);
-        // item->pinCont = NULL;
+        if (item->pinCont != NULL) {
+            lv_obj_del(item->pinCont);
+            item->pinCont = NULL;
+        }
+        if (item->passWdCont != NULL) {
+            lv_obj_del(item->passWdCont);
+            item->passWdCont = NULL;
+        }
         SRAM_FREE(item);
     }
     g_passParam.setpinParam = NULL;

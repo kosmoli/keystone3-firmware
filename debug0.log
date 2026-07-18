@@ -1,0 +1,99 @@
+startdevice settings size=262
+id = 0 name = SCREEN_INIT
+open view SCREEN_INIT freeHeap 0
+id = 3 name = SCREEN_SETUP
+open view SCREEN_SETUP freeHeap 0
+g_deviceSettings.lastVersion=0xc0500
+usEvENT:102 sig has handled:id = 0 name = SCREEN_INIT
+jsonString={"version":"1.0.0","setup_step":1,"bright":15,"auto_lock_screen":60,"auto_power_off":0,"vibration":1,"random_pin_pad":0,"permit_sign":0,"dark_mode":0,"usb_switch":1,"last_version":787712,"language":2,"nftEnable":false,"nftValid":false,"enableBlindSigning":false}
+usEvENT:242 sig has handled:id = 3 name = SCREEN_SETUP
+id = 20 name = SCREEN_WEB_AUTH
+open view SCREEN_WEB_AUTH freeHeap 0
+jsonString={"version":"1.0.0","setup_step":2,"bright":15,"auto_lock_screen":60,"auto_power_off":0,"vibration":1,"random_pin_pad":0,"permit_sign":0,"dark_mode":0,"usb_switch":1,"last_version":787712,"language":2,"nftEnable":false,"nftValid":false,"enableBlindSigning":false}
+jsonString={"version":"1.0.0","setup_step":3,"bright":15,"auto_lock_screen":60,"auto_power_off":0,"vibration":1,"random_pin_pad":0,"permit_sign":0,"dark_mode":0,"usb_switch":1,"last_version":787712,"language":2,"nftEnable":false,"nftValid":false,"enableBlindSigning":false}
+id = 21 name = SCREEN_PURPOSE
+open view SCREEN_PURPOSE freeHeap 0
+jsonString={"version":"1.0.0","setup_step":4,"bright":15,"auto_lock_screen":60,"auto_power_off":0,"vibration":1,"random_pin_pad":0,"permit_sign":0,"dark_mode":0,"usb_switch":1,"last_version":787712,"language":2,"nftEnable":false,"nftValid":false,"enableBlindSigning":false}
+usEvENT:242 sig has handled:id = 4 name = CREATE_WALLET
+usEvENT:1058 sig has handled:id = 4 name = CREATE_WALLET
+usEvENT:242 sig has handled:id = 4 name = CREATE_WALLET
+usEvENT:1059 sig has handled:id = 4 name = CREATE_WALLET
+usEvENT:242 sig has handled:id = 4 name = CREATE_WALLET
+[DEBUG] ModelGenerateEntropy called
+[DEBUG] ModelGenerateEntropy: mnemonic=[width among wave become shrimp define ginger because ask health short job double student keep van festival curtain utility entry spot card shield tenant]
+[DEBUG] ModelGenerateEntropy: ret=0
+[DEBUG] UpdateMnemonicCallback: errorCode=0
+[DEBUG] GuiSinglePhraseUpdateMnemonic: mnemonic=width among wave become shrimp define ginger because ask health short job double student keep van festival curtain utility entry spot card shield tenant
+usEvENT:496 sig has handled:id = 7 name = SINGLE_PHRASE
+usEvENT:242 sig has handled:id = 4 name = CREATE_WALLET
+[DEBUG] ModelGenerateEntropy called
+[DEBUG] ModelGenerateEntropy: mnemonic=[sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain]
+[DEBUG] ModelGenerateEntropy: ret=0
+[DEBUG] UpdateMnemonicCallback: errorCode=0
+[DEBUG] GuiSinglePhraseUpdateMnemonic: mnemonic=sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain
+usEvENT:496 sig has handled:id = 7 name = SINGLE_PHRASE
+[DEBUG] GuiSinglePhraseNextTile: entering CONFIRM phase
+[DEBUG] After ArrayRandom: g_randomBuff=sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain
+usEvENT:242 sig has handled:id = 7 name = SINGLE_PHRASE
+[DEBUG] MnemonicConfirmHandler: clicked btn=0, g_currId=0, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=1, g_currId=1, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=2, g_currId=2, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=3, g_currId=3, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=4, g_currId=4, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=5, g_currId=5, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=6, g_currId=6, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=7, g_currId=7, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=8, g_currId=8, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=9, g_currId=9, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=10, g_currId=10, g_phraseCnt=12
+[DEBUG] MnemonicConfirmHandler: clicked btn=11, g_currId=11, g_phraseCnt=12
+[DEBUG] All words confirmed, building confirmMnemonic...
+[DEBUG] confirmMnemonic=[sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain]
+[DEBUG] cached=       [sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain]
+[DEBUG] Mnemonic match! Proceeding to WriteSE...
+[DEBUG] WriteSE called
+[DEBUG] ModelWriteEntropyAndSeed called
+[DEBUG] ModelWriteEntropyAndSeed: entropyLen=16, mnemonic=sweet science promote bicycle risk combine stem sleep runway tennis lonely sustain
+[DEBUG] ModelWriteEntropyAndSeed: bip39_mnemonic_to_bytes ret=0
+[DEBUG] ModelWriteEntropyAndSeed: entropy verified OK
+before accountCnt = 0
+erase index=0
+erase index=1
+erase index=2
+erase index=3
+erase index=4
+erase index=5
+erase index=6
+erase index=7
+erase index=8
+erase index=9
+erase index=10
+erase index=11
+cJSON_GetArraySize(item) = 32
+cJSON_GetArraySize(item) = 32
+masterFingerprint,length=4
+93 7A 5E F6 
+cJSON_GetArraySize(item) = 32
+regenerate pub key!
+here, RSA_KEY
+password is empty
+here, RSA_KEY
+password is empty
+acount public key info sitch over
+SetZcashSFP
+SetZcashSFP
+passphrase not exist, info switch
+xpub info version:1.0.1
+g_xpubInfoVersion:1.0.1
+key:value does not exist
+acount public key info sitch over
+SetZcashSFP
+SetZcashSFP
+after accountCnt = 1
+[DEBUG] WriteSECallback: errorCode=0
+id = 7 name = SINGLE_PHRASE
+close view SINGLE_PHRASE freeHeap 0
+id = 4 name = CREATE_WALLET
+refresh view CREATE_WALLET freeHeap 0
+段错误 (核心已转储)
+

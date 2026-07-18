@@ -243,7 +243,7 @@ UREncodeResult *GuiGetNaboxData(void)
     GetMasterFingerPrint(mfp);
     char serialNumber[256];
     GetSerialNumber(serialNumber);
-    char firmwareVersion[12];
+    char firmwareVersion[32];
     GetSoftWareVersionNumber(firmwareVersion);
     PtrT_CSliceFFI_ExtendedPublicKey public_keys = BuildChainPaths(chainPaths, keys, chainNum);
     UREncodeResult *urEncode = get_keystone_connect_wallet_ur(mfp, sizeof(mfp), serialNumber, public_keys, "Keystone 3 Pro", firmwareVersion, NULL, 0);
@@ -506,7 +506,7 @@ UREncodeResult *GuiGetKeystoneConnectWalletDataSlip39(void)
     PtrT_CSliceFFI_ExtendedPublicKey public_keys = BuildChainPaths(chainPaths, keys, NUMBER_OF_ARRAYS(chainPaths));
     char serialNumber[256];
     GetSerialNumber(serialNumber);
-    char firmwareVersion[12];
+    char firmwareVersion[32];
     GetSoftWareVersionNumber(firmwareVersion);
 
     UREncodeResult *urEncode = get_keystone_connect_wallet_ur(mfp, sizeof(mfp), serialNumber, public_keys, "Keystone 3 Pro", firmwareVersion, NULL, 0);
@@ -539,7 +539,7 @@ UREncodeResult *GuiGetKeystoneConnectWalletDataBip39(void)
     PtrT_CSliceFFI_ExtendedPublicKey public_keys = BuildChainPaths(chainPaths, keys, NUMBER_OF_ARRAYS(chainPaths));
     char serialNumber[256];
     GetSerialNumber(serialNumber);
-    char firmwareVersion[12];
+    char firmwareVersion[32];
     GetSoftWareVersionNumber(firmwareVersion);
 
     uint8_t sfp[32];

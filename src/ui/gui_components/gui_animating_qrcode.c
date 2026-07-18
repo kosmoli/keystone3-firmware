@@ -12,10 +12,28 @@ lv_obj_t *g_qrcode = NULL;
 bool g_showPending = false;
 static URSuccessCallback g_onSuccess = NULL;
 static URFailCallback g_onFail = NULL;
+static URSuccessCallback g_onUpdate = NULL;
+
+/* Wrapper: KosmoResult → URSuccessCallback，桥接类型不匹配 */
+static void OnGenerateResult(const KosmoResult *result)
+{
+    if (result && result->errorCode == KOSMO_OK && g_onSuccess) {
+        g_onSuccess((char *)result->data, (uint16_t)result->dataLen);
+    } else if (g_onFail && result) {
+        g_onFail((char *)result->data);
+    }
+}
+
+static void OnUpdateResult(const KosmoResult *result)
+{
+    if (result && result->errorCode == KOSMO_OK && g_onUpdate) {
+        g_onUpdate((char *)result->data, (uint16_t)result->dataLen);
+    }
+}
 
 static void TimerHandler(lv_timer_t *timer)
 {
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_UPDATE, .persistent = true}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_UPDATE, .persistent = true}; KosmoApi_Request(&r, OnUpdateResult);};
 }
 
 void GuiAnimatingQRCodeControl(bool pause)
@@ -38,10 +56,11 @@ lv_obj_t* CreateQRCode(lv_obj_t* parent, uint16_t w, uint16_t h)
     return qrcode;
 }
 
-void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, char *title, char *subtitle, URSuccessCallback onSuccess, URFailCallback onFail)
+void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, char *title, char *subtitle, URSuccessCallback onSuccess, URFailCallback onFail, URSuccessCallback onUpdate)
 {
     g_onSuccess = onSuccess;
     g_onFail = onFail;
+    g_onUpdate = onUpdate;
     GuiFullscreenModeInit(SCREEN_WIDTH, SCREEN_HEIGHT, QR_BG_COLOR);
     GuiFullscreenModeCreateObject(CreateQRCode, QR_SIZE_FULL, QR_SIZE_FULL);
 
@@ -59,19 +78,20 @@ void GuiAnimatingQRCodeInitWithLoadingParams(lv_obj_t* parent, GenerateUR dataFu
         GuiPendingHintBoxOpen(title, subtitle);
     }
 
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, OnGenerateResult);};
 
 }
 
-void GuiAnimatingQRCodeInit(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, URSuccessCallback onSuccess, URFailCallback onFail)
+void GuiAnimatingQRCodeInit(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, URSuccessCallback onSuccess, URFailCallback onFail, URSuccessCallback onUpdate)
 {
-    GuiAnimatingQRCodeInitWithLoadingParams(parent, dataFunc, showPending, _("Pending"), _("generating_qr_codes"), onSuccess, onFail);
+    GuiAnimatingQRCodeInitWithLoadingParams(parent, dataFunc, showPending, _("Pending"), _("generating_qr_codes"), onSuccess, onFail, onUpdate);
 }
 
-void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, uint16_t w, uint16_t h, char *loadingTitle, URSuccessCallback onSuccess, URFailCallback onFail)
+void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc, bool showPending, uint16_t w, uint16_t h, char *loadingTitle, URSuccessCallback onSuccess, URFailCallback onFail, URSuccessCallback onUpdate)
 {
     g_onSuccess = onSuccess;
     g_onFail = onFail;
+    g_onUpdate = onUpdate;
     GuiFullscreenModeInit(SCREEN_WIDTH, SCREEN_HEIGHT, QR_BG_COLOR);
     GuiFullscreenModeCreateObject(CreateQRCode, QR_SIZE_FULL, QR_SIZE_FULL);
 
@@ -89,7 +109,7 @@ void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc,
         GuiPendingHintBoxOpen(loadingTitle, NULL);
     }
 
-    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, g_onSuccess);};
+    {KosmoRequest r = {.type = KOSMO_REQ_UR_GENERATE_QR, .persistent = true, .raw_ptr = {dataFunc}}; KosmoApi_Request(&r, OnGenerateResult);};
 }
 
 void GuiAnimantingQRCodeFirstUpdate(char* data, uint16_t len)
@@ -125,6 +145,7 @@ void GuiAnimatingQRCodeDestroyTimer()
     KosmoApi_ClearCallback(KOSMO_REQ_UR_GENERATE_QR);
     g_onSuccess = NULL;
     g_onFail = NULL;
+    g_onUpdate = NULL;
 
     GuiFullscreenModeCleanUp();
 }

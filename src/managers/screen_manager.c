@@ -116,17 +116,10 @@ static void LockScreen(void)
     ClearLockScreenTime();
     ClearShutdownTime();
     LcdBacklightOff();
-    ui_post_notification(SIG_INIT_CLOSE_CURRENT_MSG_BOX, 0);
     GetExistAccountNum(&accountNum);
     if (accountNum > 0 && !g_lockTimeState) {
         LogoutCurrentAccount();
-        ui_post_notification(SIG_LOCK_VIEW_UPDATE_PURPOSE, LOCK_SCREEN_PURPOSE_UNLOCK);
-        ui_post_notification(SIG_LOCK_VIEW_SCREEN_ON_VERIFY, SIG_LOCK_VIEW_VERIFY_PIN);
-    }
-
-    if (g_lockDeivceTimeAlive) {
-        printf("lock device page is alive\n");
-        ui_post_notification(SIG_LOCK_VIEW_SCREEN_CLEAR_ALL_TOP, 0);
+        ui_post_notification(EVENT_DEVICE_LOCKED, 0);
     }
 
     if (!FpModuleIsExist()) {

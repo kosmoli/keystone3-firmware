@@ -14,6 +14,7 @@
 #include "drv_aw32001.h"
 #include "lv_i18n_api.h"
 #include "kosmo_api.h"
+#include "gui_pop_message_box.h"
 
 int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint16_t usLen)
 {
@@ -48,6 +49,16 @@ int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
         break;
     case GUI_EVENT_DISACTIVE:
         break;
+    case EVENT_DEVICE_LOCKED: {
+        /* 业务事件：设备已锁定。前端自行决定 UI 路由。 */
+        CloseCurrentMsgBox();
+        GuiLockScreenUpdatePurpose(LOCK_SCREEN_PURPOSE_UNLOCK);
+        GuiClearAllTop();
+        GuiLockScreenTurnOn((void *)&(uint16_t){SIG_LOCK_VIEW_VERIFY_PIN});
+        QRCodeControl(true);
+        GuiAnimatingQRCodeControl(true);
+        return SUCCESS_CODE;
+    }
     case SIG_VERIFY_FINGER_PASS:
         if (GuiLockScreenIsVerifyLoading() || GuiLockScreenIsFirstUnlock() || g_lockDeviceView.isActive) {
             break;

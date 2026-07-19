@@ -72,6 +72,11 @@ int32_t GuiEmitSignal(uint16_t usEvent, void *param, uint16_t usLen)
             return SUCCESS_CODE;
         }
     }
+    /* 业务事件：设备锁定 → 直接路由到锁屏视图 */
+    if (usEvent == EVENT_DEVICE_LOCKED) {
+        sigHandled = GuiViewHandleEvent(&g_lockView, usEvent, param, usLen);
+        return SUCCESS_CODE;
+    }
     do {
         sigHandled = GuiViewHandleEvent(pView, usEvent, param, usLen);
         if (sigHandled) {

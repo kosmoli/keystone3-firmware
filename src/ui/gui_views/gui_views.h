@@ -161,6 +161,9 @@ typedef enum {
 
     SIG_HARDWARE_CALL_DERIVE_PUBKEY,
 
+    /* ── 业务事件信号（Phase 3：后端只发业务事件，前端决定 UI 路由） ── */
+    EVENT_DEVICE_LOCKED,           /* 设备已锁定（后端执行 LogoutCurrentAccount 后发送） */
+
 } GUI_VIEW_SIG_ENUM;
 
 extern GUI_VIEW g_initView;

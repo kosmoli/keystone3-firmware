@@ -20,6 +20,7 @@
 #include "user_fatfs.h"
 #include "log_print.h"
 #include "rsa.h"
+#include "ui_async.h"
 
 #define PUB_KEY_MAX_LENGTH                  1024 + 1
 #define VERSION_MAX_LENGTH                  64
@@ -564,7 +565,7 @@ int32_t AccountPublicSavePublicInfo(uint8_t accountIndex, const char *password, 
     bool isBip39 = mnemonicType == MNEMONIC_TYPE_BIP39;
     int seedLen = GetCurrentAccountSeedLen();
     do {
-        GuiApiEmitSignal(SIG_START_GENERATE_XPUB, NULL, 0);
+        ui_post_notification(SIG_START_GENERATE_XPUB, 0);
         char* icarusMasterKey = NULL;
         char* ledgerBitbox02Key = NULL;
         printf("regenerate pub key!\r\n");
@@ -645,7 +646,7 @@ int32_t AccountPublicSavePublicInfo(uint8_t accountIndex, const char *password, 
             free_simple_response_c_char(cip3_response);
             free_simple_response_c_char(ledger_bitbox02_response);
         }
-        GuiApiEmitSignal(SIG_END_GENERATE_XPUB, NULL, 0);
+        ui_post_notification(SIG_END_GENERATE_XPUB, 0);
         EXT_FREE(jsonString);
     } while (0);
 
@@ -741,7 +742,7 @@ int32_t TempAccountPublicInfo(uint8_t accountIndex, const char *password, bool s
         // g_accountPublicInfo stores the current temp public key.
         printf("g_accountPublicInfo stores the current temp public key.\r\n");
     } else {
-        GuiApiEmitSignal(SIG_START_GENERATE_XPUB, NULL, 0);
+        ui_post_notification(SIG_START_GENERATE_XPUB, 0);
         char* icarusMasterKey = NULL;
         char* ledgerBitbox02Key = NULL;
         FreePublicKeyRam();
@@ -816,7 +817,7 @@ int32_t TempAccountPublicInfo(uint8_t accountIndex, const char *password, bool s
             free_simple_response_c_char(ledger_bitbox02_response);
         }
         g_tempPublicKeyAccountIndex = accountIndex;
-        GuiApiEmitSignal(SIG_END_GENERATE_XPUB, NULL, 0);
+        ui_post_notification(SIG_END_GENERATE_XPUB, 0);
         if (g_tempParsePhraseJson != NULL) {
             cJSON_Delete(g_tempParsePhraseJson);
             g_tempParsePhraseJson = NULL;

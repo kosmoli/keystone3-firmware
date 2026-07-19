@@ -235,7 +235,7 @@ static void FpDeleteRecv(char *indata, uint8_t len)
             memset_s(&g_fpManager, sizeof(g_fpManager), 0, sizeof(g_fpManager));
         }
         SetFingerManagerInfoToSE();
-        GuiApiEmitSignal(SIG_FINGER_DELETE_SUCCESS, NULL, 0);
+        ui_post_notification(SIG_FINGER_DELETE_SUCCESS, 0);
     }
 }
 

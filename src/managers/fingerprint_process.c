@@ -194,15 +194,15 @@ void FpRegRecv(char *indata, uint8_t len)
         if (len == 38) {
             memcpy_s(g_fpTempAesKey, sizeof(g_fpTempAesKey), (uint8_t *)&indata[6], sizeof(g_fpTempAesKey));
         }
-        GuiApiEmitSignal(SIG_FINGER_REGISTER_STEP_SUCCESS, &cnt, sizeof(cnt));
+        ui_post_notification(SIG_FINGER_REGISTER_STEP_SUCCESS, cnt);
     } else {
         if (g_fpRegCnt == FINGERPRINT_REG_MAX_TIMES) {
             MotorCtrl(MOTOR_LEVEL_MIDDLE, MOTOR_SHAKE_ULTRA_LONG_TIME);
             FpCancelCurOperate();
-            GuiApiEmitSignal(SIG_FINGER_REGISTER_EXCEEDED_TIMES, &result, sizeof(result));
+            ui_post_notification(SIG_FINGER_REGISTER_EXCEEDED_TIMES, result);
         } else {
             MotorCtrl(MOTOR_LEVEL_MIDDLE, MOTOR_SHAKE_LONG_TIME);
-            GuiApiEmitSignal(SIG_FINGER_REGISTER_STEP_FAIL, &result, sizeof(result));
+            ui_post_notification(SIG_FINGER_REGISTER_STEP_FAIL, result);
         }
     }
 
@@ -226,7 +226,7 @@ static void FpDeleteRecv(char *indata, uint8_t len)
     if (result == FP_SUCCESS_CODE) {
         if (g_delFpSave == true) {
             g_delFpSave = false;
-            GuiApiEmitSignal(SIG_FINGER_DELETE_SUCCESS, NULL, 0);
+            ui_post_notification(SIG_FINGER_DELETE_SUCCESS, 0);
             return;
         }
         printf("delete success %d\n", g_fpIndex);
@@ -264,7 +264,7 @@ static void FpGetNumberRecv(char *indata, uint8_t len)
     if (result == FP_SUCCESS_CODE) {
         FpResponseHandle(FINGERPRINT_CMD_GET_REG_NUM);
         printf("fingerprints currently exist %d\n", indata[1]);
-        GuiApiEmitSignal(GUI_EVENT_REFRESH, NULL, 0);
+        ui_post_notification(GUI_EVENT_REFRESH, 0);
         if (g_fpManager.fingerNum == 0) {
             memset_s(&g_fpManager, sizeof(g_fpManager), 0, sizeof(g_fpManager));
         }
@@ -335,7 +335,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
                 ui_post_notification(SIG_VERIFY_FINGER_PASS, 0);
             }
         } else {
-            GuiApiEmitSignal(SIG_FINGER_RECOGNIZE_RESPONSE, &result, sizeof(result));
+            ui_post_notification(SIG_FINGER_RECOGNIZE_RESPONSE, result);
         }
     } else {
         MotorCtrl(MOTOR_LEVEL_MIDDLE, MOTOR_SHAKE_LONG_TIME);
@@ -344,7 +344,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
         if (GuiLockScreenIsTop() && g_fpManager.unlockFlag) {
             ui_post_notification(SIG_VERIFY_FINGER_FAIL, 0);
         } else {
-            GuiApiEmitSignal(SIG_FINGER_RECOGNIZE_RESPONSE, &result, sizeof(result));
+            ui_post_notification(SIG_FINGER_RECOGNIZE_RESPONSE, result);
         }
     }
 }

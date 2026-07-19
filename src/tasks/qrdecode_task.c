@@ -13,6 +13,7 @@
 #include "librust_c.h"
 #include "gui_api.h"
 #include "gui_views.h"
+#include "ui_async.h"
 #include "gui_chain.h"
 #include "user_delay.h"
 #include "touchpad_task.h"
@@ -198,7 +199,8 @@ void ProcessQr(uint32_t count)
             UserDelay(500);
             urViewType.viewType = retFromRust;
             urViewType.urType = retFromRust;
-            GuiApiEmitSignal(SIG_QRCODE_VIEW_SCAN_FAIL, &urViewType, sizeof(urViewType));
+            ui_post_notification(SIG_QRCODE_VIEW_SCAN_FAIL,
+                ((uint32_t)urViewType.viewType << 8) | urViewType.urType);
         }
     } else if (ret < 0) {
         printf("decode err=%d\r\n", ret);

@@ -16,6 +16,7 @@
 #include "gui_api.h"
 #include "gui_views.h"
 #include "version.h"
+#include "ui_async.h"
 
 #define LOG_NAME_MAX_LEN            64
 #define LOG_DATA_HEAD_SIZE          8
@@ -221,7 +222,7 @@ void LogExportSync(void)
         uint32_t leftSize = FatfsGetSize("0:");
         printf("start save log file,size=%d left size=%d\r\n", writeIndex, leftSize);
         if (writeIndex >= leftSize) {
-            GuiApiEmitSignalWithValue(SIG_SETTING_LOG_EXPORT_NOT_ENOUGH_SPACE, ERROR_LOG_NOT_ENOUGH_SPACE);
+            ui_post_notification(SIG_SETTING_LOG_EXPORT_NOT_ENOUGH_SPACE, ERROR_LOG_NOT_ENOUGH_SPACE);
             break;
         }
 
@@ -230,9 +231,9 @@ void LogExportSync(void)
             ret = FatfsFileWrite(g_logName, logFileData, writeIndex);
             tick = osKernelGetTickCount() - tick;
             if (FatfsFileGetSize(g_logName) == writeIndex) {
-                GuiApiEmitSignalWithValue(SIG_SETTING_LOG_EXPORT_SUCCESS, 0);
+                ui_post_notification(SIG_SETTING_LOG_EXPORT_SUCCESS, 0);
             } else {
-                GuiApiEmitSignalWithValue(SIG_SETTING_LOG_EXPORT_FAIL, ERROR_LOG_EXPORT_ERROR);
+                ui_post_notification(SIG_SETTING_LOG_EXPORT_FAIL, ERROR_LOG_EXPORT_ERROR);
             }
             printf("save log file ret=%d,used tick=%d,rate=%dbytes/s\r\n", ret, tick, writeIndex * 1000 / tick);
         }

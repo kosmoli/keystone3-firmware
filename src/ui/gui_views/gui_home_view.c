@@ -6,6 +6,7 @@
 #include "gui_pending_hintbox.h"
 #include "gui_lock_widgets.h"
 #include "gui_scan_widgets.h"
+#include "qrdecode_task.h"
 
 static int32_t GuiHomeViewInit(void)
 {
@@ -94,10 +95,18 @@ int32_t GuiHomeViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
         ClearHomePageCurrentIndex();
         break;
     case SIG_QRCODE_VIEW_SCAN_FAIL:
-        GuiScanResult(false, param);
+        {
+            uint32_t val = *(uint32_t *)param;
+            UrViewType_t urViewType = { .viewType = (val >> 8) & 0xFF, .urType = val & 0xFF };
+            GuiScanResult(false, &urViewType);
+        }
         break;
     case SIG_QRCODE_VIEW_SCAN_PASS:
-        GuiScanResult(true, param);
+        {
+            uint32_t val = *(uint32_t *)param;
+            UrViewType_t urViewType = { .viewType = (val >> 8) & 0xFF, .urType = val & 0xFF };
+            GuiScanResult(true, &urViewType);
+        }
         break;
     default:
         return ERR_GUI_UNHANDLED;

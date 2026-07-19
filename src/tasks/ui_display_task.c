@@ -316,7 +316,7 @@ void LvglCloseCurrentView(void)
 
 void LvglImportMicroCardSigView(void)
 {
-    GuiApiEmitSignal(SIG_IMPORT_TRANSACTION_FROM_FILE, NULL, 0);
+    ui_post_notification(SIG_IMPORT_TRANSACTION_FROM_FILE, 0);
 }
 
 uint8_t *GetLvglGramAddr(void)

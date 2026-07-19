@@ -22,6 +22,7 @@
 #include "data_parser_task.h"
 #include "screen_manager.h"
 #include "power_manager.h"
+#include "ui_async.h"
 
 #define TYPE_FILE_INFO_FILE_NAME    1
 #define TYPE_FILE_INFO_FILE_SIZE    2
@@ -219,12 +220,12 @@ static uint8_t *ServiceFileTransInfo(FrameHead_t *head, const uint8_t *tlvData, 
         uint8_t walletAmount;
         GetExistAccountNum(&walletAmount);
         if (GetCurrentAccountIndex() == ACCOUNT_INDEX_LOGOUT && walletAmount != 0) {
-            GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_UPDATE_DENY, 1);
+            ui_post_notification(SIG_INIT_FIRMWARE_UPDATE_DENY, 1);
             sendTlvArray[0].value = 2;
             break;
         }
         if (GetCurrentDisplayPercent() < LOW_BATTERY_PERCENT) {
-            GuiApiEmitSignalWithValue(SIG_INIT_LOW_BATTERY, 1);
+            ui_post_notification(SIG_INIT_LOW_BATTERY, 1);
             sendTlvArray[0].value = 1;
             break;
         }
@@ -236,9 +237,9 @@ static uint8_t *ServiceFileTransInfo(FrameHead_t *head, const uint8_t *tlvData, 
             sendTlvArray[0].value = 5;
             break;
         }
-        GuiApiEmitSignalWithValue(g_isNftFile ? SIG_INIT_NFT_BIN : SIG_INIT_FIRMWARE_PROCESS, 1);
+        ui_post_notification(g_isNftFile ? SIG_INIT_NFT_BIN : SIG_INIT_FIRMWARE_PROCESS, 1);
 #else
-        GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_PROCESS, 1);
+        ui_post_notification(SIG_INIT_FIRMWARE_PROCESS, 1);
 #endif
         if (g_fileTransTimeOutTimer == NULL) {
             g_fileTransTimeOutTimer = osTimerNew(FileTransTimeOutTimerFunc, osTimerOnce, NULL, NULL);
@@ -409,7 +410,7 @@ static uint8_t *ServiceFileTransComplete(FrameHead_t *head, const uint8_t *tlvDa
     sendHead.flag.b.ack = 0;
     sendHead.flag.b.isHost = 0;
 
-    GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_PROCESS, 0);
+    ui_post_notification(SIG_INIT_FIRMWARE_PROCESS, 0);
     *outLen = sizeof(FrameHead_t) + 4;
     SetSetupStep(4);
     SaveDeviceSettings();
@@ -420,10 +421,10 @@ static uint8_t *ServiceFileTransComplete(FrameHead_t *head, const uint8_t *tlvDa
 static void FileTransTimeOutTimerFunc(void *argument)
 {
     g_isReceivingFile = false;
-    GuiApiEmitSignalWithValue(SIG_INIT_FIRMWARE_PROCESS, 0);
+    ui_post_notification(SIG_INIT_FIRMWARE_PROCESS, 0);
     if (g_isNftFile) {
-        GuiApiEmitSignalWithValue(SIG_INIT_NFT_BIN, 0);
-        GuiApiEmitSignalWithValue(SIG_INIT_NFT_BIN_TRANS_FAIL, 0);
+        ui_post_notification(SIG_INIT_NFT_BIN, 0);
+        ui_post_notification(SIG_INIT_NFT_BIN_TRANS_FAIL, 0);
     }
     g_isNftFile = false;
 #endif
@@ -589,8 +590,8 @@ static uint8_t *ServiceNftFileTransComplete(FrameHead_t *head, const uint8_t *tl
     WriteNftToFlash();
     SetNftBinValid(true);
     SaveDeviceSettings();
-    GuiApiEmitSignalWithValue(SIG_INIT_NFT_BIN, 0);
-    GuiApiEmitSignalWithValue(SIG_INIT_TRANSFER_NFT_SCREEN, 1);
+    ui_post_notification(SIG_INIT_NFT_BIN, 0);
+    ui_post_notification(SIG_INIT_TRANSFER_NFT_SCREEN, 1);
     return BuildFrame(&sendHead, NULL, 0);
 }
 

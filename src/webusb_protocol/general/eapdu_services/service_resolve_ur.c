@@ -1,14 +1,9 @@
 #include "service_resolve_ur.h"
 #include "user_delay.h"
-#include "gui_chain.h"
 #include "user_msg.h"
 #include "qrdecode_task.h"
-#include "gui_lock_widgets.h"
-#include "gui_resolve_ur.h"
 #include "gui_views.h"
 #include "general_msg.h"
-#include "gui_home_widgets.h"
-#include "gui_key_derivation_request_widgets.h"
 #include "ui_async.h"
 
 /* DEFINES */
@@ -121,8 +116,8 @@ static bool IsRequestAllowed(uint32_t requestID)
 static void HandleHardwareCall(struct URParseResult *urResult)
 {
     if (g_ui_key_derivation_request_view_is_top || g_ui_home_page_is_top) {
-        GuiSetKeyDerivationRequestData(urResult, NULL, false);
-        PubValueMsg(UI_MSG_USB_HARDWARE_VIEW, 0);
+        g_ui_pending_ur_result = urResult;
+        PubValueMsg(UI_MSG_USB_HARDWARE_VIEW, 1);
         return;
     }
 

@@ -94,6 +94,13 @@ extern volatile bool g_ui_letter_kb_status_error;
 extern volatile bool g_ui_passphrase_quick_access;
 
 /*
+ * 后端→前端数据传递：用于跨线程传递需要前端处理的数据指针。
+ * 后端存储指针后通过 PubValueMsg 通知前端，前端在 UI 线程中取出并处理。
+ * 当前用于 KeyDerivationRequest 的 UR 数据传递。
+ */
+extern volatile void *g_ui_pending_ur_result;
+
+/*
  * 前端状态同步：在 UI 线程主循环中调用，将前端内部状态
  * 同步到上述全局变量，供后端安全读取。
  */

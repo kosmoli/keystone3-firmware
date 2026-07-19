@@ -18,6 +18,7 @@
 #include "lv_i18n_api.h"
 #include "drv_gd25qxx.h"
 #include "ui_async.h"
+#include "gui_key_derivation_request_widgets.h"
 
 #define LVGL_FAST_TICK_MS                   5
 #define LVGL_IDLE_TICK_MS                   100
@@ -142,6 +143,10 @@ static void UiDisplayTask(void *argument)
             }
             break;
             case UI_MSG_USB_HARDWARE_VIEW: {
+                if (rcvMsg.value == 1 && g_ui_pending_ur_result != NULL) {
+                    GuiSetKeyDerivationRequestData((void *)g_ui_pending_ur_result, NULL, false);
+                    g_ui_pending_ur_result = NULL;
+                }
                 bool usb = true;
                 if (GuiCheckIfTopView(&g_keyDerivationRequestView)) {
                     GuiEmitSignal(SIG_USB_HARDWARE_CALL_PARSE_UR, NULL, 0);

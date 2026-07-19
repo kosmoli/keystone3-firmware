@@ -117,6 +117,12 @@ int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
     case SIG_SET_NUM_KEYBOARD_MAP_DEFAULT:
         GuiLockScreenSetNumKeyBoardMapDefault();
         break;
+    case SIG_LOCK_VIEW_UPDATE_PURPOSE:
+        GuiLockScreenUpdatePurpose(*(uint32_t *)param);
+        break;
+    case SIG_SHOW_LOADING_ANIMATION:
+        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        break;
     default:
         return ERR_GUI_UNHANDLED;
     }

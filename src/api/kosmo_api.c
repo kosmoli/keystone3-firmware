@@ -808,14 +808,14 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         s_slip39.memberCnt = request->slip39_generate.memberCnt;
         s_slip39.wordCnt = request->slip39_generate.wordCnt;
         s_slip39.forget = request->slip39_generate.forget;
-        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        ui_post_notification(SIG_SHOW_LOADING_ANIMATION, 0);
         AsyncExecute(ModelGenerateSlip39Entropy, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SLIP39_WRITE_SE: {
         static uint8_t s_wordsCnt;
         s_wordsCnt = request->slip39_write_se.wordCnt;
-        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        ui_post_notification(SIG_SHOW_LOADING_ANIMATION, 0);
         AsyncExecute(ModelSlip39WriteEntropy, &s_wordsCnt, sizeof(s_wordsCnt));
         return KOSMO_OK;
     }
@@ -833,7 +833,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         s_slip39.threShold = request->slip39_update.threshold;
         s_slip39.memberCnt = request->slip39_update.memberCnt;
         s_slip39.wordCnt = request->slip39_update.wordCnt;
-        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        ui_post_notification(SIG_SHOW_LOADING_ANIMATION, 0);
         AsyncExecute(ModelGenerateSlip39Entropy, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
@@ -842,7 +842,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         s_slip39.threShold = request->slip39_update_dice.threshold;
         s_slip39.memberCnt = request->slip39_update_dice.memberCnt;
         s_slip39.wordCnt = request->slip39_update_dice.wordCnt;
-        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        ui_post_notification(SIG_SHOW_LOADING_ANIMATION, 0);
         AsyncExecute(ModelGenerateSlip39EntropyWithDiceRolls, &s_slip39, sizeof(s_slip39));
         return KOSMO_OK;
     }
@@ -856,7 +856,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         return KOSMO_OK;
     }
     case KOSMO_REQ_WRITE_SE: {
-        GuiCreateCircleAroundAnimation(lv_scr_act(), -40);
+        ui_post_notification(SIG_SHOW_LOADING_ANIMATION, 0);
         AsyncExecute(ModelWriteEntropyAndSeed, NULL, 0);
         return KOSMO_OK;
     }
@@ -1326,7 +1326,7 @@ static int32_t ModelWriteEntropyAndSeed(const void *inData, uint32_t inDataLen)
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     MODEL_WRITE_SE_END(KOSMO_REQ_WRITE_SE)
     SetLockScreen(enable);
@@ -1370,7 +1370,7 @@ static int32_t ModelBip39CalWriteEntropyAndSeed(const void *inData, uint32_t inD
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
     CHECK_ERRCODE_BREAK("login error", ret);
@@ -1688,7 +1688,7 @@ static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen)
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     MODEL_WRITE_SE_END(KOSMO_REQ_SLIP39_WRITE_SE)
 
@@ -1748,7 +1748,7 @@ static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t in
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(GuiPassphraseQuickAccess());
+        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
     CHECK_ERRCODE_BREAK("login error", ret);
@@ -1854,14 +1854,10 @@ static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen)
     if (ret == SUCCESS_CODE) {
         // reset address index in receive page
         {
-            void GuiResetCurrentUtxoAddressIndex(uint8_t index);
-            GuiResetCurrentUtxoAddressIndex(accountIndex);
-            void GuiResetCurrentEthAddressIndex(uint8_t index);
-            void GuiResetCurrentStandardAddressIndex(uint8_t index);
-            void GuiResetCurrentMultiAccountsCache(uint8_t index);
-            GuiResetCurrentEthAddressIndex(accountIndex);
-            GuiResetCurrentStandardAddressIndex(accountIndex);
-            GuiResetCurrentMultiAccountsCache(accountIndex);
+            ui_post_notification(SIG_RESET_UTXO_ADDRESS_INDEX, accountIndex);
+            ui_post_notification(SIG_RESET_ETH_ADDRESS_INDEX, accountIndex);
+            ui_post_notification(SIG_RESET_STANDARD_ADDRESS_INDEX, accountIndex);
+            ui_post_notification(SIG_RESET_MULTI_ACCOUNTS_CACHE, accountIndex);
         }
 
         uint8_t accountNum;
@@ -2123,7 +2119,7 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
             *param != SIG_HARDWARE_CALL_DERIVE_PUBKEY &&
             *param != SIG_INIT_CONNECT_USB &&
             !strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) &&
-            !GuiCheckIfViewOpened(&g_createWalletView) &&
+            !g_ui_create_wallet_view_opened &&
             !ModelGetPassphraseQuickAccess()) {
         ClearSecretCache();
     }

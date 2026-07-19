@@ -8,6 +8,7 @@
 #include "keystore.h"
 #include "event_groups.h"
 #include "timers.h"
+#include "ui_async.h"
 
 extern EventGroupHandle_t g_fpEventGroup;
 extern char g_intrRecvBuffer[RCV_MSG_MAX_LEN];
@@ -17,7 +18,6 @@ osTimerId_t g_fingerInitTimer = NULL;
 osTimerId_t g_fpTimeoutTimer = NULL;
 void FpTimeoutHandle(void *argument);
 void FpResponseHandleStop(void);
-bool GuiNeedFpRecognize(void);
 
 void CreateFingerprintTask(void)
 {
@@ -41,7 +41,7 @@ void FpGetAesStateHandle(void *argument)
 
 void FpRecognizeHandle(void *argument)
 {
-    if (GuiNeedFpRecognize()) {
+    if (g_ui_need_fp_recognize) {
         FpRecognize(RECOGNIZE_UNLOCK);
     }
 }

@@ -17,11 +17,8 @@
 #include "user_delay.h"
 #include "touchpad_task.h"
 #include "gui_analyze.h"
-#include "gui_web_auth_result_widgets.h"
 #include "assert.h"
 #include "qrdecode_task.h"
-#include "gui_resolve_ur.h"
-#include "gui_key_derivation_request_widgets.h"
 #endif
 
 #define QUIT_AREA_X_START                   10

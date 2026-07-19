@@ -186,6 +186,7 @@ static void UiDisplayTask(void *argument)
         if (g_lvglHandlerEnable) {
             ui_async_mailbox_poll();
             lv_timer_handler();
+            ui_state_sync();
             GuiLetterKbStatusError();
         }
     }

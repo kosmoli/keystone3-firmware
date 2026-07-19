@@ -2,10 +2,9 @@
 #include "user_msg.h"
 #include "user_utils.h"
 #include "gui.h"
-#include "gui_lock_widgets.h"
-#include "gui_home_widgets.h"
 #include "gui_wallet.h"
 #include "cmsis_os.h"
+#include "ui_async.h"
 
 /* DEFINES */
 
@@ -179,12 +178,12 @@ static void ExportEthAddress(uint16_t requestID, uint8_t n, ETHAccountType type)
 
 static bool CheckExportAcceptable(EAPDURequestPayload_t *payload)
 {
-    if (GuiLockScreenIsTop()) {
+    if (g_ui_lock_screen_is_top) {
         SendEApduResponseError(EAPDU_PROTOCOL_HEADER, CMD_EXPORT_ADDRESS, payload->requestID, PRS_EXPORT_ADDRESS_DISALLOWED, "Export address is not allowed when the device is locked");
         return false;
     }
     // Only allow on specific pages
-    if (!GuiHomePageIsTop()) {
+    if (!g_ui_home_page_is_top) {
         SendEApduResponseError(EAPDU_PROTOCOL_HEADER, CMD_EXPORT_ADDRESS, payload->requestID, PRS_EXPORT_ADDRESS_DISALLOWED, "Export address is just allowed on specific pages");
         return false;
     }

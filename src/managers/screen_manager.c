@@ -6,12 +6,10 @@
 #include "qrdecode_task.h"
 #include "low_power.h"
 #include "keystore.h"
-#include "gui_power_option_widgets.h"
 #include "fingerprint_task.h"
 #include "user_msg.h"
 #include "device_setting.h"
 #include "power_manager.h"
-#include "gui_lock_widgets.h"
 #include "account_manager.h"
 #include "fingerprint_process.h"
 #include "ui_async.h"
@@ -122,13 +120,13 @@ static void LockScreen(void)
     GetExistAccountNum(&accountNum);
     if (accountNum > 0 && !g_lockTimeState) {
         LogoutCurrentAccount();
-        GuiLockScreenUpdatePurpose(LOCK_SCREEN_PURPOSE_UNLOCK);
-        GuiEmitSignal(SIG_LOCK_VIEW_SCREEN_ON_VERIFY, &single, sizeof(single));
+        ui_post_notification(SIG_LOCK_VIEW_UPDATE_PURPOSE, LOCK_SCREEN_PURPOSE_UNLOCK);
+        ui_post_notification(SIG_LOCK_VIEW_SCREEN_ON_VERIFY, SIG_LOCK_VIEW_VERIFY_PIN);
     }
 
     if (g_lockDeivceTimeAlive) {
         printf("lock device page is alive\n");
-        GuiEmitSignal(SIG_LOCK_VIEW_SCREEN_CLEAR_ALL_TOP, NULL, 0);
+        ui_post_notification(SIG_LOCK_VIEW_SCREEN_CLEAR_ALL_TOP, 0);
     }
 
     if (!FpModuleIsExist()) {

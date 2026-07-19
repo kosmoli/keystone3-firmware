@@ -3,6 +3,10 @@
 #include "gui_api.h"
 #include "screen_manager.h"
 #include "kosmo_types.h"
+#include "ui_async.h"
+#include "gui_lock_widgets.h"
+#include "gui_setup_widgets.h"
+#include "gui_keyboard.h"
 #ifndef COMPILE_SIMULATOR
 #include "user_msg.h"
 #endif
@@ -240,4 +244,31 @@ static const char *GuiFrameIdToName(SCREEN_ID_ENUM ID)
     printf("id = %d name = %s\n", ID, str);
     const char *name = str;
     return name;
+}
+/*
+ * ui_state_sync — 前端状态同步到后端可读的全局变量。
+ * 每帧在 UI 线程主循环中调用一次，替代后端直接调用前端查询函数。
+ */
+#include "ui_async.h"
+
+/* 前向声明：来自其他前端模块的查询函数 */
+extern bool GuiIsSetup(void);
+extern bool GuiLockScreenIsVerifyLoading(void);
+extern bool GuiNeedFpRecognize(void);
+extern bool GuiHomePageIsTop(void);
+extern bool GuiPassphraseQuickAccess(void);
+extern bool GuiLetterKbStatusError(void);
+
+void ui_state_sync(void)
+{
+    g_ui_is_setup = GuiIsSetup();
+    g_ui_lock_screen_is_top = GuiLockScreenIsTop();
+    g_ui_lock_screen_verify_loading = GuiLockScreenIsVerifyLoading();
+    g_ui_home_page_is_top = GuiHomePageIsTop();
+    g_ui_usb_transport_view_is_top = GuiCheckIfTopView(&g_USBTransportView);
+    g_ui_key_derivation_request_view_is_top = GuiCheckIfTopView(&g_keyDerivationRequestView);
+    g_ui_create_wallet_view_opened = GuiCheckIfViewOpened(&g_createWalletView);
+    g_ui_need_fp_recognize = GuiNeedFpRecognize();
+    g_ui_letter_kb_status_error = GuiLetterKbStatusError();
+    g_ui_passphrase_quick_access = GuiPassphraseQuickAccess();
 }

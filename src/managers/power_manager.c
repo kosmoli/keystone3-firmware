@@ -2,7 +2,6 @@
 #include "stdio.h"
 #include "drv_aw32001.h"
 #include "drv_button.h"
-#include "gui_power_option_widgets.h"
 #include "drv_lcd_bright.h"
 #include "mhscpu.h"
 #include "gui_views.h"

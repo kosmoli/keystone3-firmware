@@ -108,6 +108,18 @@ int32_t GuiHomeViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
             GuiScanResult(true, &urViewType);
         }
         break;
+    case SIG_RESET_UTXO_ADDRESS_INDEX:
+        GuiResetCurrentUtxoAddressIndex(*(uint32_t *)param);
+        break;
+    case SIG_RESET_ETH_ADDRESS_INDEX:
+        GuiResetCurrentEthAddressIndex(*(uint32_t *)param);
+        break;
+    case SIG_RESET_STANDARD_ADDRESS_INDEX:
+        GuiResetCurrentStandardAddressIndex(*(uint32_t *)param);
+        break;
+    case SIG_RESET_MULTI_ACCOUNTS_CACHE:
+        GuiResetCurrentMultiAccountsCache(*(uint32_t *)param);
+        break;
     default:
         return ERR_GUI_UNHANDLED;
     }

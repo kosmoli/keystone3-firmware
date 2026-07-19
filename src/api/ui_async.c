@@ -1,6 +1,21 @@
 #include "ui_async.h"
 #include <stdio.h>
 
+/*
+ * 后端可读的前端状态变量定义。
+ * 由前端在状态变化时更新，后端直接读取（无锁，单写多读安全）。
+ */
+volatile bool g_ui_is_setup = false;
+volatile bool g_ui_lock_screen_is_top = false;
+volatile bool g_ui_lock_screen_verify_loading = false;
+volatile bool g_ui_home_page_is_top = false;
+volatile bool g_ui_usb_transport_view_is_top = false;
+volatile bool g_ui_key_derivation_request_view_is_top = false;
+volatile bool g_ui_create_wallet_view_opened = false;
+volatile bool g_ui_need_fp_recognize = false;
+volatile bool g_ui_letter_kb_status_error = false;
+volatile bool g_ui_passphrase_quick_access = false;
+
 #ifdef COMPILE_SIMULATOR
 /*
  * 模拟器：同步执行（与 AsyncExecute 行为一致）

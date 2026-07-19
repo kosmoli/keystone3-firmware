@@ -9,6 +9,7 @@
 #include "general_msg.h"
 #include "gui_home_widgets.h"
 #include "gui_key_derivation_request_widgets.h"
+#include "ui_async.h"
 
 /* DEFINES */
 #define REQUEST_ID_IDLE 0xFFFF
@@ -17,7 +18,6 @@
 
 /* FUNC DECLARATION*/
 static void BasicHandlerFunc(const void *data, uint32_t data_len, uint16_t requestID, StatusEnum status);
-bool GuiIsSetup(void);
 
 /* STATIC VARIABLES */
 static uint16_t g_requestID = REQUEST_ID_IDLE;
@@ -78,13 +78,13 @@ static bool CheckURAcceptable(void);
 
 static bool CheckURAcceptable(void)
 {
-    if (GuiLockScreenIsTop()) {
+    if (g_ui_lock_screen_is_top) {
         const char *data = "Device is locked";
         HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
         return false;
     }
     // Only allow URL parsing on specific pages
-    if (GuiIsSetup()) {
+    if (g_ui_is_setup) {
         const char *data = "Export address is just allowed on specific pages";
         HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
         return false;
@@ -120,7 +120,7 @@ static bool IsRequestAllowed(uint32_t requestID)
 
 static void HandleHardwareCall(struct URParseResult *urResult)
 {
-    if (GuiCheckIfTopView(&g_keyDerivationRequestView) || GuiHomePageIsTop()) {
+    if (g_ui_key_derivation_request_view_is_top || g_ui_home_page_is_top) {
         GuiSetKeyDerivationRequestData(urResult, NULL, false);
         PubValueMsg(UI_MSG_USB_HARDWARE_VIEW, 0);
         return;
@@ -133,11 +133,11 @@ static void HandleHardwareCall(struct URParseResult *urResult)
 
 static bool HandleNormalCall(void)
 {
-    if (GuiHomePageIsTop()) {
+    if (g_ui_home_page_is_top) {
         return true;
     }
 
-    if (GuiCheckIfTopView(&g_USBTransportView)) {
+    if (g_ui_usb_transport_view_is_top) {
         PubValueMsg(UI_MSG_USB_TRANSPORT_NEXT_VIEW, 0);
         UserDelay(200);
         return true;

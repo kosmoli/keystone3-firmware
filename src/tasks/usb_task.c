@@ -12,7 +12,6 @@
 #include "gui_views.h"
 #include "drv_aw32001.h"
 #include "device_setting.h"
-#include "gui_setup_widgets.h"
 #include "low_power.h"
 #include "account_manager.h"
 #include "ui_async.h"

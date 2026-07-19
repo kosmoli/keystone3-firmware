@@ -319,9 +319,9 @@ void GotoResultPage(EAPDUResultPage_t *resultPageParams)
             return;
         }
         if (resultPageParams == NULL) {
-            PubValueMsg(UI_MSG_USB_TRANSPORT_VIEW, 0);
+            PubValueMsg(EVENT_USB_SESSION_STARTED, 0);
         } else {
-            PubBufferMsg(UI_MSG_USB_TRANSPORT_VIEW, resultPageParams, sizeof(EAPDUResultPage_t));
+            PubBufferMsg(EVENT_USB_SESSION_STARTED, resultPageParams, sizeof(EAPDUResultPage_t));
         }
     }
 }

@@ -113,7 +113,7 @@ static void HandleHardwareCall(struct URParseResult *urResult)
 {
     if (GetCurrentAccountIndex() != ACCOUNT_INDEX_LOGOUT) {
         g_ui_pending_ur_result = urResult;
-        PubValueMsg(UI_MSG_USB_HARDWARE_VIEW, 1);
+        PubValueMsg(EVENT_USB_HARDWARE_CALL, 1);
         return;
     }
 

@@ -132,17 +132,20 @@ static void UiDisplayTask(void *argument)
 #endif
             }
             break;
-            case UI_MSG_USB_TRANSPORT_VIEW: {
+            case EVENT_USB_SESSION_STARTED: {
+                /* 业务事件：USB 会话已启动。前端自行决定打开 USB 传输视图。 */
                 GuiFrameOpenViewWithParam(&g_USBTransportView, rcvMsg.buffer, rcvMsg.length);
             }
             break;
             case UI_MSG_USB_TRANSPORT_NEXT_VIEW: {
+                /* 业务事件：USB 传输下一阶段。前端自行决定关闭当前视图。 */
                 if (GuiCheckIfTopView(&g_USBTransportView)) {
                     GuiEmitSignal(SIG_CLOSE_USB_TRANSPORT, NULL, 0);
                 }
             }
             break;
-            case UI_MSG_USB_HARDWARE_VIEW: {
+            case EVENT_USB_HARDWARE_CALL: {
+                /* 业务事件：硬件调用请求。前端自行决定打开密钥派生请求视图。 */
                 if (rcvMsg.value == 1 && g_ui_pending_ur_result != NULL) {
                     GuiSetKeyDerivationRequestData((void *)g_ui_pending_ur_result, NULL, false);
                     g_ui_pending_ur_result = NULL;

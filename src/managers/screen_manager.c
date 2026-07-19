@@ -107,7 +107,6 @@ static void LockScreen(void)
         return;
     }
 
-    static uint16_t single = SIG_LOCK_VIEW_VERIFY_PIN;
     uint8_t accountNum = 1;
 
     if (FpModuleIsExist()) {

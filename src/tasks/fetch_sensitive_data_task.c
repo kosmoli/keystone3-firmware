@@ -10,7 +10,6 @@
 #include "user_fatfs.h"
 #include "user_delay.h"
 #include "err_code.h"
-#include "gui_api.h"
 #include "gui_views.h"
 #include "drv_usb.h"
 #include "usb_task.h"

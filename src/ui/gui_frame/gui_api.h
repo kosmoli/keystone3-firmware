@@ -23,6 +23,10 @@ enum {
 
 #endif
 
+/*
+ * 前端内部信号广播（仅供 src/ui/ 内部使用）。
+ * 后端代码应使用 ui_post_notification() 替代。
+ */
 int32_t GuiApiEmitSignal(uint16_t signal, void *param, uint16_t usLen);
 int32_t GuiApiEmitSignalWithValue(uint16_t signal, uint32_t value);
 

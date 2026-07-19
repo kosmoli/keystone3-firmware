@@ -13,7 +13,6 @@
 #include "log_print.h"
 #include "user_fatfs.h"
 #include "log_task.h"
-#include "gui_api.h"
 #include "gui_views.h"
 #include "version.h"
 #include "ui_async.h"

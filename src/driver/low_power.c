@@ -23,7 +23,6 @@
 #include "background_task.h"
 #include "user_fatfs.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "power_manager.h"
 #include "screen_manager.h"
 #include "usb_task.h"

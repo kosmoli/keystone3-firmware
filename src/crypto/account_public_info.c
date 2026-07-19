@@ -15,7 +15,6 @@
 #include "assert.h"
 #include "gui.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "gui_home_widgets.h"
 #include "user_fatfs.h"
 #include "log_print.h"

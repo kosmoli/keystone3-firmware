@@ -11,7 +11,6 @@
 #include "drv_ds28s60.h"
 #include "drv_trng.h"
 #include "librust_c.h"
-#include "gui_api.h"
 #include "gui_views.h"
 #include "ui_async.h"
 #include "gui_chain.h"

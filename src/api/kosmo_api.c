@@ -29,7 +29,6 @@
 #include "secret_cache.h"
 #include "gui.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "gui_obj.h"
 #include "bip39_english.h"
 #include "user_memory.h"
@@ -746,14 +745,13 @@ int32_t KosmoApi_GetZcashUFVK(uint8_t accountIndex, char *outUFVK)
 /* ── Phase 2: 异步请求统一分发 ──────────────────────── */
 
 /*
- * KosmoApi_Request() — 统一异步入口
+ * KosmoApi_Request() — 异步请求入口
  *
- * 当前实现：分发到 GuiModel* 包装函数（保留旧 signal 回传机制）。
- * Phase 3 将改为：分发到 Model* 内部函数 + KosmoCallback 回传。
- * Phase 4 将改为：逻辑直接内联，移除 gui_model.h 依赖。
+ * 前端调用此函数发起请求，结果通过 callback 返回。
+ * 真机：投递到 FetchSensitiveDataTask 队列。
+ * 模拟器：同步执行。
  *
- * callback 参数暂时未使用（Model* 函数仍通过 GuiApiEmitSignal 回传结果）。
- * Phase 3 完成后将启用。
+ * callback 在 UI 线程执行（通过 KosmoApi_NotifyResult → ui_post_rpc_callback）。
  */
 int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 {

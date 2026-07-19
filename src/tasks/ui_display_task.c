@@ -16,7 +16,6 @@
 #include "anti_tamper.h"
 #include "screenshot.h"
 #include "lv_i18n_api.h"
-#include "gui_api.h"
 #include "drv_gd25qxx.h"
 #include "ui_async.h"
 

@@ -6,7 +6,6 @@
 #include "drv_lcd_bright.h"
 #include "mhscpu.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "device_setting.h"
 #include "ui_async.h"
 

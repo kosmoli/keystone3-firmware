@@ -10,7 +10,6 @@
 #include "user_utils.h"
 #include "screen_manager.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "drv_aw32001.h"
 #include "device_setting.h"
 #include "gui_setup_widgets.h"

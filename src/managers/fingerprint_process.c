@@ -14,7 +14,6 @@
 #include "keystore.h"
 #include "account_manager.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "secret_cache.h"
 #include "user_msg.h"
 #include "user_utils.h"

@@ -9,7 +9,6 @@
 #include "user_fatfs.h"
 #include "ff.h"
 #include "gui_views.h"
-#include "gui_api.h"
 #include "librust_c.h"
 #include "sha256.h"
 #include "background_task.h"

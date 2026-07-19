@@ -57,40 +57,20 @@ void ui_post_notification(uint16_t signal, uint32_t value);
 /*
  * === 后端可读的前端状态变量 ===
  *
- * 这些 volatile 变量由前端在状态变化时更新，后端直接读取（无锁）。
- * 替代后端直接调用 GuiIsSetup() / GuiLockScreenIsTop() 等查询函数。
+ * 注意：大部分 UI 状态变量已在 Phase 1/2 重构中移除。
+ * 后端应使用自身的业务状态（GetCurrentAccountIndex、GetExistAccountNum 等）
+ * 而非读取前端 UI 状态。
  *
- * 规则：前端只写，后端只读。
+ * 以下变量是 Phase 2 清理后的残留，待后续 Phase 进一步消除。
  */
 
-/* 设备是否处于 Setup 流程 */
-extern volatile bool g_ui_is_setup;
-
-/* 锁屏界面是否在栈顶 */
-extern volatile bool g_ui_lock_screen_is_top;
-
-/* 锁屏验证加载动画是否显示中 */
-extern volatile bool g_ui_lock_screen_verify_loading;
-
-/* 首页是否在栈顶 */
-extern volatile bool g_ui_home_page_is_top;
-
-/* USB 传输视图是否在栈顶 */
-extern volatile bool g_ui_usb_transport_view_is_top;
-
-/* 密钥派生请求视图是否在栈顶 */
-extern volatile bool g_ui_key_derivation_request_view_is_top;
-
-/* 创建钱包视图是否已打开 */
-extern volatile bool g_ui_create_wallet_view_opened;
-
-/* 指纹识别是否被需要 */
+/* 指纹识别是否被需要（依赖前端错误计数，Phase 2 暂保留） */
 extern volatile bool g_ui_need_fp_recognize;
 
-/* 字母键盘状态是否有错误 */
-extern volatile bool g_ui_letter_kb_status_error;
+/* 创建钱包视图是否已打开（kosmo_api.c 仍在读取，Phase 2 暂保留） */
+extern volatile bool g_ui_create_wallet_view_opened;
 
-/* Passphrase 快速访问状态 */
+/* Passphrase 快速访问状态（kosmo_api.c 仍在读取，Phase 2 暂保留） */
 extern volatile bool g_ui_passphrase_quick_access;
 
 /*
@@ -103,6 +83,7 @@ extern volatile void *g_ui_pending_ur_result;
 /*
  * 前端状态同步：在 UI 线程主循环中调用，将前端内部状态
  * 同步到上述全局变量，供后端安全读取。
+ * Phase 2 清理后仅更新 3 个仍被使用的变量。
  */
 void ui_state_sync(void);
 

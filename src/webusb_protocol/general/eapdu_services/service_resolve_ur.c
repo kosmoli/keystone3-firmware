@@ -4,7 +4,9 @@
 #include "qrdecode_task.h"
 #include "gui_views.h"
 #include "general_msg.h"
-#include "ui_async.h"
+#include "account_manager.h"
+#include "keystore.h"
+#include "usb_task.h"
 
 /* DEFINES */
 #define REQUEST_ID_IDLE 0xFFFF
@@ -73,14 +75,8 @@ static bool CheckURAcceptable(void);
 
 static bool CheckURAcceptable(void)
 {
-    if (g_ui_lock_screen_is_top) {
+    if (GetCurrentAccountIndex() == ACCOUNT_INDEX_LOGOUT) {
         const char *data = "Device is locked";
-        HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
-        return false;
-    }
-    // Only allow URL parsing on specific pages
-    if (g_ui_is_setup) {
-        const char *data = "Export address is just allowed on specific pages";
         HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
         return false;
     }
@@ -115,7 +111,7 @@ static bool IsRequestAllowed(uint32_t requestID)
 
 static void HandleHardwareCall(struct URParseResult *urResult)
 {
-    if (g_ui_key_derivation_request_view_is_top || g_ui_home_page_is_top) {
+    if (GetCurrentAccountIndex() != ACCOUNT_INDEX_LOGOUT) {
         g_ui_pending_ur_result = urResult;
         PubValueMsg(UI_MSG_USB_HARDWARE_VIEW, 1);
         return;
@@ -128,11 +124,11 @@ static void HandleHardwareCall(struct URParseResult *urResult)
 
 static bool HandleNormalCall(void)
 {
-    if (g_ui_home_page_is_top) {
+    if (GetCurrentAccountIndex() != ACCOUNT_INDEX_LOGOUT) {
         return true;
     }
 
-    if (g_ui_usb_transport_view_is_top) {
+    if (GetUsbState()) {
         PubValueMsg(UI_MSG_USB_TRANSPORT_NEXT_VIEW, 0);
         UserDelay(200);
         return true;

@@ -14,7 +14,6 @@
 #include "keystore.h"
 #include "account_manager.h"
 #include "gui_views.h"
-#include "ui_async.h"
 #include "secret_cache.h"
 #include "user_msg.h"
 #include "user_utils.h"
@@ -302,7 +301,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
 {
     int i = 0;
     uint8_t result = indata[i++];
-    if (g_fingerRecognizeType == RECOGNIZE_UNLOCK && g_ui_lock_screen_verify_loading) {
+    if (g_fingerRecognizeType == RECOGNIZE_UNLOCK) {
         return;
     }
     ClearLockScreenTime();
@@ -328,7 +327,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
             }
         }
 
-        if (g_ui_lock_screen_is_top) {
+        if (GetCurrentAccountIndex() == ACCOUNT_INDEX_LOGOUT) {
             if (g_fpManager.unlockFlag) {
                 ui_post_notification(SIG_VERIFY_FINGER_PASS, 0);
             }
@@ -339,7 +338,7 @@ static void FpRecognizeRecv(char *indata, uint8_t len)
         MotorCtrl(MOTOR_LEVEL_MIDDLE, MOTOR_SHAKE_LONG_TIME);
         GetFpErrorMessage(result);
         printf("recognize failed\n");
-        if (g_ui_lock_screen_is_top && g_fpManager.unlockFlag) {
+        if (GetCurrentAccountIndex() == ACCOUNT_INDEX_LOGOUT && g_fpManager.unlockFlag) {
             ui_post_notification(SIG_VERIFY_FINGER_FAIL, 0);
         } else {
             ui_post_notification(SIG_FINGER_RECOGNIZE_RESPONSE, result);
@@ -764,7 +763,7 @@ void SearchFpNum(void)
 void FpRecognize(Recognize_Type type)
 {
     uint8_t accountNum = 0;
-    if (type == RECOGNIZE_UNLOCK && g_ui_lock_screen_verify_loading) {
+    if (type == RECOGNIZE_UNLOCK && g_fingerRecognizeType == RECOGNIZE_UNLOCK) {
         return;
     }
     GetExistAccountNum(&accountNum);

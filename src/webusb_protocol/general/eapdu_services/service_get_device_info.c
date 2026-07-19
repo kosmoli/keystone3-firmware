@@ -5,7 +5,7 @@
 #include "user_memory.h"
 #include "version.h"
 #include "gui.h"
-#include "ui_async.h"
+#include "account_manager.h"
 
 void GetDeviceInfoService(EAPDURequestPayload_t *payload)
 {
@@ -16,7 +16,7 @@ void GetDeviceInfoService(EAPDURequestPayload_t *payload)
         return;
     }
 
-    if (g_ui_lock_screen_is_top) {
+    if (GetCurrentAccountIndex() == ACCOUNT_INDEX_LOGOUT) {
         SendEApduResponseError(EAPDU_PROTOCOL_HEADER, CMD_GET_DEVICE_INFO, payload->requestID, PRS_PARSING_DISALLOWED,
                                "Get device info is not allowed when the device is locked");
         return;

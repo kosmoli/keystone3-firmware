@@ -14,7 +14,7 @@
 #include "eapdu_services/service_echo_test.h"
 #include "eapdu_services/service_export_address.h"
 #include "eapdu_services/service_get_device_info.h"
-#include "ui_async.h"
+#include "usb_task.h"
 
 static ProtocolSendCallbackFunc_t g_sendFunc = NULL;
 static uint32_t g_eapduRcvCount = 0;
@@ -315,7 +315,7 @@ const struct ProtocolParser *NewEApduProtocolParser()
 void GotoResultPage(EAPDUResultPage_t *resultPageParams)
 {
     if (resultPageParams != NULL) {
-        if (g_ui_usb_transport_view_is_top) {
+        if (GetUsbState()) {
             return;
         }
         if (resultPageParams == NULL) {

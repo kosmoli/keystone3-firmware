@@ -172,7 +172,6 @@ extern GUI_VIEW g_importPhraseView;
 extern GUI_VIEW g_createShareView;
 extern GUI_VIEW g_importShareView;
 extern GUI_VIEW g_settingView;
-extern GUI_VIEW g_connectWalletView;
 
 extern GUI_VIEW g_passphraseView;
 extern GUI_VIEW g_utxoReceiveView;
@@ -184,18 +183,15 @@ extern GUI_VIEW g_firmwareUpdateView;
 
 extern GUI_VIEW g_systemSettingView;
 extern GUI_VIEW g_purposeView;
-extern GUI_VIEW g_aboutView;
-extern GUI_VIEW g_aboutKeystoneView;
 extern GUI_VIEW g_aboutInfoView;
-extern GUI_VIEW g_aboutTermsView;
 extern GUI_VIEW g_wipeDeviceView;
-extern GUI_VIEW g_walletTutorialView;
+
 extern GUI_VIEW g_selfDestructView;
 extern GUI_VIEW g_inactiveView;
 extern GUI_VIEW g_displayView;
-extern GUI_VIEW g_tutorialView;
+
 extern GUI_VIEW g_connectionView;
-extern GUI_VIEW g_DevicePublicKeyView;
+
 extern GUI_VIEW g_multiAccountsReceiveView;
 extern GUI_VIEW g_keyDerivationRequestView;
 extern GUI_VIEW g_deriveContextHashRequestView;

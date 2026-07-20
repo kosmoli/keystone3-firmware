@@ -18,7 +18,6 @@ typedef int32_t(*GuiEventProcessFunc)(void *self, uint16_t usEvent, void *param,
     add(IMPORT_SHARE)           \
     add(SINGLE_PHRASE)          \
     add(IMPORT_SINGLE_PHRASE)   \
-    add(CONNECT_WALLET)         \
     add(SCREEN_SETTING)         \
     add(SCREEN_QRCODE)          \
     add(SCREEN_PASSPHRASE)      \
@@ -33,16 +32,11 @@ typedef int32_t(*GuiEventProcessFunc)(void *self, uint16_t usEvent, void *param,
     add(SCREEN_PURPOSE)         \
     add(SCREEN_SYSTEM_SETTING)  \
     add(SCREEN_WEB_AUTH_RESULT) \
-    add(SCREEN_ABOUT)           \
-    add(SCREEN_ABOUT_KEYSTONE)  \
-    add(SCREEN_ABOUT_TERMS)     \
     add(SCREEN_ABOUT_INFO)      \
     add(SCREEN_WIPE_DEVICE)     \
-    add(SCREEN_WALLET_TUTORIAL) \
     add(SCREEN_SELF_DESTRUCT)   \
     add(SCREEN_INACTIVE)        \
     add(SCREEN_DISPLAY)         \
-    add(SCREEN_TUTORIAL)        \
     add(SCREEN_CONNECTION)      \
     add(SCREEN_MULTI_ACCOUNTS_RECEIVE)          \
     add(SCREEN_KEY_DERIVATION_REQUEST)          \
@@ -51,7 +45,6 @@ typedef int32_t(*GuiEventProcessFunc)(void *self, uint16_t usEvent, void *param,
     add(SCREEN_TRANSACTION_DETAIL)              \
     add(SCREEN_TRANSACTION_SIGNATURE)           \
     add(SCREEN_DICE_ROLLS)                      \
-    add(SCREEN_DEVICE_PUB_KEY)                  \
     add(SCREEN_DEVICE_UPDATE_SUCCESS)           \
     add(SCREEN_BTC_WALLET_PROFILE)              \
     add(SCREEN_MULTI_SIG_IMPORT_WALLET_INFO)    \

@@ -986,46 +986,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
 }
 
 
-/* ═══════════════════════════════════════════════════════════
- * Phase 8: ConnectWallet 状态管理 + 地址生成包装
- * ═══════════════════════════════════════════════════════════ */
-
-
-/* ── ConnectWallet 状态 ──────────────────────────────── */
-
-uint32_t KosmoApi_GetConnectWalletPathIndex(const char *walletName) {
-    return GetConnectWalletPathIndex(walletName);
-}
-
-void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint32_t index) {
-    SetConnectWalletPathIndex(walletName, index);
-}
-
-uint32_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName) {
-    return GetConnectWalletAccountIndex(walletName);
-}
-
-void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint32_t index) {
-    SetConnectWalletAccountIndex(walletName, index);
-}
-
-uint32_t KosmoApi_GetConnectWalletNetwork(const char *walletName) {
-    return GetConnectWalletNetwork(walletName);
-}
-
-void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint32_t network) {
-    SetConnectWalletNetwork(walletName, network);
-}
-
-const char *KosmoApi_GetWalletName(void) {
-    return GetWalletName();
-}
-
-const char *KosmoApi_GetWalletNameByIndex(uint8_t index) {
-    return GetWalletNameByIndex(index);
-}
-
-/* ── 地址生成 ────────────────────────────────────────── */
+/* ── 地址生成包装 ────────────────────────────────────── */
 
 char *KosmoApi_GetXrpAddressByIndex(uint16_t index) {
     return GuiGetXrpAddressByIndex(index);
@@ -1033,14 +994,6 @@ char *KosmoApi_GetXrpAddressByIndex(uint16_t index) {
 
 char *KosmoApi_GetAdaBaseAddressByXPub(char *xpub) {
     return GuiGetADABaseAddressByXPub(xpub);
-}
-
-UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint32_t index) {
-    return GuiGetKeplrDataByIndex(index);
-}
-
-UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName) {
-    return GuiGetADADataByIndex((char *)walletName);
 }
 
 UREncodeResult *KosmoApi_GetXrpToolkitDataByIndex(uint16_t index) {

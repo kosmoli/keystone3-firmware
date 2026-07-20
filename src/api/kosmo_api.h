@@ -307,38 +307,7 @@ uint32_t KosmoApi_GetAdaXPubType(void);
 int32_t KosmoApi_Bip39MnemonicFromBytes(const uint8_t *entropy, uint32_t entropyLen, char **outMnemonic);
 
 
-/* ── ConnectWallet 状态管理 ────────────────────────────── */
-
-/*
- * ConnectWallet 路径索引（读写）。
- * @param walletName  钱包名称（如 "MetaMask", "Keplr"）
- */
-uint32_t KosmoApi_GetConnectWalletPathIndex(const char *walletName);
-void KosmoApi_SetConnectWalletPathIndex(const char *walletName, uint32_t index);
-
-/*
- * ConnectWallet 账户索引（读写）。
- */
-uint32_t KosmoApi_GetConnectWalletAccountIndex(const char *walletName);
-void KosmoApi_SetConnectWalletAccountIndex(const char *walletName, uint32_t index);
-
-/*
- * ConnectWallet 网络选择（读写）。
- */
-uint32_t KosmoApi_GetConnectWalletNetwork(const char *walletName);
-void KosmoApi_SetConnectWalletNetwork(const char *walletName, uint32_t network);
-
-/*
- * 当前钱包名称。
- */
-const char *KosmoApi_GetWalletName(void);
-
-/*
- * 按索引获取钱包名称。
- */
-const char *KosmoApi_GetWalletNameByIndex(uint8_t index);
-
-/* ── 地址生成（ConnectWallet 专用）─────────────────────── */
+/* ── 地址生成 ─────────────────────────────────────────── */
 
 /*
  * XRP 地址。
@@ -349,16 +318,6 @@ char *KosmoApi_GetXrpAddressByIndex(uint16_t index);
  * ADA Base 地址（从 XPub）。
  */
 char *KosmoApi_GetAdaBaseAddressByXPub(char *xpub);
-
-/*
- * Keplr 数据（Cosmos 链 UR）。
- */
-UREncodeResult *KosmoApi_GetKeplrDataByIndex(uint32_t index);
-
-/*
- * ADA 数据（Cardano UR）。
- */
-UREncodeResult *KosmoApi_GetAdaDataByIndex(const char *walletName);
 
 /*
  * XRP Toolkit 数据。

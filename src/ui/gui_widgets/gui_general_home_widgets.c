@@ -440,7 +440,7 @@ static void OpenMoreViewHandler(lv_event_t *e)
 static void OpenMoreSettingHandler(lv_event_t *e)
 {
     MoreInfoTable_t moreInfoTable[] = {
-        {.name = _("home_more_connect_wallet"), .src = &imgConnect, .callBack = OpenMoreViewHandler, &g_connectWalletView},
+
         {.name = _("device_setting_mid_btn"), .src = &imgSettings, .callBack = OpenMoreViewHandler, &g_settingView},
     };
     g_moreHintbox = GuiCreateMoreInfoHintBox(NULL, NULL, moreInfoTable, NUMBER_OF_ARRAYS(moreInfoTable), true, &g_moreHintbox);

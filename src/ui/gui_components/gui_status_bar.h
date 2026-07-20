@@ -4,7 +4,6 @@
 
 #include "gui.h"
 #include "kosmo_types.h"
-#include "gui_connect_wallet_widgets.h"
 
 typedef enum {
     NVS_BAR_RETURN = 0,

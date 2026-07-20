@@ -2,7 +2,7 @@
 #include "gui_wallet.h"
 #include "keystore.h"
 #include "account_public_info.h"
-#include "gui_connect_wallet_widgets.h"
+
 #include "version.h"
 #include "user_memory.h"
 #include "gui_chain.h"

@@ -160,6 +160,14 @@ typedef enum {
     KOSMO_REQ_SIGN_ETH_TX,
     KOSMO_REQ_SIGN_ETH_MESSAGE,
 
+    /* Phase 6c: XMR, ETH Batch, ARWEAVE Signing */
+    KOSMO_REQ_SIGN_XMR_KEYIMAGE,
+    KOSMO_REQ_SIGN_XMR_TX,
+    KOSMO_REQ_SIGN_ETH_BATCH_TX,
+    KOSMO_REQ_SIGN_AR_TX,
+    KOSMO_REQ_SIGN_AR_MESSAGE,
+    KOSMO_REQ_SIGN_AR_DATAITEM,
+
     KOSMO_REQ_NUM,
 } KosmoRequestType;
 
@@ -216,6 +224,13 @@ typedef struct {
         struct { void *urData; bool isBytes; char hdPath[32]; } sign_xrp_tx;
         struct { void *urData; uint32_t urType; bool isUnlimited; bool isBytes; uint8_t viewType; } sign_eth_tx;
         struct { void *urData; } sign_eth_message;
+        /* Phase 6c */
+        struct { void *urData; } sign_xmr_keyimage;
+        struct { void *urData; } sign_xmr_tx;
+        struct { void *urData; } sign_eth_batch_tx;
+        struct { void *urData; } sign_ar_tx;
+        struct { void *urData; } sign_ar_message;
+        struct { void *urData; } sign_ar_dataitem;
     };
 } KosmoRequest;
 

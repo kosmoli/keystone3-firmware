@@ -129,42 +129,24 @@ void *GuiGetMoneroUnsignedTxData(void)
 
 UREncodeResult *GuiGetMoneroKeyimagesQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[64];
-    uint32_t seedLen;
-    do {
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = monero_generate_keyimage(data, seed, seedLen, 0);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_XMR_KEYIMAGE,
+        .sign_xmr_keyimage = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetMoneroSignedTransactionQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[64];
-    uint32_t seedLen;
-    do {
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = monero_generate_signature(data, seed, seedLen, 0);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_XMR_TX,
+        .sign_xmr_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 void FreeMoneroMemory(void)

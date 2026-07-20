@@ -48,6 +48,7 @@
 #include "assert.h"
 #include "version.h"
 #include "user_delay.h"
+#include "rsa.h"
 
 #ifndef COMPILE_SIMULATOR
 #include "sha256.h"
@@ -181,6 +182,12 @@ static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignXrpTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignXmrKeyimage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignXmrTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen);
 
 /* ── ChainType 映射表 ───────────────────────────────── */
 
@@ -1132,6 +1139,44 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         static void *s_urData;
         s_urData = request->sign_eth_message.urData;
         AsyncExecute(ModelSignEthMessage, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+
+    /* ── Phase 6c: XMR, ETH Batch, ARWEAVE ────────── */
+    case KOSMO_REQ_SIGN_XMR_KEYIMAGE: {
+        static void *s_urData;
+        s_urData = request->sign_xmr_keyimage.urData;
+        AsyncExecute(ModelSignXmrKeyimage, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_XMR_TX: {
+        static void *s_urData;
+        s_urData = request->sign_xmr_tx.urData;
+        AsyncExecute(ModelSignXmrTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ETH_BATCH_TX: {
+        static void *s_urData;
+        s_urData = request->sign_eth_batch_tx.urData;
+        AsyncExecute(ModelSignEthBatchTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_AR_TX: {
+        static void *s_urData;
+        s_urData = request->sign_ar_tx.urData;
+        AsyncExecute(ModelSignArTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_AR_MESSAGE: {
+        static void *s_urData;
+        s_urData = request->sign_ar_message.urData;
+        AsyncExecute(ModelSignArMessage, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_AR_DATAITEM: {
+        static void *s_urData;
+        s_urData = request->sign_ar_dataitem.urData;
+        AsyncExecute(ModelSignArDataitem, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
 
@@ -2816,4 +2861,94 @@ static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen)
     ClearSecretCache();
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_MESSAGE, result);
     return KOSMO_OK;
+}
+
+/* ── Phase 6c: XMR, ETH Batch, ARWEAVE Signing ─────── */
+
+static int32_t ModelSignXmrKeyimage(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_XMR_KEYIMAGE, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    UREncodeResult *result = monero_generate_keyimage(urData, seed, seedLen, 0);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_KEYIMAGE, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignXmrTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_XMR_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    UREncodeResult *result = monero_generate_signature(urData, seed, seedLen, 0);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ETH_BATCH_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = eth_sign_batch_tx((PtrUR)urData, (PtrBytes)seed, len);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_BATCH_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignArCommon(KosmoRequestType reqType, void *urData)
+{
+    Rsa_primes_t *primes = FlashReadRsaPrimes();
+    if (primes == NULL) {
+        KosmoApi_NotifyResult(reqType, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+    UREncodeResult *result = ar_sign_tx(urData, primes->p, SPI_FLASH_RSA_PRIME_SIZE,
+                                         primes->q, SPI_FLASH_RSA_PRIME_SIZE);
+    memset_s(primes->p, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
+    memset_s(primes->q, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
+    memset_s(primes, sizeof(Rsa_primes_t), 0, sizeof(Rsa_primes_t));
+    SRAM_FREE(primes);
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(reqType, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_TX, urData);
+}
+
+static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_MESSAGE, urData);
+}
+
+static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_DATAITEM, urData);
 }

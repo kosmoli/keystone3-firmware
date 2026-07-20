@@ -146,14 +146,13 @@ void GuiEthBatchTxWidgetsVerifyPasswordSuccess()
 
 UREncodeResult *GuiGetEthBatchTxSignQrCodeData()
 {
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[64];
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    KosmoApi_GetAccountSeed(KosmoApi_GetCurrentAccountIndex(), seed, KosmoApi_CacheGetPassword());
-    encodeResult = KosmoApi_EthSignBatchTx(data, seed, len);
-    KosmoApi_CacheCleanSecretCache();
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ETH_BATCH_TX,
+        .sign_eth_batch_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static void SignByPasswordCb(bool cancel)

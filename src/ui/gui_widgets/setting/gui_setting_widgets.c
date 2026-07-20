@@ -16,7 +16,7 @@
 #include "fingerprint_process.h"
 #include "screen_manager.h"
 #include <stdlib.h>
-#include "user_fatfs.h"
+// user_fatfs.h removed — OTA check no longer needed
 #include "gui_tutorial_widgets.h"
 
 typedef void (*setting_update_cb)(void *obj, void *param);
@@ -282,11 +282,7 @@ static void GuiSettingEntranceWidget(lv_obj_t *parent)
     char showString[BUFFER_SIZE_64] = {0};
     char version[SOFTWARE_VERSION_MAX_LEN] = {0};
     GetSoftWareVersionNumber(version);
-    if (FatfsFileExist(SD_CARD_OTA_BIN_PATH)) {
-        snprintf_s(showString, BUFFER_SIZE_64, "#8E8E8E v%s#  /  #F5870A %s#", version, _("firmware_update_title"));
-    } else {
-        snprintf_s(showString, BUFFER_SIZE_64, "#8E8E8E %s#", version);
-    }
+    snprintf_s(showString, BUFFER_SIZE_64, "#8E8E8E v%s#", version);
     button = CreateSettingWidgetsButton(parent, _("device_setting_about_title"),
                                         showString, &imgAbout, AboutHandler, NULL);
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, 556 - GUI_MAIN_AREA_OFFSET);

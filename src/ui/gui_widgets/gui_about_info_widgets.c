@@ -268,7 +268,8 @@ static void ConfirmLogExportHandler(lv_event_t *e)
     if (!SdCardInsert()) {
         GuiAboutWidgetsLogExport(false, ERROR_LOG_HAVE_NO_SD_CARD);
     } else {
-        PubValueMsg(LOG_MSG_EXPORT, 0);
+        KosmoRequest r = {.type = KOSMO_REQ_EXPORT_LOG};
+        KosmoApi_Request(&r, NULL);
     }
 }
 

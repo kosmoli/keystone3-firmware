@@ -14,7 +14,7 @@
 
 #ifndef COMPILE_SIMULATOR
 #include "drv_usb.h"
-#include "user_fatfs.h"
+// user_fatfs.h removed — OTA check no longer needed
 #else
 #include "simulator_model.h"
 static void SwitchWalletHandler(lv_event_t *e)
@@ -318,13 +318,7 @@ void GuiStatusBarSetSdCard(bool connected, bool onlyImg)
     sdStatus = connected;
     if (connected) {
         lv_obj_clear_flag(g_guiStatusBar.sdCardImg, LV_OBJ_FLAG_HIDDEN);
-        if (!onlyImg) {
-            uint8_t accountCnt = 0;
-            KosmoApi_GetExistAccountNum(&accountCnt);
-            if (!GuiLockScreenIsTop() && accountCnt > 0 && FatfsFileExist(SD_CARD_OTA_BIN_PATH) && !GuiCheckIfTopView(&g_forgetPassView)) {
-                GuiCreateSdCardUpdateHintbox(false);
-            }
-        }
+        // OTA check removed — KOSMO uses ForgeBox bootloader for firmware updates
     } else {
         lv_obj_add_flag(g_guiStatusBar.sdCardImg, LV_OBJ_FLAG_HIDDEN);
     }

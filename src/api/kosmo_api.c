@@ -58,6 +58,7 @@
 #include "cmsis_os.h"
 #include "fingerprint_process.h"
 #include "user_fatfs.h"
+#include "log.h"
 #include "mhscpu_qspi.h"
 #include "safe_mem_lib.h"
 #include "usb_task.h"
@@ -156,6 +157,7 @@ static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen);
 static int32_t ModelTransactionCheckResultClear(const void *inData, uint32_t inDataLen);
 static int32_t ModelParseTransaction(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t parseTransactionFunc);
 static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen);
+static int32_t ModelExportLog(const void *indata, uint32_t inDataLen);
 static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen);
 static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen);
 static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen);
@@ -970,6 +972,11 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     case KOSMO_REQ_FORMAT_SD_CARD: {
         SetPageLockScreen(false);
         AsyncExecute(ModelFormatMicroSd, NULL, 0);
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_EXPORT_LOG: {
+        SetPageLockScreen(false);
+        AsyncExecute(ModelExportLog, NULL, 0);
         return KOSMO_OK;
     }
     case KOSMO_REQ_CONTROL_QR_DECODE: {
@@ -2570,6 +2577,15 @@ static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)
     }
     SetPageLockScreen(true);
 
+    return SUCCESS_CODE;
+}
+
+static int32_t ModelExportLog(const void *indata, uint32_t inDataLen)
+{
+    UNUSED(indata);
+    UNUSED(inDataLen);
+    LogExportSync();
+    SetPageLockScreen(true);
     return SUCCESS_CODE;
 }
 

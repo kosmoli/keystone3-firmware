@@ -16,6 +16,7 @@
 #include "gui_mnemonic_input.h"
 #include "gui_page.h"
 #include "gui_keyboard_hintbox.h"
+#include "drv_battery.h"
 #include "gui_lock_device_widgets.h"
 #ifdef COMPILE_SIMULATOR
 #include "simulator_model.h"

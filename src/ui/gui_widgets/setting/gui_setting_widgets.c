@@ -206,8 +206,8 @@ static void GuiOpenPassphraseLearnMore()
 
 void OpenPassphraseTutorialHandler(lv_event_t *e)
 {
-    TUTORIAL_LIST_INDEX_ENUM index = TUTORIAL_PASSPHRASE_LEARN_MORE;
-    GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
+    (void)e;
 }
 
 static void OpenPassphraseLearnMoreHandler(lv_event_t *e)
@@ -238,7 +238,7 @@ static void GuiWalletAddLimit(lv_obj_t *parent)
 
 static void AboutHandler(lv_event_t *e)
 {
-    GuiFrameOpenView(&g_aboutView);
+    GuiFrameOpenView(&g_aboutInfoView);
 }
 
 static void GuiSettingEntranceWidget(lv_obj_t *parent)

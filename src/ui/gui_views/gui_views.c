@@ -11,6 +11,7 @@
 #include "gui_lock_device_widgets.h"
 #include "gui_page.h"
 #include "user_memory.h"
+#include "drv_battery.h"
 
 #define IMPORT_WALLET_NOTICE                                            false
 #define CREATE_WALLET_NOTICE                                            true

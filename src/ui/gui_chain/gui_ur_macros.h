@@ -8,9 +8,7 @@
 #define _GUI_UR_MACROS_H
 
 #include <stdio.h>
-
-/* UREncodeResult 前向声明（定义在 rust.h） */
-typedef struct UREncodeResult UREncodeResult;
+#include "librust_c.h"
 
 #define CHECK_CHAIN_BREAK(result)                                       \
     if (result->error_code != 0) {                                      \

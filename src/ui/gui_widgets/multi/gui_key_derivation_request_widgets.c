@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "kosmo_api.h"
 #include "gui_page.h"
+#include "gui_views.h"
 #include "librust_c.h"
 #include "user_memory.h"
 #include "gui_button.h"
@@ -13,6 +14,9 @@
 #include "gui_keyboard_hintbox.h"
 #include "gui_lock_widgets.h"
 #include "gui_key_derivation_request_widgets.h"
+#include "gui_ada.h"
+#include "account_public_info.h"
+#include "gui_ur_macros.h"
 
 typedef struct KeyDerivationWidget {
     uint8_t currentTile;
@@ -1127,8 +1131,7 @@ static void OpenMoreHandlerWithOutDerivationPath(lv_event_t *e)
 
 static void OpenTutorialHandler(lv_event_t *e)
 {
-    WALLET_LIST_INDEX_ENUM *wallet = lv_event_get_user_data(e);
-    GuiFrameOpenViewWithParam(&g_walletTutorialView, wallet, sizeof(WALLET_LIST_INDEX_ENUM));
+    /* g_walletTutorialView removed in Phase 5 — tutorial feature deleted */
     GUI_DEL_OBJ(g_openMoreHintBox);
 }
 

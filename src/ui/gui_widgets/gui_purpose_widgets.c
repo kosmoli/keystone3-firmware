@@ -6,6 +6,7 @@
 #include "gui_hintbox.h"
 #include "gui_single_phrase_widgets.h"
 #include "gui_create_wallet_widgets.h"
+#include "ui_display_task.h"
 #include "user_memory.h"
 #include "background_task.h"
 #include "gui_lock_widgets.h"

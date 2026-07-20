@@ -12,6 +12,7 @@
 #include "user_utils.h"
 #include "gui_home_widgets.h"
 #include "gui_button.h"
+#include "account_public_info.h"
 #include "gui_tutorial_widgets.h"
 #include "gui_fullscreen_mode.h"
 #include "gui_page.h"
@@ -1155,13 +1156,8 @@ static void ExportXpubHandler(lv_event_t *e)
 static void TutorialHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_utxoReceiveWidgets.moreCont);
-    if (g_chainCard == HOME_WALLET_CARD_BTC) {
-        TUTORIAL_LIST_INDEX_ENUM tIndex = TUTORIAL_BTC_RECEIVE;
-        GuiFrameOpenViewWithParam(&g_tutorialView, &tIndex, sizeof(tIndex));
-    } else if (g_chainCard == HOME_WALLET_CARD_LTC) {
-        TUTORIAL_LIST_INDEX_ENUM tIndex = TUTORIAL_LTC_RECEIVE;
-        GuiFrameOpenViewWithParam(&g_tutorialView, &tIndex, sizeof(tIndex));
-    }
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
+    (void)e;
 }
 
 static void LeftBtnHandler(lv_event_t *e)

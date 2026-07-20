@@ -5,9 +5,11 @@
 #include "gui_page.h"
 #include "gui_fullscreen_mode.h"
 #include "kosmo_api.h"
+#include "account_public_info.h"
 #include "assert.h"
 #include "gui_hintbox.h"
 #include "sdcard_manager.h"
+#include "librust_c.h"
 
 #include "gui_animating_qrcode.h"
 #include "gui_home_widgets.h"

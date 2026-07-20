@@ -1,6 +1,7 @@
 #include "gui_eth_batch_tx_widgets.h"
 #include "gui_api.h"
 #include "gui.h"
+#include "gui_views.h"
 #include "gui_page.h"
 #include "kosmo_api.h"
 

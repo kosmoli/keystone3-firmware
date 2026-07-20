@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "gui_views.h"
 
 #include "gui_page.h"
 #include "gui_hintbox.h"

@@ -1048,8 +1048,7 @@ static void TutorialHandler(lv_event_t *e)
         lv_obj_set_style_text_font(obj, g_defTextFont, LV_PART_MAIN);
         lv_obj_add_event_cb(GuiGetHintBoxRightBtn(g_noticeWindow), CloseHintBoxHandler, LV_EVENT_CLICKED, &g_noticeWindow);
     } else {
-        TUTORIAL_LIST_INDEX_ENUM index = GetTutorialIndex();
-        GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+        /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
     }
 }
 

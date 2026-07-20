@@ -114,13 +114,6 @@ static const char *g_normalNumBtnmMap[] = {
     "-", "0", LV_SYMBOL_OK, '\0'
 };
 
-static char *g_emojiBtnmMap[] = {
-    "1", "2", "3", "4", "\n",
-    "5", "6", "7", "8", "\n",
-    "9", "10", "11", "12", "\n",
-    "13", "14", "15", "16", '\0'
-};
-
 static const char *g_selectSliceBtnmMap[] = {
     "2", "3", "4", "5", "6", "\n",
     "7", "8", "9", "10", "11", "\n",
@@ -192,18 +185,8 @@ typedef struct {
     uint16_t size;
 } BtnMatrixCtl_t;
 
-static const lv_img_dsc_t *g_emojiMatrix[16] = {
-    &emojiBitcoin, &emojiEth, &emojiLogo, &emojiAt,
-    &emojiSafe, &emojiFlash, &emojiAlien, &emojiHappy,
-    &emojiRocket, &emojiCrown, &emojiCopper, &emojiStar,
-    &emojiMusic, &emojiHeart, &emojiCompass, &emojiGame,
-};
-
 static MnemonicKeyBoard_t *g_importPhraseKb = NULL;
-static lv_obj_t *g_walletIcon = NULL;
 static lv_obj_t *g_enterProgressLabel = NULL;
-static uint8_t g_currEmojiIndex = 0;
-static uint8_t g_statusBarEmojiIndex = 0;
 char g_wordBuf[GUI_KEYBOARD_CANDIDATE_WORDS_CNT][GUI_KEYBOARD_CANDIDATE_WORDS_LEN];
 static char g_wordChange[GUI_KEYBOARD_CANDIDATE_WORDS_LEN];
 extern TrieSTPtr rootTree;
@@ -358,117 +341,23 @@ static const BtnMatrixCtl_t g_kbCtrlBak[4] = {
     {g_letterCtrlMapBak, sizeof(g_letterCtrlMapBak)},
 };
 
-static void EmojiDrawEventHandler(lv_event_t * e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t *obj = lv_event_get_target(e);
-    lv_obj_t *bgCont = lv_event_get_user_data(e);
-    if (code == LV_EVENT_DRAW_PART_BEGIN) {
-        lv_obj_draw_part_dsc_t * dsc = lv_event_get_draw_part_dsc(e);
-        if (dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN) {
-            dsc->rect_dsc->radius = 30;
-            dsc->rect_dsc->bg_color = DARK_BG_COLOR;
-            dsc->rect_dsc->shadow_width = 0;
-            dsc->rect_dsc->border_width = 1;
-            dsc->rect_dsc->outline_width = 0;
-            dsc->rect_dsc->outline_color = WHITE_COLOR;
-            uint32_t currentId = lv_btnmatrix_get_selected_btn(obj);
-            if (currentId == dsc->id) {
-                dsc->rect_dsc->border_color = ORANGE_COLOR;
-                if (g_walletIcon != NULL) {
-                    lv_img_set_src(g_walletIcon, g_emojiMatrix[dsc->id]);
-                }
-                g_currEmojiIndex = currentId;
-            } else {
-                dsc->rect_dsc->border_opa = LV_OPA_10 + LV_OPA_2;
-                dsc->rect_dsc->border_color = WHITE_COLOR;
-            }
-        }
-    } else if (code == LV_EVENT_DRAW_PART_END) {
-        lv_obj_draw_part_dsc_t * dsc = lv_event_get_draw_part_dsc(e);
-
-        if (dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN) {
-            lv_img_header_t header;
-            lv_res_t res = lv_img_decoder_get_info(g_emojiMatrix[dsc->id], &header);
-            if (res != LV_RES_OK) return;
-
-            lv_area_t a;
-            a.x1 = dsc->draw_area->x1 + (lv_area_get_width(dsc->draw_area) - header.w) / 2;
-            a.x2 = a.x1 + header.w - 1;
-            a.y1 = dsc->draw_area->y1 + (lv_area_get_height(dsc->draw_area) - header.h) / 2;
-            a.y2 = a.y1 + header.h - 1;
-
-            lv_draw_img_dsc_t img_draw_dsc;
-            lv_draw_img_dsc_init(&img_draw_dsc);
-            img_draw_dsc.recolor = lv_color_black();
-            lv_draw_img(dsc->draw_ctx, &img_draw_dsc, &a, g_emojiMatrix[dsc->id]);
-        }
-    } else if (code == LV_EVENT_CLICKED) {
-        lv_obj_del(bgCont);
-        Vibrate(SLIGHT);
-    }
-}
-
 void GuiSetEmojiIconIndex(uint8_t index)
-{
-    if (GUI_KEYBOARD_EMOJI_CANCEL_NEW_INDEX == index) {
-        index = g_statusBarEmojiIndex;
-    } else if (GUI_KEYBOARD_EMOJI_NEW_INDEX == index) {
-        index = 0;
-    }
-    g_currEmojiIndex = index;
-}
+{ (void)index; }
 
 uint8_t GuiSearchIconIndex(lv_obj_t *icon)
-{
-    const void *img = lv_img_get_src(icon);
-    for (uint8_t i = 0; i < sizeof(g_emojiMatrix) / sizeof(g_emojiMatrix[0]); i++) {
-        if (g_emojiMatrix[i] == img) {
-            return i;
-        }
-    }
-    return 0;
-}
+{ (void)icon; return 0; }
 
 uint8_t GuiGetEmojiIconIndex(void)
-{
-    return g_currEmojiIndex;
-}
+{ return 0; }
 
 const lv_img_dsc_t *GuiGetEmojiIconImg(void)
-{
-    return g_emojiMatrix[g_currEmojiIndex];
-}
+{ return NULL; }
 
 void SetStatusBarEmojiIndex(uint8_t index)
-{
-    g_statusBarEmojiIndex = index;
-}
+{ (void)index; }
 
 void *GuiCreateEmojiKeyBoard(lv_obj_t *parent, lv_obj_t *icon)
-{
-    g_walletIcon = icon;
-    lv_obj_t *hintbox = GuiCreateHintBox(534);
-    lv_obj_add_event_cb(lv_obj_get_child(hintbox, 0), CloseHintBoxHandler, LV_EVENT_CLICKED, NULL);
-    lv_obj_t *label = GuiCreateNoticeLabel(hintbox, _("single_backup_namewallet_previnput_2"));
-    lv_obj_set_width(label, 380);
-    lv_obj_align(label, LV_ALIGN_DEFAULT, 36, 296);
-
-    lv_obj_t *img = GuiCreateImgButton(hintbox, &imgClose, 45, CloseCurrentParentHandler, NULL);
-    lv_obj_align(img, LV_ALIGN_TOP_RIGHT, -36, 293);
-
-    lv_obj_t *btnm = lv_btnmatrix_create(hintbox);
-    lv_btnmatrix_set_map(btnm, (const char **)g_emojiBtnmMap);
-    lv_obj_set_size(btnm, 440, 440);
-    lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_style_bg_color(btnm, DARK_BG_COLOR, LV_PART_MAIN);
-    lv_obj_set_style_text_color(btnm, DARK_BG_COLOR, LV_PART_MAIN);
-    lv_obj_set_style_border_width(btnm, 0, 0);
-    lv_btnmatrix_set_selected_btn(btnm, g_currEmojiIndex);
-    lv_obj_set_style_pad_gap(btnm, 24, LV_PART_MAIN);
-    lv_obj_add_event_cb(btnm, EmojiDrawEventHandler, LV_EVENT_ALL, hintbox);
-    return hintbox;
-}
+{ (void)parent; (void)icon; return NULL; }
 
 static void ShuffleNumKeyBoardMap(const char **map)
 {

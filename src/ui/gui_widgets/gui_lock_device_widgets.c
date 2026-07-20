@@ -10,6 +10,7 @@
 #include "gui_page.h"
 #include "gui_hintbox.h"
 #include "user_memory.h"
+#include "drv_battery.h"
 
 typedef struct {
     uint16_t leftErrorCode;

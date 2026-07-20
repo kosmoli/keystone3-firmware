@@ -6,6 +6,7 @@
 #include "gui_obj.h"
 #include "gui_status_bar.h"
 #include "gui_lock_widgets.h"
+#include "ui_display_task.h"
 #include "kosmo_api.h"
 #include "gui_setup_widgets.h"
 #include "background_task.h"
@@ -15,6 +16,7 @@
 #include "version.h"
 #include "user_memory.h"
 #include "user_fatfs.h"
+#include "drv_battery.h"
 
 static void Sha256ProgressCallback(const KosmoResult *result);
 

@@ -153,24 +153,7 @@ LV_IMG_DECLARE(imgSoftwareWallet);
 LV_IMG_DECLARE(imgJupiter);
 LV_IMG_DECLARE(imgEllipse);
 LV_IMG_DECLARE(imgEnterPassphrase);
-// emoji
-LV_IMG_DECLARE(emojiAlien);
-LV_IMG_DECLARE(emojiAt);
-LV_IMG_DECLARE(emojiBitcoin);
-LV_IMG_DECLARE(emojiCompass);
-LV_IMG_DECLARE(emojiCopper);
-LV_IMG_DECLARE(emojiCrown);
-LV_IMG_DECLARE(emojiEth);
-LV_IMG_DECLARE(emojiFlash);
-LV_IMG_DECLARE(emojiGame);
-LV_IMG_DECLARE(emojiHappy);
-LV_IMG_DECLARE(emojiHeart);
-LV_IMG_DECLARE(emojiLogo);
-LV_IMG_DECLARE(emojiMusic);
-LV_IMG_DECLARE(emojiRocket);
-LV_IMG_DECLARE(emojiSafe);
-LV_IMG_DECLARE(emojiStar);
-LV_IMG_DECLARE(emojiCam);
+
 
 // coin
 LV_IMG_DECLARE(coinApt);

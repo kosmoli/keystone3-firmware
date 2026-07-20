@@ -86,13 +86,11 @@ static void QuestionMarkEventCb(lv_event_t *e)
 {
     uint8_t index = TUTORIAL_SHAMIR_BACKUP;
     GUI_DEL_OBJ(g_openMoreHintBox);
-    GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
+    (void)index;
 }
 
-static void OpenEmojiKbHandler(lv_event_t *e)
-{
-    GuiCreateEmojiKeyBoard(lv_scr_act(), g_nameWalletIcon);
-}
+/* Emoji picker removed in Phase 5 — wallet naming feature deleted */
 
 static void GuiCreateNameWalletWidget(lv_obj_t *parent)
 {
@@ -104,7 +102,7 @@ static void GuiCreateNameWalletWidget(lv_obj_t *parent)
     lv_obj_set_style_text_opa(label, LV_OPA_60, LV_PART_MAIN);
     GuiAlignToPrevObj(label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 12);
 
-    GuiSetEmojiIconIndex(GUI_KEYBOARD_EMOJI_NEW_INDEX);
+    GuiSetEmojiIconIndex(0);
     g_nameWalletKb = GuiCreateFullKeyBoard(parent, ReadyNextTileHandler, KEY_STONE_FULL_L, NULL);
     GuiSetKeyBoardMinTaLen(g_nameWalletKb, 0);
     lv_obj_set_size(g_nameWalletKb->ta, 300, 60);
@@ -118,24 +116,7 @@ static void GuiCreateNameWalletWidget(lv_obj_t *parent)
     lv_obj_align(progresslabel, LV_ALIGN_TOP_RIGHT, -36, 384 - GUI_MAIN_AREA_OFFSET);
     GuiSetEnterProgressLabel(progresslabel);
 
-    lv_obj_t *img = GuiCreateImg(parent, &emojiBitcoin);
-    lv_obj_t *arrowDownImg = GuiCreateImg(parent, &imgArrowDownS);
-    g_nameWalletIcon = img;
-    GuiButton_t table[] = {
-        {
-            .obj = img,
-            .align = LV_ALIGN_LEFT_MID,
-            .position = {15, 0},
-        },
-        {
-            .obj = arrowDownImg,
-            .align = LV_ALIGN_LEFT_MID,
-            .position = {59, 0},
-        },
-    };
-    lv_obj_t *button = GuiCreateButton(parent, 100, 70, table, NUMBER_OF_ARRAYS(table), OpenEmojiKbHandler, NULL);
-    lv_obj_align(button, LV_ALIGN_DEFAULT, 24, 312 - GUI_MAIN_AREA_OFFSET);
-    lv_obj_set_style_radius(button, 16, LV_PART_MAIN);
+    /* Emoji icon picker removed in Phase 5 — wallet naming feature deleted */
 
     lv_obj_t *line = GuiCreateDividerLine(parent);
     lv_obj_align(line, LV_ALIGN_DEFAULT, 0, 380 - GUI_MAIN_AREA_OFFSET);
@@ -697,8 +678,8 @@ static void ChangeEntropyMethodHandler(lv_event_t *e)
 
 static void OpenChangeEntropyTutorialHandler(lv_event_t *e)
 {
-    uint8_t index = TUTORIAL_CHANGE_ENTROPY;
-    GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
+    (void)e;
 }
 
 static void PassphraseButtonHandler(lv_event_t *e)

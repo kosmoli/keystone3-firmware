@@ -8,6 +8,7 @@
 #include "gui_views.h"
 #include "gui_ur_macros.h"
 #include "kosmo_api.h"
+#include "account_public_info.h"
 #include "gui_keyboard_hintbox.h"
 #include "gui_lock_widgets.h"
 #include "gui_animating_qrcode.h"

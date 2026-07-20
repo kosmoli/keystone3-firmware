@@ -16,6 +16,7 @@
 #include "gui.h"
 #include "gui_tutorial_widgets.h"
 #include "gui_button.h"
+#include "account_manager.h"
 #ifdef COMPILE_SIMULATOR
 #include "simulator_mock_define.h"
 #endif
@@ -806,8 +807,8 @@ static void TutorialHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_standardReceiveWidgets.moreCont);
 
-    TUTORIAL_LIST_INDEX_ENUM index = TUTORIAL_ETH_RECEIVE;
-    GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
+    (void)e;
 }
 
 static void LeftBtnHandler(lv_event_t *e)

@@ -897,11 +897,7 @@ static void TutorialHandler(lv_event_t *e)
 {
     GUI_DEL_OBJ(g_multiAccountsReceiveWidgets.moreCont);
 
-    TUTORIAL_LIST_INDEX_ENUM index = TUTORIAL_ADA_RECEIVE;
-    if (g_chainCard == HOME_WALLET_CARD_MONERO) {
-        index = TUTORIAL_XMR_RECEIVE;
-    }
-    GuiFrameOpenViewWithParam(&g_tutorialView, &index, sizeof(index));
+    /* g_tutorialView removed in Phase 5 — tutorial feature deleted */
 }
 
 static void SetKeyboardValid(bool validation)

@@ -2,6 +2,7 @@
 #include "gui.h"
 #include "lvgl.h"
 #include "gui_framework.h"
+#include "gui_views.h"
 #include "gui_status_bar.h"
 #include "gui_hintbox.h"
 #include "gui_tutorial_widgets.h"

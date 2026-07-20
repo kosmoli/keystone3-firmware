@@ -33,13 +33,24 @@ void GuiSetAvaxUrData(URParseResult *urResult, URParseMultiResult *urMultiResult
 UREncodeResult *GuiGetAvaxSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(avax_sign, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_AVAX_TX,
+        .sign_avax_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetAvaxSignUrDataUnlimited(void)
 {
+    /* Unlimited variant uses same backend path — avax_sign handles both */
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(avax_sign_unlimited, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_AVAX_TX,
+        .sign_avax_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 PtrT_TransactionCheckResult GuiGetAvaxCheckResult(void)

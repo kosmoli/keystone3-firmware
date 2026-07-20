@@ -1,7 +1,6 @@
 #include "gui_ton.h"
 #include "kosmo_api.h"
 #include "rust.h"
-#include "secret_cache.h"
 #include "gui_chain.h"
 #include "gui_chain_components.h"
 
@@ -45,42 +44,24 @@ void GuiSetTonUrData(URParseResult *urResult, URParseMultiResult *urMultiResult,
 
 UREncodeResult *GuiGetTonSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[64];
-    uint32_t seedLen;
-    do {
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = ton_sign_transaction(data, seed, seedLen);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_TON_TX,
+        .sign_ton_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetTonProofSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[64];
-    uint32_t seedLen;
-    do {
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        CHECK_ERRCODE_BREAK("GetAccountSeed", ret);
-        encodeResult = ton_sign_proof(data, seed, seedLen);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_TON_PROOF,
+        .sign_ton_proof = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 PtrT_TransactionCheckResult GuiGetTonCheckResult(void)

@@ -265,11 +265,21 @@ void GetSuiDetail(void *indata, void *param, uint32_t maxLen)
 UREncodeResult *GuiGetSuiSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(sui_sign_intent, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_SUI_TX,
+        .sign_sui_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetSuiSignHashQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(sui_sign_hash, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_SUI_HASH,
+        .sign_sui_hash = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }

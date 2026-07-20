@@ -161,6 +161,20 @@ static void ModelStopCalculateCheckSum(void);
 static bool ModelGetPassphraseQuickAccess(void);
 int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 
+/* Phase 6: Signing Model handlers */
+static int32_t ModelSignSolTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAvaxTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen);
+
 /* ── ChainType 映射表 ───────────────────────────────── */
 
 typedef struct {
@@ -302,6 +316,17 @@ void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data,
     };
     cb(&result);
 #endif
+}
+
+/* Phase 6: Signing result helper */
+void KosmoApi_NotifySignResult(KosmoRequestType reqType, void *result)
+{
+    UREncodeResult *ur = (UREncodeResult *)result;
+    if (ur != NULL && ur->error_code == 0) {
+        KosmoApi_NotifyResult(reqType, KOSMO_OK, ur, sizeof(*ur));
+    } else {
+        KosmoApi_NotifyResult(reqType, KOSMO_ERR_GENERAL, NULL, 0);
+    }
 }
 
 /* KosmoApi_Request 实现在文件末尾（Phase 2 分发逻辑） */
@@ -977,6 +1002,81 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     /* ── RSA ──────────────────────────────────────── */
     case KOSMO_REQ_RSA_GENERATE_KEYPAIR: {
         AsyncExecute(ModelRsaGenerateKeyPair, NULL, 0);
+        return KOSMO_OK;
+    }
+
+    /* ── Phase 6: Transaction Signing ─────────────── */
+    case KOSMO_REQ_SIGN_SOL_TX: {
+        static void *s_urData;
+        s_urData = request->sign_sol_tx.urData;
+        AsyncExecute(ModelSignSolTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_SOL_MESSAGE: {
+        static void *s_urData;
+        s_urData = request->sign_sol_message.urData;
+        AsyncExecute(ModelSignSolMessage, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_TON_TX: {
+        static void *s_urData;
+        s_urData = request->sign_ton_tx.urData;
+        AsyncExecute(ModelSignTonTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_TON_PROOF: {
+        static void *s_urData;
+        s_urData = request->sign_ton_proof.urData;
+        AsyncExecute(ModelSignTonProof, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_STELLAR_TX:
+    case KOSMO_REQ_SIGN_STELLAR_HASH: {
+        static void *s_urData;
+        s_urData = request->sign_stellar_tx.urData;
+        AsyncExecute(ModelSignStellarTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_APTOS_TX: {
+        static void *s_urData;
+        s_urData = request->sign_aptos_tx.urData;
+        AsyncExecute(ModelSignAptosTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_AVAX_TX: {
+        static void *s_urData;
+        s_urData = request->sign_avax_tx.urData;
+        AsyncExecute(ModelSignAvaxTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_SUI_TX: {
+        static void *s_urData;
+        s_urData = request->sign_sui_tx.urData;
+        AsyncExecute(ModelSignSuiTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_SUI_HASH: {
+        static void *s_urData;
+        s_urData = request->sign_sui_hash.urData;
+        AsyncExecute(ModelSignSuiHash, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_IOTA_TX: {
+        static void *s_urData;
+        s_urData = request->sign_iota_tx.urData;
+        AsyncExecute(ModelSignIotaTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_IOTA_HASH: {
+        static void *s_urData;
+        s_urData = request->sign_iota_hash.urData;
+        AsyncExecute(ModelSignIotaHash, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ZCASH_TX: {
+        static void *s_urData;
+        s_urData = request->sign_zcash_tx.urData;
+        AsyncExecute(ModelSignZcashTx, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
 
@@ -2385,4 +2485,120 @@ int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType)
     SetLockScreen(lockState);
     ClearLockScreenTime();
     return ret;
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 6: Signing Model handlers
+ *
+ * All follow the same pattern:
+ *   1. Extract urData pointer from the async parameter
+ *   2. Get seed via KosmoApi_GetSeed()
+ *   3. Call Rust signing function
+ *   4. Clear seed from memory
+ *   5. Notify result via KosmoApi_NotifySignResult()
+ * ═══════════════════════════════════════════════════════════ */
+
+/* Generic signing helper — covers chains with (data, seed, len) signature */
+static int32_t ModelSignGeneric(KosmoRequestType reqType, void *urData,
+                                 UREncodeResult *(*signFn)(void *, PtrBytes, uint32_t))
+{
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(reqType, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = signFn(urData, seed, len);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(reqType, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignSolTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_SOL_TX, urData, solana_sign_tx);
+}
+
+static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    /* solana_sign_tx handles both tx and message in the current Rust API */
+    return ModelSignGeneric(KOSMO_REQ_SIGN_SOL_MESSAGE, urData, solana_sign_tx);
+}
+
+static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_TON_TX, urData, ton_sign_transaction);
+}
+
+static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_TON_PROOF, urData, ton_sign_proof);
+}
+
+static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_STELLAR_TX, urData, stellar_sign);
+}
+
+static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_APTOS_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    const char *pubKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_APT);
+    UREncodeResult *result = aptos_sign_tx(urData, seed, len, (char *)pubKey);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_APTOS_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignAvaxTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_AVAX_TX, urData, avax_sign);
+}
+
+static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_SUI_TX, urData, sui_sign_intent);
+}
+
+static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_SUI_HASH, urData, sui_sign_hash);
+}
+
+static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_IOTA_TX, urData, iota_sign_intent);
+}
+
+static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_IOTA_HASH, urData, iota_sign_hash);
+}
+
+static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    return ModelSignGeneric(KOSMO_REQ_SIGN_ZCASH_TX, urData, sign_zcash_tx);
 }

@@ -48,6 +48,15 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb);
 void KosmoApi_NotifyResult(KosmoRequestType type, int32_t errorCode, void *data, uint32_t dataLen);
 
 /*
+ * 签名结果通知辅助函数。
+ * Model* 签名函数完成后调用，检查 UREncodeResult 并触发 UI callback。
+ *
+ * @param reqType  请求类型（KOSMO_REQ_SIGN_*）
+ * @param result   Rust 签名返回的 UREncodeResult（可能为 NULL）
+ */
+void KosmoApi_NotifySignResult(KosmoRequestType reqType, void *result);
+
+/*
  * 注册结果回调（不触发 Model 函数）。
  * @param type        请求类型
  * @param cb          回调函数

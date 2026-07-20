@@ -75,21 +75,13 @@ void GuiSetStellarUrData(URParseResult *urResult, URParseMultiResult *urMultiRes
 
 UREncodeResult *GuiGetStellarSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t seed[64];
-        uint32_t seedLen;
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        (void)ret;
-        encodeResult = stellar_sign(data, seed, seedLen);
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_STELLAR_TX,
+        .sign_stellar_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static void CreateStellarNoticeCOntainer(lv_obj_t *parent, const char *title, const char *context, lv_coord_t w, lv_coord_t h)

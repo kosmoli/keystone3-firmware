@@ -309,7 +309,12 @@ PtrT_TransactionCheckResult GuiGetZcashCheckResult(void)
 UREncodeResult *GuiGetZcashSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(sign_zcash_tx, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ZCASH_TX,
+        .sign_zcash_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 void FreeZcashMemory(void)

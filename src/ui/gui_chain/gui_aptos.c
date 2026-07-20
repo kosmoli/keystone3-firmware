@@ -81,29 +81,13 @@ bool IsAptosMsg(ViewType viewType)
 
 UREncodeResult *GuiGetAptosSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    uint8_t seed[SEED_LEN];
-    int ret = 0;
-
-    do {
-        uint32_t seedLen = 0;
-        ret = KosmoApi_GetSeed(seed, &seedLen);
-        if (ret != KOSMO_OK) {
-            break;
-        }
-        char *path = aptos_get_path(data);
-        const char *pubKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_APT);
-        free_ptr_string(path);
-        encodeResult = aptos_sign_tx(data, seed, seedLen, (char *)pubKey);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_APTOS_TX,
+        .sign_aptos_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static uint8_t GetAptosPublickeyIndex(char* rootPath)

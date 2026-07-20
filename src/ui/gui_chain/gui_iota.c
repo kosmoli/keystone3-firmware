@@ -85,7 +85,12 @@ void FreeIotaMemory(void)
 UREncodeResult *GuiGetIotaSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(iota_sign_intent, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_IOTA_TX,
+        .sign_iota_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 bool GetIotaIsTransaction(void *indata, void *param)
@@ -186,5 +191,10 @@ void GuiIotaTxRawData(lv_obj_t *parent, void *totalData)
 UREncodeResult *GuiGetIotaSignHashQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    return SignInternal(iota_sign_hash, data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_IOTA_HASH,
+        .sign_iota_hash = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }

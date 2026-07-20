@@ -137,6 +137,21 @@ typedef enum {
     /* RSA */
     KOSMO_REQ_RSA_GENERATE_KEYPAIR,          /* 生成 RSA 密钥对 */
 
+    /* Phase 6: Transaction Signing */
+    KOSMO_REQ_SIGN_SOL_TX,
+    KOSMO_REQ_SIGN_SOL_MESSAGE,
+    KOSMO_REQ_SIGN_TON_TX,
+    KOSMO_REQ_SIGN_TON_PROOF,
+    KOSMO_REQ_SIGN_STELLAR_TX,
+    KOSMO_REQ_SIGN_STELLAR_HASH,
+    KOSMO_REQ_SIGN_APTOS_TX,
+    KOSMO_REQ_SIGN_AVAX_TX,
+    KOSMO_REQ_SIGN_SUI_TX,
+    KOSMO_REQ_SIGN_SUI_HASH,
+    KOSMO_REQ_SIGN_IOTA_TX,
+    KOSMO_REQ_SIGN_IOTA_HASH,
+    KOSMO_REQ_SIGN_ZCASH_TX,
+
     KOSMO_REQ_NUM,
 } KosmoRequestType;
 
@@ -171,6 +186,21 @@ typedef struct {
         struct { bool enable; } bool_param;
         struct { uint8_t viewType; } view_type;
         struct { void *ptr; } raw_ptr;
+
+        /* Phase 6: Transaction Signing */
+        struct { void *urData; } sign_sol_tx;
+        struct { void *urData; } sign_sol_message;
+        struct { void *urData; } sign_ton_tx;
+        struct { void *urData; } sign_ton_proof;
+        struct { void *urData; } sign_stellar_tx;
+        struct { void *urData; } sign_stellar_hash;
+        struct { void *urData; } sign_aptos_tx;
+        struct { void *urData; } sign_avax_tx;
+        struct { void *urData; } sign_sui_tx;
+        struct { void *urData; } sign_sui_hash;
+        struct { void *urData; } sign_iota_tx;
+        struct { void *urData; } sign_iota_hash;
+        struct { void *urData; } sign_zcash_tx;
     };
 } KosmoRequest;
 

@@ -3,7 +3,6 @@
 #include "rust.h"
 #include "gui_chain.h"
 #include "version.h"
-#include "secret_cache.h"
 #include "screen_manager.h"
 #include "assert.h"
 #include "cjson/cJSON.h"
@@ -49,21 +48,13 @@ void GuiSetSolUrData(URParseResult *urResult, URParseMultiResult *urMultiResult,
 
 UREncodeResult *GuiGetSolSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t seed[64];
-        uint32_t seedLen;
-        int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-        (void)ret;
-        encodeResult = solana_sign_tx(data, seed, seedLen);
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_SOL_TX,
+        .sign_sol_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 void *GuiGetSolData(void)

@@ -168,6 +168,14 @@ typedef enum {
     KOSMO_REQ_SIGN_AR_MESSAGE,
     KOSMO_REQ_SIGN_AR_DATAITEM,
 
+    /* Phase 6c part 2: BTC and ADA Signing */
+    KOSMO_REQ_SIGN_BTC_PSBT,
+    KOSMO_REQ_SIGN_BTC_MESSAGE,
+    KOSMO_REQ_SIGN_ADA_TX,
+    KOSMO_REQ_SIGN_ADA_TX_HASH,
+    KOSMO_REQ_SIGN_ADA_SIGN_DATA,
+    KOSMO_REQ_SIGN_ADA_CATALYST,
+
     KOSMO_REQ_NUM,
 } KosmoRequestType;
 
@@ -231,6 +239,13 @@ typedef struct {
         struct { void *urData; } sign_ar_tx;
         struct { void *urData; } sign_ar_message;
         struct { void *urData; } sign_ar_dataitem;
+        /* Phase 6c part 2: BTC and ADA */
+        struct { void *urData; uint32_t urType; bool isUnlimited; uint8_t viewType; } sign_btc_psbt;
+        struct { void *urData; uint32_t urType; } sign_btc_message;
+        struct { void *urData; bool isUnlimited; } sign_ada_tx;
+        struct { void *urData; } sign_ada_tx_hash;
+        struct { void *urData; } sign_ada_sign_data;
+        struct { void *urData; } sign_ada_catalyst;
     };
 } KosmoRequest;
 

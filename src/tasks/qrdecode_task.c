@@ -19,7 +19,6 @@
 #include "gui_analyze.h"
 #include "assert.h"
 #include "qrdecode_task.h"
-#endif
 
 #define QUIT_AREA_X_START                   10
 #define QUIT_AREA_Y_START                   64

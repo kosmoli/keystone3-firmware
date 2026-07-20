@@ -14,6 +14,7 @@
 #include "gui_home_widgets.h"
 #include "gui_transaction_detail_widgets.h"
 #include "err_code.h"
+#include "kosmo_api.h"
 
 #define CHECK_FREE_PARSE_RESULT(result)                       \
     if (result != NULL)                                       \
@@ -109,12 +110,54 @@ static UREncodeResult *GuiGetSignPsbtBytesCodeData(void)
 
 UREncodeResult *GuiGetBtcSignQrCodeData(void)
 {
-    return GetBtcSignDataDynamic(false);
+    enum QRCodeType urType = URTypeUnKnown;
+    enum ViewType viewType = ViewTypeUnKnown;
+    void *data = NULL;
+    if (g_isMulti) {
+        urType = g_urMultiResult->ur_type;
+        viewType = g_urMultiResult->t;
+        data = g_urMultiResult->data;
+    } else {
+        urType = g_urResult->ur_type;
+        viewType = g_urResult->t;
+        data = g_urResult->data;
+    }
+    if (urType == BtcSignRequest || urType == SeedSignerMessage) {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_BTC_MESSAGE,
+            .sign_btc_message = { .urData = data, .urType = urType },
+        };
+        KosmoApi_Request(&req, NULL);
+    } else {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_BTC_PSBT,
+            .sign_btc_psbt = { .urData = data, .urType = urType, .isUnlimited = false, .viewType = viewType },
+        };
+        KosmoApi_Request(&req, NULL);
+    }
+    return NULL;
 }
 
 UREncodeResult *GuiGetBtcSignUrDataUnlimited(void)
 {
-    return GetBtcSignDataDynamic(true);
+    enum QRCodeType urType = URTypeUnKnown;
+    enum ViewType viewType = ViewTypeUnKnown;
+    void *data = NULL;
+    if (g_isMulti) {
+        urType = g_urMultiResult->ur_type;
+        viewType = g_urMultiResult->t;
+        data = g_urMultiResult->data;
+    } else {
+        urType = g_urResult->ur_type;
+        viewType = g_urResult->t;
+        data = g_urResult->data;
+    }
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_BTC_PSBT,
+        .sign_btc_psbt = { .urData = data, .urType = urType, .isUnlimited = true, .viewType = viewType },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static UREncodeResult *BtcSignPsbt(void *data, uint8_t *seed, int len, uint8_t *mfp, uint32_t mfpLen, bool unLimit)

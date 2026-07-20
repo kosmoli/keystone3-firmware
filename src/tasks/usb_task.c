@@ -47,7 +47,6 @@ void OpenUsb()
 {
     PubValueMsg(USB_MSG_INIT, 0);
     ClearUSBRequestId();
-#endif
 }
 
 bool GetUsbState(void)

@@ -37,6 +37,7 @@
 #include "fetch_sensitive_data_task.h"
 #include "gui_setting_widgets.h"
 #include "gui_chain.h"
+#include "gui_transaction_detail_widgets.h"
 #include "user_utils.h"
 #include "device_setting.h"
 #include "presetting.h"
@@ -188,6 +189,13 @@ static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen);
+/* Phase 6c part 2: BTC and ADA */
+static int32_t ModelSignBtcPsbt(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignBtcMessage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAdaTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen);
 
 /* ── ChainType 映射表 ───────────────────────────────── */
 
@@ -1177,6 +1185,49 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         static void *s_urData;
         s_urData = request->sign_ar_dataitem.urData;
         AsyncExecute(ModelSignArDataitem, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+
+    /* ── Phase 6c part 2: BTC and ADA Signing ─────── */
+    case KOSMO_REQ_SIGN_BTC_PSBT: {
+        static void *s_arr[4];
+        s_arr[0] = request->sign_btc_psbt.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_btc_psbt.urType;
+        s_arr[2] = (void *)(uintptr_t)request->sign_btc_psbt.isUnlimited;
+        s_arr[3] = (void *)(uintptr_t)request->sign_btc_psbt.viewType;
+        AsyncExecute(ModelSignBtcPsbt, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_BTC_MESSAGE: {
+        static void *s_arr[2];
+        s_arr[0] = request->sign_btc_message.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_btc_message.urType;
+        AsyncExecute(ModelSignBtcMessage, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ADA_TX: {
+        static void *s_arr[2];
+        s_arr[0] = request->sign_ada_tx.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_ada_tx.isUnlimited;
+        AsyncExecute(ModelSignAdaTx, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ADA_TX_HASH: {
+        static void *s_urData;
+        s_urData = request->sign_ada_tx_hash.urData;
+        AsyncExecute(ModelSignAdaTxHash, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ADA_SIGN_DATA: {
+        static void *s_urData;
+        s_urData = request->sign_ada_sign_data.urData;
+        AsyncExecute(ModelSignAdaSignData, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ADA_CATALYST: {
+        static void *s_urData;
+        s_urData = request->sign_ada_catalyst.urData;
+        AsyncExecute(ModelSignAdaCatalyst, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
 
@@ -2951,4 +3002,343 @@ static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen)
 {
     void *urData = *(void **)inData;
     return ModelSignArCommon(KOSMO_REQ_SIGN_AR_DATAITEM, urData);
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * Phase 6c part 2: BTC and ADA Signing
+ * ═══════════════════════════════════════════════════════════ */
+
+/* ── BTC Signing ──────────────────────────────────────── */
+
+static void BtcPreparePublicKeys(PtrT_CSliceFFI_ExtendedPublicKey public_keys, ExtendedPublicKey *keys)
+{
+    public_keys->data = keys;
+    public_keys->size = 4;
+    keys[0].path = "m/84'/0'/0'";
+    keys[0].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_NATIVE_SEGWIT);
+    keys[1].path = "m/49'/0'/0'";
+    keys[1].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC);
+    keys[2].path = "m/44'/0'/0'";
+    keys[2].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_LEGACY);
+    keys[3].path = "m/86'/0'/0'";
+    keys[3].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BTC_TAPROOT);
+    public_keys->size = 9;
+    keys[4].path = "m/44'/60'/0'";
+    keys[4].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_AVAX_BIP44_STANDARD);
+    keys[5].path = "m/44'/3'/0'";
+    keys[5].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_DOGE);
+    keys[6].path = "m/49'/2'/0'";
+    keys[6].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_LTC);
+    keys[7].path = "m/84'/2'/0'";
+    keys[7].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_LTC_NATIVE_SEGWIT);
+    keys[8].path = "m/44'/5'/0'";
+    keys[8].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_DASH);
+    keys[9].path = "m/44'/145'/0'";
+    keys[9].xpub = GetCurrentAccountPublicKey(XPUB_TYPE_BCH);
+}
+
+static int32_t BtcGetUtxoPubKeyAndHdPath(ViewType viewType, char **xPub, char **hdPath)
+{
+    /* Same mapping as gui_btc.c g_UtxoViewToChainMap */
+    typedef struct { ViewType viewType; ChainType chainType; char *hdPath; } UtxoViewToChain_t;
+    static const UtxoViewToChain_t map[] = {
+        {BtcNativeSegwitTx, XPUB_TYPE_BTC_NATIVE_SEGWIT, "m/84'/0'/0'"},
+        {BtcSegwitTx, XPUB_TYPE_BTC, "m/49'/0'/0'"},
+        {BtcLegacyTx, XPUB_TYPE_BTC_LEGACY, "m/44'/0'/0'"},
+        {LtcTx, XPUB_TYPE_LTC, "m/49'/2'/0'"},
+        {DashTx, XPUB_TYPE_DASH, "m/44'/5'/0'"},
+        {BchTx, XPUB_TYPE_BCH, "m/44'/145'/0'"},
+        {DogeTx, XPUB_TYPE_DOGE, "m/44'/3'/0'"},
+    };
+    for (uint32_t i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+        if (viewType == map[i].viewType) {
+            *hdPath = map[i].hdPath;
+            *xPub = GetCurrentAccountPublicKey(map[i].chainType);
+            return 0;
+        }
+    }
+    *xPub = NULL;
+    return -1;
+}
+
+static int32_t ModelSignBtcPsbt(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+    bool isUnlimited = (bool)(uintptr_t)arr[2];
+    ViewType viewType = (ViewType)(uintptr_t)arr[3];
+
+    uint8_t seed[64] = {0};
+    uint8_t accountIdx = GetCurrentAccountIndex();
+    const char *password = SecretCacheGetPassword();
+    if (password == NULL) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_BTC_PSBT, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+    int len = GetCurrentAccountSeedLen();
+    int ret = GetAccountSeed(accountIdx, seed, password);
+    if (ret != 0) {
+        memset_s(seed, sizeof(seed), 0, sizeof(seed));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_BTC_PSBT, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    uint8_t mfp[4] = {0};
+    GetMasterFingerPrint(mfp);
+    UREncodeResult *result = NULL;
+
+    if (urType == CryptoPSBT) {
+        if (GuiGetCurrentTransactionType() == TRANSACTION_TYPE_BTC_MULTISIG) {
+            /* Multisig PSBT — currently returns NULL (not implemented) */
+            result = NULL;
+        } else {
+            if (GuiGetCurrentTransactionNeedSign()) {
+                if (isUnlimited) {
+                    result = btc_sign_psbt_unlimited(urData, seed, len, mfp, sizeof(mfp));
+                } else {
+                    result = btc_sign_psbt(urData, seed, len, mfp, sizeof(mfp));
+                }
+            }
+        }
+    } else if (urType == Bytes || urType == KeystoneSignRequest) {
+        char *hdPath = NULL;
+        char *xPub = NULL;
+        if (0 != BtcGetUtxoPubKeyAndHdPath(viewType, &xPub, &hdPath)) {
+            memset_s(seed, sizeof(seed), 0, sizeof(seed));
+            KosmoApi_NotifyResult(KOSMO_REQ_SIGN_BTC_PSBT, KOSMO_ERR_GENERAL, NULL, 0);
+            return KOSMO_ERR_GENERAL;
+        }
+        result = utxo_sign_keystone(urData, urType, mfp, sizeof(mfp), xPub, SOFTWARE_VERSION, seed, len);
+    } else if (urType == CryptoPSBTExtend) {
+        PtrT_CSliceFFI_ExtendedPublicKey public_keys = SRAM_MALLOC(sizeof(CSliceFFI_ExtendedPublicKey));
+        ExtendedPublicKey keys[14];
+        BtcPreparePublicKeys(public_keys, keys);
+        result = utxo_sign_psbt_extend(urData, seed, len, mfp, sizeof(mfp), isUnlimited);
+        SRAM_FREE(public_keys);
+    }
+
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_BTC_PSBT, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignBtcMessage(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+
+    uint8_t seed[64] = {0};
+    uint8_t accountIdx = GetCurrentAccountIndex();
+    const char *password = SecretCacheGetPassword();
+    if (password == NULL) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_BTC_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+    int len = GetCurrentAccountSeedLen();
+    int ret = GetAccountSeed(accountIdx, seed, password);
+    if (ret != 0) {
+        memset_s(seed, sizeof(seed), 0, sizeof(seed));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_BTC_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    uint8_t mfp[4] = {0};
+    GetMasterFingerPrint(mfp);
+    UREncodeResult *result = NULL;
+
+    if (urType == BtcSignRequest) {
+        result = btc_sign_msg(urData, seed, len, mfp, sizeof(mfp));
+    } else if (urType == SeedSignerMessage) {
+        result = sign_seed_signer_message(urData, seed, len);
+    }
+
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_BTC_MESSAGE, result);
+    return KOSMO_OK;
+}
+
+/* ── ADA Signing ──────────────────────────────────────── */
+
+static int32_t AdaGetEntropy(uint8_t *entropy, uint8_t *entropyLen, bool isSlip39)
+{
+    uint8_t accountIdx = GetCurrentAccountIndex();
+    const char *password = SecretCacheGetPassword();
+    if (password == NULL) return KOSMO_ERR_GENERAL;
+
+    if (isSlip39) {
+        *entropyLen = GetCurrentAccountEntropyLen();
+        return GetAccountSeed(accountIdx, entropy, password);
+    } else {
+        return GetAccountEntropy(accountIdx, entropy, entropyLen, password);
+    }
+}
+
+static char *AdaGetXpubFromData(void *data)
+{
+    SimpleResponse_c_char *path = cardano_get_path(data);
+    if (path == NULL || path->error_code != 0) {
+        if (path != NULL) free_simple_response_c_char(path);
+        return NULL;
+    }
+    char *adaPath = path->data;
+    char *xpub = NULL;
+    /* Check if the path is a standard ADA derivation path (1852'/1815'/N') */
+    if (adaPath != NULL && strncmp(adaPath, "1852'/1815'/", 12) == 0) {
+        int idx = atoi(adaPath + 12);
+        if (idx >= 0 && idx <= 23) {
+            xpub = GetCurrentAccountPublicKey(GetAdaXPubTypeByIndex(idx));
+        }
+    }
+    free_simple_response_c_char(path);
+    return xpub;
+}
+
+static int32_t ModelSignAdaTx(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    bool isUnlimited = (bool)(uintptr_t)arr[1];
+
+    uint8_t entropy[64] = {0};
+    uint8_t len = 0;
+    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    int ret = AdaGetEntropy(entropy, &len, isSlip39);
+    if (ret != 0) {
+        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    uint8_t mfp[4] = {0};
+    GetMasterFingerPrint(mfp);
+    char *xpub = AdaGetXpubFromData(urData);
+    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
+    AdaXPubType adaType = GetAdaXPubType();
+    UREncodeResult *result = NULL;
+
+    if (isUnlimited) {
+        if (adaType == LEDGER_ADA) {
+            char *mnemonic = NULL;
+            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
+            result = cardano_sign_tx_with_ledger_bitbox02_unlimited(urData, mfp, xpub, mnemonic, passphrase);
+        } else {
+            result = cardano_sign_tx_unlimited(urData, mfp, xpub, entropy, len, passphrase, isSlip39);
+        }
+    } else {
+        if (adaType == LEDGER_ADA) {
+            char *mnemonic = NULL;
+            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
+            result = cardano_sign_tx_with_ledger_bitbox02(urData, mfp, xpub, mnemonic, passphrase, false);
+        } else {
+            result = cardano_sign_tx(urData, mfp, xpub, entropy, len, passphrase, false, isSlip39);
+        }
+    }
+
+    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+
+    uint8_t entropy[64] = {0};
+    uint8_t len = 0;
+    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    int ret = AdaGetEntropy(entropy, &len, isSlip39);
+    if (ret != 0) {
+        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_TX_HASH, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    uint8_t mfp[4] = {0};
+    GetMasterFingerPrint(mfp);
+    char *xpub = AdaGetXpubFromData(urData);
+    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
+    AdaXPubType adaType = GetAdaXPubType();
+    UREncodeResult *result = NULL;
+
+    if (adaType == LEDGER_ADA) {
+        char *mnemonic = NULL;
+        bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
+        result = cardano_sign_tx_with_ledger_bitbox02(urData, mfp, xpub, mnemonic, passphrase, true);
+    } else {
+        result = cardano_sign_tx(urData, mfp, xpub, entropy, len, passphrase, true, isSlip39);
+    }
+
+    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_TX_HASH, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+
+    uint8_t entropy[64] = {0};
+    uint8_t len = 0;
+    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    int ret = AdaGetEntropy(entropy, &len, isSlip39);
+    if (ret != 0) {
+        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_SIGN_DATA, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
+    AdaXPubType adaType = GetAdaXPubType();
+    UREncodeResult *result = NULL;
+
+    if (adaType == LEDGER_ADA) {
+        char *mnemonic = NULL;
+        bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
+        result = cardano_sign_sign_data_with_ledger_bitbox02(urData, mnemonic, passphrase);
+    } else {
+        result = cardano_sign_sign_data(urData, entropy, len, passphrase, isSlip39);
+    }
+
+    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_SIGN_DATA, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+
+    uint8_t entropy[64] = {0};
+    uint8_t len = 0;
+    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
+    int ret = AdaGetEntropy(entropy, &len, isSlip39);
+    if (ret != 0) {
+        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_CATALYST, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+
+    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
+    AdaXPubType adaType = GetAdaXPubType();
+    UREncodeResult *result = NULL;
+
+    if (adaType == LEDGER_ADA) {
+        char *mnemonic = NULL;
+        bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
+        result = cardano_sign_catalyst_with_ledger_bitbox02(urData, mnemonic, passphrase);
+    } else {
+        result = cardano_sign_catalyst(urData, entropy, len, passphrase, isSlip39);
+    }
+
+    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_CATALYST, result);
+    return KOSMO_OK;
 }

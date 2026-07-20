@@ -11,6 +11,7 @@
 #include "gui.h"
 #include "user_memory.h"
 #include "drv_mpu.h"
+#include "kosmo_api.h"
 #define ADA_ADD_MAX_LEN             (150)
 
 static bool g_isMulti = false;
@@ -651,114 +652,46 @@ void *GetAdaWithdrawalsData(uint8_t *row, uint8_t *col, void *param)
 
 UREncodeResult *GuiGetAdaSignCatalystVotingRegistrationQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_catalyst_with_ledger_bitbox02(data, mnemonic, GetPassphrase(GetCurrentAccountIndex()));
-        } else {
-            encodeResult = cardano_sign_catalyst(data, entropy, len, GetPassphrase(GetCurrentAccountIndex()), isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_CATALYST,
+        .sign_ada_catalyst = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetAdaSignSignDataQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_sign_data_with_ledger_bitbox02(data, mnemonic, GetPassphrase(GetCurrentAccountIndex()));
-        } else {
-            encodeResult = cardano_sign_sign_data(data, entropy, len, GetPassphrase(GetCurrentAccountIndex()), isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_SIGN_DATA,
+        .sign_ada_sign_data = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetAdaSignSignCip8DataQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_sign_cip8_data_with_ledger_bitbox02(data, mnemonic, GetPassphrase(GetCurrentAccountIndex()));
-        } else {
-            encodeResult = cardano_sign_sign_cip8_data(data, entropy, len, GetPassphrase(GetCurrentAccountIndex()), isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_SIGN_DATA,
+        .sign_ada_sign_data = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetAdaSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_tx_with_ledger_bitbox02(data, mfp, g_xpub, mnemonic, GetPassphrase(GetCurrentAccountIndex()), false);
-        } else {
-            encodeResult = cardano_sign_tx(data, mfp, g_xpub, entropy, len, GetPassphrase(GetCurrentAccountIndex()), false, isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_TX,
+        .sign_ada_tx = { .urData = data, .isUnlimited = false },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 static void SetContainerDefaultStyle(lv_obj_t *container)
 {
@@ -769,30 +702,13 @@ static void SetContainerDefaultStyle(lv_obj_t *container)
 
 UREncodeResult *GuiGetAdaSignTxHashQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_tx_with_ledger_bitbox02(data, mfp, g_xpub, mnemonic, GetPassphrase(GetCurrentAccountIndex()), true);
-        } else {
-            encodeResult = cardano_sign_tx(data, mfp, g_xpub, entropy, len, GetPassphrase(GetCurrentAccountIndex()), true, isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_TX_HASH,
+        .sign_ada_tx_hash = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 lv_obj_t *GuiCreateAdaAutoHeightContainer(lv_obj_t *parent, uint16_t width, uint16_t padding_x)
 {
@@ -965,30 +881,13 @@ void GuiShowAdaSignTxHashDetails(lv_obj_t *parent, void *totalData)
 
 UREncodeResult *GuiGetAdaSignUrDataUnlimited(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t entropy[64];
-        uint8_t len = 0;
-        bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-        GetAccountAdaEntropy(GetCurrentAccountIndex(), entropy, &len, SecretCacheGetPassword(), isSlip39);
-        if (GetAdaXPubType() == LEDGER_ADA) {
-            char *mnemonic = NULL;
-            bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-            encodeResult = cardano_sign_tx_with_ledger_bitbox02_unlimited(data, mfp, g_xpub, mnemonic, GetPassphrase(GetCurrentAccountIndex()));
-        } else {
-            encodeResult = cardano_sign_tx_unlimited(data, mfp, g_xpub, entropy, len, GetPassphrase(GetCurrentAccountIndex()), isSlip39);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ADA_TX,
+        .sign_ada_tx = { .urData = data, .isUnlimited = true },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 ChainType GetAdaXPubTypeByIndexAndDerivationType(AdaXPubType type, uint16_t index)

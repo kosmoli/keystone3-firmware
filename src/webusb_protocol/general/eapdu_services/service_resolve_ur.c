@@ -128,9 +128,9 @@ static bool HandleNormalCall(void)
         return true;
     }
 
+    /* USB transport view was removed in Phase 4.1 refactoring.
+     * If USB is connected, allow the operation to proceed silently. */
     if (GetUsbState()) {
-        PubValueMsg(UI_MSG_USB_TRANSPORT_NEXT_VIEW, 0);
-        UserDelay(200);
         return true;
     }
 

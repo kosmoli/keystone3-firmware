@@ -11,9 +11,7 @@
 #include "gui_firmware_process_widgets.h"
 #include "gui_usb_connection_widgets.h"
 #include "gui_low_battery_widgets.h"
-#include "gui_nft_screen_widgets.h"
 #include "gui_firmware_update_deny_widgets.h"
-#include "gui_trans_nft_process_widgets.h"
 #include "gui_firmware_update_widgets.h"
 #include "gui_lock_widgets.h"
 #include "presetting.h"
@@ -121,15 +119,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
             CloseMsgBox(&g_guiMsgBoxLowBattery);
         }
         break;
-    case SIG_INIT_TRANSFER_NFT_SCREEN:
-        rcvValue = *(uint32_t *)param;
-        printf("rcvValue=%d\r\n", rcvValue);
-        if (rcvValue != 0) {
-            OpenMsgBox(&g_guiMsgBoxNftScreen);
-        } else {
-            CloseMsgBox(&g_guiMsgBoxNftScreen);
-        }
-        break;
     case SIG_INIT_USB_CONNECTION:
         rcvValue = *(uint32_t *)param;
         if (rcvValue != 0 && !GuiLockScreenIsTop() && GetUsbDetectState() && ((KosmoApi_GetCurrentAccountIndex() != 0xFF) || GuiIsSetup())) {
@@ -146,7 +135,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
     case SIG_INIT_POWER_OPTION:
         rcvValue = *(uint32_t *)param;
         if (rcvValue != 0) {
-            NftLockQuit();
             OpenMsgBox(&g_guiMsgBoxPowerOption);
         } else {
             CloseMsgBox(&g_guiMsgBoxPowerOption);
@@ -185,17 +173,6 @@ int32_t GUI_InitViewEventProcess(void *self, uint16_t usEvent, void *param, uint
         break;
     case SIG_STATUS_BAR_REFRESH:
         GuiStatusBarSetUsb();
-        break;
-    case SIG_INIT_NFT_BIN:
-        rcvValue = *(uint32_t *)param;
-        if (rcvValue != 0) {
-            OpenMsgBox(&g_guiMsgBoxTransNftProcess);
-        } else {
-            CloseMsgBox(&g_guiMsgBoxTransNftProcess);
-        }
-        break;
-    case SIG_INIT_NFT_BIN_TRANS_FAIL:
-        GuiNftTransferFailed();
         break;
     default:
         return ERR_GUI_UNHANDLED;

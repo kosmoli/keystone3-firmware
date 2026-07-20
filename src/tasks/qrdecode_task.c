@@ -37,7 +37,9 @@ const static QrDecodeViewTouchArea_t g_qrDecodeObjects[2] = {
 
 static void QrDecodeTask(void *argument);
 static void QrDecodeMinuteTimerFunc(void *argument);
-uint8_t *GetDataParserCache(void);
+/* Local QR decode buffer - replaces deleted data_parser_task.c's GetDataParserCache */
+static uint8_t g_qrDecodeCache[QR_DECODE_STRING_LEN];
+static uint8_t *GetDataParserCache(void) { return g_qrDecodeCache; }
 
 osThreadId_t g_qrDecodeTaskHandle;
 static volatile QrDecodeStateType g_qrDecodeState;

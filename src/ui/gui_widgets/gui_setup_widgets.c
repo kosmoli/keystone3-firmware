@@ -4,8 +4,6 @@
 #include "gui_setup_widgets.h"
 #include "gui_obj.h"
 #include "version.h"
-#include "gui_web_auth_widgets.h"
-#include "gui_web_auth_result_widgets.h"
 #include "device_setting.h"
 #include "gui_page.h"
 #include "ui_display_task.h"
@@ -106,12 +104,6 @@ static void SelectLanguageHandler(lv_event_t *e)
     }
 }
 
-void GuiOpenWebAuthHandler(lv_event_t *e)
-{
-    GuiWebAuthSetEntry(WEB_AUTH_ENTRY_SETUP);
-    GuiFrameOpenView(&g_webAuthView);
-}
-
 void GuiCreateLanguageWidget(lv_obj_t *parent, uint16_t offset)
 {
     uint8_t lang = LanguageGetIndex();
@@ -166,9 +158,6 @@ static void GuiSetLanguageWidget(lv_obj_t *parent)
 
     lv_obj_t *cont = GuiCreateContainer(lv_obj_get_width(lv_scr_act()), 114);
     lv_obj_set_align(cont, LV_ALIGN_BOTTOM_MID);
-    lv_obj_t *btn = GuiCreateBtn(cont, USR_SYMBOL_ARROW_NEXT);
-    lv_obj_align(btn, LV_ALIGN_BOTTOM_RIGHT, -36, -24);
-    lv_obj_add_event_cb(btn, GuiOpenWebAuthHandler, LV_EVENT_CLICKED, NULL);
     g_selectLanguageCont = cont;
     lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
 }
@@ -207,10 +196,7 @@ uint8_t GuiSetupNextTile(void)
     if (g_setupTileView.currentTile == SETUP_SET_LANGUAGE) {
         GuiSetSetupPhase(SETUP_PAHSE_LANGUAGE);
         if (g_reboot) {
-            if (!GuiJudgeCurrentPahse(SETUP_PAHSE_LANGUAGE)) {
-                GuiWebAuthSetEntry(WEB_AUTH_ENTRY_SETUP);
-                GuiFrameOpenView(&g_webAuthView);
-            } else {
+            if (GuiJudgeCurrentPahse(SETUP_PAHSE_LANGUAGE)) {
                 g_reboot = false;
             }
         }

@@ -4,8 +4,6 @@
 #include "protocol_parse.h"
 #include "cJSON.h"
 #include "librust_c.h"
-// #include "gui_framework.h"
-// #include "gui_views.h"
 
 #define EAPDU_PROTOCOL_HEADER             0x00
 #define EAPDU_PROTOCOL_PARSER_NAME        "eapdu_protocol_parser"

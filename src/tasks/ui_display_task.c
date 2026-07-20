@@ -45,10 +45,6 @@ static volatile bool g_snapShotDone = false;
 static volatile uint32_t g_dynamicTick, g_fastModeCount;
 bool g_reboot = false;
 
-static bool g_lockNft = false;
-void DrawNftImage(void);
-void RefreshDisplay(uint16_t *snapShotAddr);
-#endif
 
 void CreateUiDisplayTask(void)
 {
@@ -132,18 +128,6 @@ static void UiDisplayTask(void *argument)
 #endif
             }
             break;
-            case EVENT_USB_SESSION_STARTED: {
-                /* 业务事件：USB 会话已启动。前端自行决定打开 USB 传输视图。 */
-                GuiFrameOpenViewWithParam(&g_USBTransportView, rcvMsg.buffer, rcvMsg.length);
-            }
-            break;
-            case UI_MSG_USB_TRANSPORT_NEXT_VIEW: {
-                /* 业务事件：USB 传输下一阶段。前端自行决定关闭当前视图。 */
-                if (GuiCheckIfTopView(&g_USBTransportView)) {
-                    GuiEmitSignal(SIG_CLOSE_USB_TRANSPORT, NULL, 0);
-                }
-            }
-            break;
             case EVENT_USB_HARDWARE_CALL: {
                 /* 业务事件：硬件调用请求。前端自行决定打开密钥派生请求视图。 */
                 if (rcvMsg.value == 1 && g_ui_pending_ur_result != NULL) {
@@ -158,20 +142,6 @@ static void UiDisplayTask(void *argument)
                 }
             }
             break;
-#endif
-            case UI_MSG_CLOSE_NFT_LOCK: {
-                uint8_t *snapShotAddr = GetActSnapShot();
-                while (LcdBusy()) {
-                    osDelay(1);
-                }
-                RefreshDisplay((uint16_t *)snapShotAddr);
-                if (snapShotAddr != NULL) {
-                    EXT_FREE(snapShotAddr);
-                }
-                g_lvglHandlerEnable = true;
-            }
-            break;
-#endif
             case UI_MSG_PREPARE_RECEIVE_UR_USB: {
                 GuiFrameOpenViewWithParam(&g_transactionDetailView, &rcvMsg.value, sizeof(rcvMsg.value));
             }
@@ -281,10 +251,6 @@ static void __SetLvglHandlerAndSnapShot(uint32_t value)
         while (LcdBusy()) {
             osDelay(1);
         }
-        if (g_lockNft && !IsWakeupByFinger()) {
-            DrawNftImage();
-        } else
-#endif
         {
             LcdDraw(0, 0, LCD_DISPLAY_WIDTH - 1, LCD_DISPLAY_HEIGHT - 1, (uint16_t *)snapShotAddr);
             if (snapShotAddr != NULL) {
@@ -353,72 +319,4 @@ void ActivateUiTaskLoop(void)
     }
 }
 
-#define LCD_DISPLAY_WIDTH  480
-#define LCD_DISPLAY_HEIGHT 800
-#define ROWS_PER_STEP      40
 
-void SetNftLockState(void)
-{
-    if (GetNftScreenSaver() && IsNftScreenValid()) {
-        g_lockNft = true;
-    }
-}
-
-void RefreshDisplay(uint16_t *snapShotAddr)
-{
-    for (int y = LCD_DISPLAY_HEIGHT - 1; y >= 0; y -= ROWS_PER_STEP) {
-        int startY = y - ROWS_PER_STEP + 1;
-        if (startY < 0) {
-            startY = 0;
-        }
-        LcdDraw(0, startY, LCD_DISPLAY_WIDTH - 1, y, snapShotAddr + startY * LCD_DISPLAY_WIDTH);
-        while (LcdBusy()) {
-            osDelay(1);
-        }
-    }
-}
-
-
-void DrawNftImage(void)
-{
-#define START_ADDR 0x00EB2000
-    uint16_t *fileBuf = EXT_MALLOC(LCD_DISPLAY_WIDTH * LCD_DISPLAY_HEIGHT * 2);
-    Gd25FlashReadBuffer(START_ADDR, (uint8_t *)fileBuf, LCD_DISPLAY_WIDTH * LCD_DISPLAY_HEIGHT * 2);
-    LcdDraw(0, 0, LCD_DISPLAY_WIDTH - 1, LCD_DISPLAY_HEIGHT - 1, (uint16_t *)fileBuf);
-    EXT_FREE(fileBuf);
-}
-
-
-void NftLockQuit(void)
-{
-    if (g_lockNft == false) {
-        return;
-    }
-    osKernelLock();
-    PubValueMsg(UI_MSG_CLOSE_NFT_LOCK, 0);
-    g_lockNft = false;
-    osKernelUnlock();
-}
-
-void NftLockDecodeTouchQuit(void)
-{
-    if (g_lockNft == false) {
-        return;
-    }
-    static bool quitArea = false;
-    TouchStatus_t *pStatus;
-    pStatus = GetLatestTouchStatus();
-    if (pStatus->touch) {
-        quitArea = true;
-    } else {
-        if (quitArea) {
-            osKernelLock();
-            ClearTouchBuffer();
-            PubValueMsg(UI_MSG_CLOSE_NFT_LOCK, 0);
-            g_lockNft = false;
-            osKernelUnlock();
-            quitArea = false;
-        }
-    }
-}
-#endif

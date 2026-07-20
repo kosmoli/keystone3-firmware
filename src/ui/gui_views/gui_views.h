@@ -19,8 +19,6 @@ typedef enum {
     SIG_INIT_LOW_BATTERY,
     SIG_INIT_POWER_OPTION,
     SIG_INIT_FIRMWARE_PROCESS,
-    SIG_INIT_NFT_BIN,
-    SIG_INIT_NFT_BIN_TRANS_FAIL,
     SIG_INIT_CLOSE_CURRENT_MSG_BOX,
     SIG_INIT_SD_CARD_OTA_COPY,
     SIG_INIT_SD_CARD_OTA_COPY_SUCCESS,
@@ -28,7 +26,6 @@ typedef enum {
     SIG_BOOT_UPDATE_SUCCESS,
     SIG_BOOT_UPDATE_FAIL,
     SIG_STATUS_BAR_REFRESH,
-    SIG_INIT_TRANSFER_NFT_SCREEN,
     SIG_INIT_CONNECT_USB,
     SIG_INIT_PULLOUT_USB,
     SIG_INIT_VIEW_BUTT,
@@ -108,7 +105,6 @@ typedef enum {
     SIG_SETTING_CHANGE_BOOT_SECURE_SWITCH,
     SIG_SETTING_CHANGE_RECOVERY_MODE_SWITCH,
     SIG_USB_HARDWARE_CALL_PARSE_UR,
-    SIG_CLOSE_USB_TRANSPORT,
     SIG_SETTING_BUTT,
 
     SIG_FINGER_REGISTER_STEP_SUCCESS = SIG_SETTING_BUTT + 50,
@@ -177,7 +173,7 @@ extern GUI_VIEW g_createShareView;
 extern GUI_VIEW g_importShareView;
 extern GUI_VIEW g_settingView;
 extern GUI_VIEW g_connectWalletView;
-extern GUI_VIEW g_USBTransportView;
+
 extern GUI_VIEW g_passphraseView;
 extern GUI_VIEW g_utxoReceiveView;
 extern GUI_VIEW g_multiPathCoinReceiveView;
@@ -185,8 +181,7 @@ extern GUI_VIEW g_standardReceiveView;
 extern GUI_VIEW g_forgetPassView;
 extern GUI_VIEW g_lockDeviceView;
 extern GUI_VIEW g_firmwareUpdateView;
-extern GUI_VIEW g_webAuthView;
-extern GUI_VIEW g_webAuthResultView;
+
 extern GUI_VIEW g_systemSettingView;
 extern GUI_VIEW g_purposeView;
 extern GUI_VIEW g_aboutView;

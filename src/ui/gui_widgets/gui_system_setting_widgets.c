@@ -7,7 +7,6 @@
 #include "gui_hintbox.h"
 #include "user_memory.h"
 #include "presetting.h"
-#include "gui_web_auth_widgets.h"
 #include "gui_setting_widgets.h"
 #include "gui_enter_passcode.h"
 #include "device_setting.h"
@@ -59,11 +58,6 @@ void GuiSystemSettingAreaInit(void)
     GuiSystemSettingEntranceWidget(g_container);
 }
 
-void GuiSystemSettingWebAuthHandler(lv_event_t *e)
-{
-    GuiWebAuthSetEntry(WEB_AUTH_ENTRY_SETTING);
-    GuiFrameOpenView(&g_webAuthView);
-}
 
 void GuiSystemSettingEntranceWidget(lv_obj_t *parent)
 {
@@ -173,11 +167,6 @@ void GuiSystemSettingEntranceWidget(lv_obj_t *parent)
 
     button = GuiCreateButton(parent, 456, 84, tableSwitch, NUMBER_OF_ARRAYS(tableSwitch),
                              RecoveryModeSwitchHandler, NULL);
-    lv_obj_align(button, LV_ALIGN_DEFAULT, 12, offset);
-    offset += 100;
-
-    button = GuiCreateSelectButton(parent, _("verify_title_text"), &imgArrowRight,
-                                   GuiSystemSettingWebAuthHandler, NULL, false);
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, offset);
     offset += 100;
 

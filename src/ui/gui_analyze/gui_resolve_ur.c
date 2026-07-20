@@ -1,5 +1,5 @@
 #include "gui_analyze.h"
-#include "gui_web_auth_result_widgets.h"
+
 #include "assert.h"
 #include "ui_display_task.h"
 #include "librust_c.h"
@@ -68,9 +68,7 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
 {
     GuiRemapViewType viewType = ViewTypeReMap(urViewType.viewType);
     switch (urViewType.viewType) {
-    case WebAuthResult:
-        GuiSetWebAuthResultData(urResult, urMultiResult, is_multi);
-        break;
+
     case KeyDerivationRequest:
         GuiSetKeyDerivationRequestData(urResult, urMultiResult, is_multi);
         break;
@@ -85,8 +83,7 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
         break;
     }
 
-    if (urViewType.viewType == WebAuthResult
-            || urViewType.viewType == KeyDerivationRequest
+    if (urViewType.viewType == KeyDerivationRequest
             || urViewType.viewType == DeriveContextHashRequest
             || urViewType.viewType == EthBatchTx
             || viewType != REMAPVIEW_BUTT) {

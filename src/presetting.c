@@ -48,46 +48,6 @@ int32_t SetSerialNumber(const char *serialNumber)
     return SUCCESS_CODE;
 }
 
-int32_t GetWebAuthRsaKey(uint8_t *key)
-{
-    uint8_t *data;
-    MpuSetOtpProtection(false);
-
-    OTP_PowerOn();
-    data = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
-    memcpy(data, (uint8_t *)OTP_ADDR_WEB_AUTH_RSA_KEY, WEB_AUTH_RSA_KEY_LEN);
-    if (CheckEntropy(data, WEB_AUTH_RSA_KEY_LEN) == false) {
-        MpuSetOtpProtection(true);
-        SRAM_FREE(data);
-        return ERR_WEB_AUTH_KEY_NOT_EXIST;
-    }
-    MpuSetOtpProtection(true);
-    memcpy(key, data, WEB_AUTH_RSA_KEY_LEN);
-    SRAM_FREE(data);
-    return SUCCESS_CODE;
-}
-
-int32_t SetWebAuthRsaKey(const uint8_t *key)
-{
-    int32_t ret;
-    uint8_t *data;
-
-    data = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
-    ret = GetWebAuthRsaKey(data);
-    if (ret == SUCCESS_CODE) {
-        SRAM_FREE(data);
-        return ERR_WEB_AUTH_KEY_ALREADY_EXIST;
-    }
-    OTP_PowerOn();
-    memcpy_s(data, WEB_AUTH_RSA_KEY_LEN, key, WEB_AUTH_RSA_KEY_LEN);
-    for (uint32_t i = 0; i < WEB_AUTH_RSA_KEY_LEN; i += 256) {
-        WriteOtpData(OTP_ADDR_WEB_AUTH_RSA_KEY + i, data + i, 256);
-    }
-    memset_s(data, WEB_AUTH_RSA_KEY_LEN, 0, WEB_AUTH_RSA_KEY_LEN);
-    SRAM_FREE(data);
-    return SUCCESS_CODE;
-}
-
 bool GetFactoryResult(void)
 {
     MpuSetOtpProtection(false);
@@ -193,30 +153,6 @@ void PresettingTest(int argc, char *argv[])
         ret = SetSerialNumber(argv[1]);
         CHECK_ERRCODE_RETURN(ret);
         printf("set serialNumber=%s\n", argv[1]);
-    } else if (strcmp(argv[0], "get_web_auth_key") == 0) {
-        data = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
-        ret = GetWebAuthRsaKey(data);
-        printf("ret=%d\n", ret);
-        PrintArray("web auth key", data, WEB_AUTH_RSA_KEY_LEN);
-        SRAM_FREE(data);
-    } else if (strcmp(argv[0], "set_web_auth_key") == 0) {
-        VALUE_CHECK(argc, 2);
-        len = strnlen_s(argv[1], 1024);
-        if (len != 2048) {
-            printf("set_web_auth_key err input,len=%d\n", len);
-            return;
-        }
-        data = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
-        len = StrToHex(data, argv[1]);
-        if (len != WEB_AUTH_RSA_KEY_LEN) {
-            printf("set_web_auth_key err hex,len=%d\n", len);
-            SRAM_FREE(data);
-            return;
-        }
-        PrintArray("hex", data, len);
-        ret = SetWebAuthRsaKey(data);
-        printf("set web auth key ret=%d\n", ret);
-        SRAM_FREE(data);
     } else if (strcmp(argv[0], "get_update_pub_key") == 0) {
         data = SRAM_MALLOC(UPDATE_PUB_KEY_LEN + 1);
         ret = GetUpdatePubKey(data);

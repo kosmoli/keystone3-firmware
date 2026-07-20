@@ -14,7 +14,6 @@
 #include "qrdecode_task.h"
 #include "kosmo_api.h"
 #include "assert.h"
-#include "gui_web_auth_widgets.h"
 #include "gui_qr_hintbox.h"
 #include "motor_manager.h"
 #include "gui_lock_widgets.h"

@@ -87,7 +87,6 @@ uint32_t EnterLowPower(void)
     printf("sleepSecond=%d\n", sleepSecond);
     TouchClose();
     UserDelay(10);
-    SetNftLockState();
     SetLvglHandlerAndSnapShot(false);
     CloseUsb();
     while (GetUsbState()) {

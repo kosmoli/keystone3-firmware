@@ -1,305 +1,67 @@
+/**
+ * Stub implementation of eapdu_protocol_parser.
+ *
+ * The full USB data-communication protocol was removed in Phase 4.1.
+ * Only the type definitions (in the header) and thin stubs for functions
+ * that are still called by surviving service code are kept here.
+ */
+
 #include "stdio.h"
 #include "stdlib.h"
-#include "assert.h"
-#include "cmsis_os.h"
+#include "string.h"
 #include "eapdu_protocol_parser.h"
-#include "keystore.h"
-#include "data_parser_task.h"
-#include "user_msg.h"
 #include "user_memory.h"
-#include "gui_views.h"
-#include "user_delay.h"
-#include "eapdu_services/service_resolve_ur.h"
-#include "eapdu_services/service_check_lock.h"
-#include "eapdu_services/service_echo_test.h"
-#include "eapdu_services/service_export_address.h"
-#include "eapdu_services/service_get_device_info.h"
+#include "user_msg.h"
 #include "usb_task.h"
 
-static ProtocolSendCallbackFunc_t g_sendFunc = NULL;
-static uint32_t g_eapduRcvCount = 0;
-
-#define EAPDU_RESPONSE_STATUS_LENGTH 2
-#define MAX_PACKETS 200
-#define MAX_PACKETS_LENGTH MAX_EAPDU_PACKET_SIZE
-#define MAX_EAPDU_RESPONSE_DATA_SIZE (MAX_PACKETS_LENGTH - OFFSET_CDATA - EAPDU_RESPONSE_STATUS_LENGTH)
-#define EAPDU_REASSEMBLY_TIMEOUT_MS 5000
-
-static uint8_t g_protocolRcvBuffer[MAX_PACKETS][MAX_PACKETS_LENGTH] __attribute__((section(".data_parser_section")));
-static uint8_t g_packetLengths[MAX_PACKETS];
-static uint8_t g_receivedPackets[MAX_PACKETS];
-static uint8_t g_totalPackets = 0;
-static uint32_t g_lastPacketTick = 0;
-static uint32_t GetRcvCount(void);
-static void ResetRcvCount(void);
-
-typedef enum {
-    FRAME_INVALID_LENGTH,
-    UNKNOWN_COMMAND,
-    FRAME_INDEX_ERROR,
-    FRAME_TOTAL_ERROR,
-    DUPLICATE_FRAME,
-    FRAME_CHECKSUM_OK,
-} ParserStatusEnum;
-
+/* ---- stub: SendEApduResponse ---- */
 void SendEApduResponse(EAPDUResponsePayload_t *payload)
 {
-    assert(payload != NULL);
-    if (payload == NULL || g_sendFunc == NULL) {
-        return;
-    }
-    if (payload->data == NULL && payload->dataLen != 0U) {
-        return;
-    }
-
-    uint8_t packet[MAX_PACKETS_LENGTH];
-    uint16_t totalPackets = (payload->dataLen + MAX_EAPDU_RESPONSE_DATA_SIZE - 1) / MAX_EAPDU_RESPONSE_DATA_SIZE;
-    uint16_t packetIndex = 0;
-    uint32_t offset = 0;
-    uint32_t remaining = payload->dataLen;
-    if (totalPackets == 0U) {
-        totalPackets = 1U;
-    }
-
-    do {
-        uint16_t packetDataSize = remaining > MAX_EAPDU_RESPONSE_DATA_SIZE ? MAX_EAPDU_RESPONSE_DATA_SIZE : (uint16_t)remaining;
-
-        packet[OFFSET_CLA] = payload->cla;
-        insert_16bit_value(packet, OFFSET_INS, payload->commandType);
-        insert_16bit_value(packet, OFFSET_P1, totalPackets);
-        insert_16bit_value(packet, OFFSET_P2, packetIndex);
-        insert_16bit_value(packet, OFFSET_LC, payload->requestID);
-        if (packetDataSize > 0U) {
-            memcpy_s(packet + OFFSET_CDATA, MAX_PACKETS_LENGTH - OFFSET_CDATA, payload->data + offset, packetDataSize);
-        }
-        insert_16bit_value(packet, OFFSET_CDATA + packetDataSize, payload->status);
-        g_sendFunc(packet, OFFSET_CDATA + packetDataSize + EAPDU_RESPONSE_STATUS_LENGTH);
-        offset += packetDataSize;
-        remaining -= packetDataSize;
-        packetIndex++;
-        UserDelay(10);
-    } while (remaining > 0U);
+    (void)payload;
+    printf("[eapdu_stub] SendEApduResponse called (no-op)\n");
 }
 
+/* ---- stub: SendEApduResponseError ---- */
 void SendEApduResponseError(uint8_t cla, CommandType ins, uint16_t requestID, StatusEnum status, char *error)
 {
-    if (error == NULL) {
-        error = "unknown error";
-    }
-    EAPDUResponsePayload_t *result = (EAPDUResponsePayload_t *)SRAM_MALLOC(sizeof(EAPDUResponsePayload_t));
-    if (result == NULL) {
-        return;
-    }
-    cJSON *root = cJSON_CreateObject();
-    if (root == NULL) {
-        SRAM_FREE(result);
-        return;
-    }
-    cJSON_AddStringToObject(root, "payload", error);
-    char *json_str = cJSON_PrintBuffered(root, BUFFER_SIZE_1024, false);
-    cJSON_Delete(root);
-    if (json_str == NULL) {
-        SRAM_FREE(result);
-        return;
-    }
-    result->data = (uint8_t *)json_str;
-    result->dataLen = strlen((char *)result->data);
-    result->status = status;
-    result->cla = cla;
-    result->commandType = ins;
-    result->requestID = requestID;
-    SendEApduResponse(result);
-    EXT_FREE(json_str);
-    SRAM_FREE(result);
+    (void)cla; (void)ins; (void)requestID; (void)status; (void)error;
+    printf("[eapdu_stub] SendEApduResponseError called (no-op): %s\n", error ? error : "null");
 }
 
-static void free_parser()
+/* ---- stub: GotoResultPage ---- */
+void GotoResultPage(EAPDUResultPage_t *resultPageParams)
 {
-    g_totalPackets = 0;
-    g_eapduRcvCount = 0;
-    g_lastPacketTick = 0;
-    memset_s(g_receivedPackets, sizeof(g_receivedPackets), 0, sizeof(g_receivedPackets));
-    memset_s(g_packetLengths, sizeof(g_packetLengths), 0, sizeof(g_packetLengths));
-    for (int i = 0; i < MAX_PACKETS; i++) {
-        memset_s(g_protocolRcvBuffer[i], sizeof(g_protocolRcvBuffer[i]), 0, sizeof(g_protocolRcvBuffer[i]));
-    }
+    (void)resultPageParams;
+    printf("[eapdu_stub] GotoResultPage called (no-op)\n");
 }
 
-static void EApduRequestHandler(EAPDURequestPayload_t *request)
+/* ---- stub: EApduProtocolParse ---- */
+static void EApduProtocolParse(const uint8_t *frame, uint32_t len)
 {
-    if (!request) {
-        printf("Invalid request: NULL pointer\n");
-        return;
-    }
-    switch (request->commandType) {
-    case CMD_ECHO_TEST:
-        EchoService(request);
-        break;
-    case CMD_RESOLVE_UR:
-        ProcessURService(request);
-        break;
-    case CMD_CHECK_LOCK_STATUS:
-        CheckDeviceLockStatusService(request);
-        break;
-    case CMD_EXPORT_ADDRESS:
-        ExportAddressService(request);
-        break;
-#endif
-    case CMD_GET_DEVICE_INFO:
-        GetDeviceInfoService(request);
-        break;
-    default:
-        printf("Invalid command: %u\n", request->commandType);
-        break;
-    }
+    (void)frame; (void)len;
+    printf("[eapdu_stub] EApduProtocolParse called (no-op)\n");
 }
 
-static ParserStatusEnum CheckFrameValidity(EAPDUFrame_t *eapduFrame)
-{
-    if (eapduFrame->p1 > MAX_PACKETS) {
-        SendEApduResponseError(EAPDU_PROTOCOL_HEADER, eapduFrame->ins, eapduFrame->lc, PRS_INVALID_TOTAL_PACKETS, "Invalid total number of packets");
-        free_parser();
-        return FRAME_TOTAL_ERROR;
-    } else if (eapduFrame->p2 >= eapduFrame->p1) {
-        printf("Invalid packet index\n");
-        SendEApduResponseError(EAPDU_PROTOCOL_HEADER, eapduFrame->ins, eapduFrame->lc, PRS_INVALID_INDEX, "Invalid packet index");
-        free_parser();
-        return FRAME_INDEX_ERROR;
-    } else if (g_receivedPackets[eapduFrame->p2]) {
-        // duplicate packet
-        printf("Duplicate frame\n");
-        return DUPLICATE_FRAME;
-    }
-
-    return FRAME_CHECKSUM_OK;
-}
-
-static EAPDUFrame_t *FrameParser(const uint8_t *frame, uint32_t len)
-{
-    if (!frame || len < OFFSET_CDATA) {
-        printf("Invalid frame data\n");
-        return NULL;
-    }
-    EAPDUFrame_t *eapduFrame = (EAPDUFrame_t *)SRAM_MALLOC(sizeof(EAPDUFrame_t));
-    if (eapduFrame == NULL) {
-        return NULL;
-    }
-    eapduFrame->cla = frame[OFFSET_CLA];
-    eapduFrame->ins = extract_16bit_value(frame, OFFSET_INS);
-    eapduFrame->p1 = extract_16bit_value(frame, OFFSET_P1);
-    eapduFrame->p2 = extract_16bit_value(frame, OFFSET_P2);
-    eapduFrame->lc = extract_16bit_value(frame, OFFSET_LC);
-    eapduFrame->data = (uint8_t *)(frame + OFFSET_CDATA);
-    eapduFrame->dataLen = len - OFFSET_CDATA;
-    return eapduFrame;
-}
-
-void EApduProtocolParse(const uint8_t *frame, uint32_t len)
-{
-    uint32_t tick = osKernelGetTickCount();
-    if (g_totalPackets != 0 && g_lastPacketTick != 0 && (tick - g_lastPacketTick > EAPDU_REASSEMBLY_TIMEOUT_MS)) {
-        printf("EAPDU reassembly timeout\n");
-        free_parser();
-    }
-
-    g_eapduRcvCount++;
-    if (len < OFFSET_CDATA) {
-        printf("Invalid EAPDU data: too short\n");
-        free_parser();
-        return;
-    }
-    EAPDUFrame_t *eapduFrame = FrameParser(frame, len);
-    if (!eapduFrame || CheckFrameValidity(eapduFrame) != FRAME_CHECKSUM_OK) {
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-    if (g_totalPackets == 0) {
-        g_totalPackets = eapduFrame->p1;
-        assert(g_totalPackets <= MAX_PACKETS);
-        memset_s(g_receivedPackets, sizeof(g_receivedPackets), 0, sizeof(g_receivedPackets));
-    } else if (g_totalPackets != eapduFrame->p1) {
-        SendEApduResponseError(EAPDU_PROTOCOL_HEADER, eapduFrame->ins, eapduFrame->lc, PRS_INVALID_TOTAL_PACKETS, "Mismatched total packets");
-        free_parser();
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-    g_lastPacketTick = tick;
-    if (eapduFrame->dataLen > MAX_EAPDU_DATA_SIZE || eapduFrame->p2 >= MAX_PACKETS) {
-        SendEApduResponseError(EAPDU_PROTOCOL_HEADER, eapduFrame->ins, eapduFrame->lc, PRS_INVALID_INDEX, "Invalid packet length/index");
-        free_parser();
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-    assert(eapduFrame->dataLen <= MAX_EAPDU_DATA_SIZE && eapduFrame->p2 < MAX_PACKETS);
-    memcpy_s(g_protocolRcvBuffer[eapduFrame->p2], sizeof(g_protocolRcvBuffer[eapduFrame->p2]), eapduFrame->data, eapduFrame->dataLen);
-    g_packetLengths[eapduFrame->p2] = eapduFrame->dataLen;
-    g_receivedPackets[eapduFrame->p2] = 1;
-    for (uint8_t i = 0; i < g_totalPackets; i++) {
-        if (!g_receivedPackets[i]) {
-            printf("Waiting for more packets, missing: %d\n", i);
-            SRAM_FREE(eapduFrame);
-            return;
-        }
-    }
-    uint32_t fullDataLen = 0;
-    uint32_t offset = 0;
-    uint8_t *fullData = NULL;
-    for (uint16_t i = 0; i < g_totalPackets; i++) {
-        fullDataLen += g_packetLengths[i];
-    }
-    if (fullDataLen > (MAX_PACKETS * MAX_EAPDU_DATA_SIZE)) {
-        free_parser();
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-
-    fullData = (uint8_t *)SRAM_MALLOC(fullDataLen + 1);
-    if (fullData == NULL) {
-        free_parser();
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-    for (uint32_t i = 0; i < g_totalPackets; i++) {
-        memcpy_s(fullData + offset, fullDataLen - offset, g_protocolRcvBuffer[i], g_packetLengths[i]);
-        offset += g_packetLengths[i];
-    }
-    fullData[fullDataLen] = '\0';
-    EAPDURequestPayload_t *request = (EAPDURequestPayload_t *)SRAM_MALLOC(sizeof(EAPDURequestPayload_t));
-    if (request == NULL) {
-        SRAM_FREE(fullData);
-        free_parser();
-        SRAM_FREE(eapduFrame);
-        return;
-    }
-    request->data = fullData;
-    request->dataLen = fullDataLen;
-    request->requestID = eapduFrame->lc;
-    request->commandType = eapduFrame->ins;
-    request->cla = eapduFrame->cla;
-    EApduRequestHandler(request);
-    SRAM_FREE(eapduFrame);
-    SRAM_FREE(fullData);
-    SRAM_FREE(request);
-    free_parser();
-}
-
+/* ---- stub: RegisterSendFunc ---- */
 static void RegisterSendFunc(ProtocolSendCallbackFunc_t sendFunc)
 {
-    if (g_sendFunc == NULL) {
-        g_sendFunc = sendFunc;
-    }
+    (void)sendFunc;
 }
+
+/* ---- stub: GetRcvCount / ResetRcvCount ---- */
+static uint32_t g_stubRcvCount = 0;
 
 static uint32_t GetRcvCount(void)
 {
-    return g_eapduRcvCount;
+    return g_stubRcvCount;
 }
 
 static void ResetRcvCount(void)
 {
-    free_parser();
+    g_stubRcvCount = 0;
 }
 
+/* ---- stub: NewEApduProtocolParser ---- */
 const struct ProtocolParser *NewEApduProtocolParser()
 {
     static const struct ProtocolParser g_eapduParser = {
@@ -310,18 +72,4 @@ const struct ProtocolParser *NewEApduProtocolParser()
         .resetRcvCount = ResetRcvCount,
     };
     return &g_eapduParser;
-}
-
-void GotoResultPage(EAPDUResultPage_t *resultPageParams)
-{
-    if (resultPageParams != NULL) {
-        if (GetUsbState()) {
-            return;
-        }
-        if (resultPageParams == NULL) {
-            PubValueMsg(EVENT_USB_SESSION_STARTED, 0);
-        } else {
-            PubBufferMsg(EVENT_USB_SESSION_STARTED, resultPageParams, sizeof(EAPDUResultPage_t));
-        }
-    }
 }

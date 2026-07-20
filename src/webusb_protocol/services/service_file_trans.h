@@ -3,19 +3,8 @@
 
 #include "stdint.h"
 #include "stdbool.h"
-#include "err_code.h"
-#include "protocol_parse.h"
 
-enum {
-    COMMAND_ID_FILE_TRANS_INFO = 1,
-    COMMAND_ID_FILE_TRANS_CONTENT,
-    COMMAND_ID_FILE_TRANS_COMPLETE,
-    COMMAND_ID_FILE_GET_PUBKEY,
-    COMMAND_ID_FILE_TRANS_MAX,
-};
-
-extern const ProtocolServiceCallbackFunc_t g_fileTransInfoServiceFunc[];
-extern const ProtocolServiceCallbackFunc_t g_nftFileTransInfoServiceFunc[];
-bool GetIsReceivingFile();
+/* Stub: file transfer service was removed in Phase 4.1 */
+bool GetIsReceivingFile(void);
 
 #endif

@@ -9,7 +9,7 @@
 #include "user_memory.h"
 #include "background_task.h"
 #include "gui_lock_widgets.h"
-#include "gui_web_auth_widgets.h"
+
 #include "gui_setup_widgets.h"
 #include "gui_page.h"
 

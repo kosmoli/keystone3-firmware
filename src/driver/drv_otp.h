@@ -17,8 +17,6 @@
 
 #define OTP_ADDR_SN                 0x40009700
 
-#define OTP_ADDR_WEB_AUTH_RSA_KEY   0x40009800
-
 #define OTP_ADDR_UPDATE_PUB_KEY     0x40009C00
 
 #if (OTP_ADDR_BASE % 256 != 0)

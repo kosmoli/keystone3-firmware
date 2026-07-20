@@ -13,7 +13,7 @@
 #include "qrdecode_task.h"
 #include "kosmo_api.h"
 #include "assert.h"
-#include "gui_web_auth_widgets.h"
+
 #include "gui_qr_hintbox.h"
 #include "motor_manager.h"
 #include "gui_lock_widgets.h"
@@ -90,10 +90,7 @@ void GuiScanResult(bool result, void *param)
             }
         }
         if (g_chainType == CHAIN_BUTT) {
-            if (g_qrcodeViewType == WebAuthResult) {
-                GuiCloseCurrentWorkingView();
-                GuiFrameOpenView(&g_webAuthResultView);
-            }
+
             if (g_qrcodeViewType == KeyDerivationRequest) {
                 if (!GuiCheckIfTopView(&g_homeView)) {
                     GuiCloseCurrentWorkingView();

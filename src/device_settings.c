@@ -41,8 +41,6 @@
 #define KEY_USB_SWITCH                  "usb_switch"
 #define KEY_LAST_VERSION                "last_version"
 #define KEY_LANGUAGE                    "language"
-#define KEY_NFT_SCREEN                  "nftEnable"
-#define KEY_NFT_VALID                   "nftValid"
 #define KEY_ENABLE_BLIND_SIGNING        "enableBlindSigning"
 #define DEFAULT_SETUP_STEP              0
 #define DEFAULT_BRIGHT                  15
@@ -67,8 +65,6 @@ typedef struct {
     uint32_t usbSwitch;
     uint32_t lastVersion;
     uint32_t language;
-    bool nftEnable;
-    bool nftValid;
     bool enableBlindSigning;
 } DeviceSettings_t;
 
@@ -143,8 +139,6 @@ void DeviceSettingsInit(void)
         g_deviceSettings.usbSwitch = DEFAULT_USB_SWITCH;
         g_deviceSettings.lastVersion = DEFAULT_LAST_VERSION;
         g_deviceSettings.language = DEFAULT_LANGUAGE;
-        g_deviceSettings.nftEnable = false;
-        g_deviceSettings.nftValid = false;
         g_deviceSettings.enableBlindSigning = false;
         SaveDeviceSettingsSync();
     }
@@ -416,29 +410,6 @@ bool IsUpdateSuccess(void)
     return isUpdate;
 }
 
-bool IsNftScreenValid(void)
-{
-    return g_deviceSettings.nftValid;
-}
-
-void SetNftBinValid(bool en)
-{
-    g_deviceSettings.nftValid = en;
-    if (en == false) {
-        g_deviceSettings.nftEnable = false;
-    }
-}
-
-bool GetNftScreenSaver(void)
-{
-    return g_deviceSettings.nftEnable;
-}
-
-void SetNftScreenSaver(bool enable)
-{
-    g_deviceSettings.nftEnable = enable;
-}
-
 bool GetEnableBlindSigning(void)
 {
     return g_deviceSettings.enableBlindSigning;
@@ -576,8 +547,6 @@ static bool GetDeviceSettingsFromJsonString(const char *string)
         g_deviceSettings.usbSwitch = GetIntValue(rootJson, KEY_USB_SWITCH, DEFAULT_USB_SWITCH);
         g_deviceSettings.lastVersion = GetIntValue(rootJson, KEY_LAST_VERSION, DEFAULT_LAST_VERSION);
         g_deviceSettings.language = GetIntValue(rootJson, KEY_LANGUAGE, DEFAULT_LANGUAGE);
-        g_deviceSettings.nftEnable = GetBoolValue(rootJson, KEY_NFT_SCREEN, false);
-        g_deviceSettings.nftValid = GetBoolValue(rootJson, KEY_NFT_VALID, false);
         g_deviceSettings.enableBlindSigning = GetBoolValue(rootJson, KEY_ENABLE_BLIND_SIGNING, false);
     } while (0);
     cJSON_Delete(rootJson);
@@ -603,8 +572,6 @@ static char *GetJsonStringFromDeviceSettings(void)
     cJSON_AddItemToObject(rootJson, KEY_USB_SWITCH, cJSON_CreateNumber(g_deviceSettings.usbSwitch));
     cJSON_AddItemToObject(rootJson, KEY_LAST_VERSION, cJSON_CreateNumber(g_deviceSettings.lastVersion));
     cJSON_AddItemToObject(rootJson, KEY_LANGUAGE, cJSON_CreateNumber(g_deviceSettings.language));
-    cJSON_AddItemToObject(rootJson, KEY_NFT_SCREEN, cJSON_CreateBool(g_deviceSettings.nftEnable));
-    cJSON_AddItemToObject(rootJson, KEY_NFT_VALID, cJSON_CreateBool(g_deviceSettings.nftValid));
     cJSON_AddItemToObject(rootJson, KEY_ENABLE_BLIND_SIGNING, cJSON_CreateBool(g_deviceSettings.enableBlindSigning));
     retStr = cJSON_PrintBuffered(rootJson, SPI_FLASH_SIZE_NORMAL_PARAM - 4, false);
     RemoveFormatChar(retStr);

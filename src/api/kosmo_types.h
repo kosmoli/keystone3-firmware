@@ -119,8 +119,7 @@ typedef enum {
     KOSMO_REQ_CALCULATE_SHA256,              /* 计算 SHA256 */
     KOSMO_REQ_FORMAT_SD_CARD,                /* 格式化 SD 卡 */
     KOSMO_REQ_COPY_SD_CARD_OTA,              /* SD 卡 OTA 复制 */
-    KOSMO_REQ_UPDATE_BOOT,                   /* 更新 boot */
-    KOSMO_REQ_CALCULATE_WEB_AUTH_CODE,       /* 计算 WebAuth 码 */
+    KOSMO_REQ_UPDATE_BOOT,                   /* 更新 Boot */
     KOSMO_REQ_CONTROL_QR_DECODE,             /* 控制 QR 解码 */
 
     /* UR 操作 */

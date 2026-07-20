@@ -31,7 +31,7 @@
 #include "touchpad_task.h"
 #include "background_task.h"
 #include "fetch_sensitive_data_task.h"
-#include "data_parser_task.h"
+
 #include "log_task.h"
 #include "usb_task.h"
 #include "user_fatfs.h"
@@ -98,7 +98,7 @@ int main(void)
     CreateCmdTask();
 #endif
     CreateFetchSensitiveDataTask();
-    CreateDataParserTask();
+
     CreateUiDisplayTask();
     CreateQrDecodeTask();
     CreateTouchPadTask();

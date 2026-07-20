@@ -64,8 +64,7 @@ static void CloseChooseAutoShutdownHandler(lv_event_t* e);
 static void SelectAutoShutdownHandler(lv_event_t *e);
 static uint32_t GetAutoShutdownTimeByEnum(AUTO_SHUTDOWN_ENUM shutdownTime);
 static const char *GetAutoShutdownTimeDescByLockTime(void);
-static void NftScreenSaverSwitchHandler(lv_event_t * e);
-static void OpenNftTutorialHandler(lv_event_t *e);
+
 
 void GuiDisplayWidgetsInit()
 {
@@ -177,35 +176,6 @@ void GuiDisplayEntranceWidget(lv_obj_t *parent)
     lv_obj_clear_flag(button, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, 84);
 
-    label = GuiCreateTextLabel(parent, _("nft_screen_saver"));
-    lv_obj_t *img = GuiCreateImg(parent, &imgInfo);
-    GuiButton_t nftTable[] = {
-        {.obj = label, .align = LV_ALIGN_LEFT_MID, .position = {0, 0}},
-        {.obj = img, .align = LV_ALIGN_LEFT_MID, .position = {16 + lv_obj_get_self_width(label), 0},},
-    };
-    lv_obj_t *btn = GuiCreateButton(parent, lv_obj_get_self_width(label) + lv_obj_get_self_width(img) + 16, 48, nftTable, NUMBER_OF_ARRAYS(nftTable),
-                                    OpenNftTutorialHandler, NULL);
-    lv_obj_set_style_radius(btn, 12, LV_PART_MAIN);
-
-    lv_obj_t *nftSwitch = GuiCreateSwitch(parent);
-    if (!IsNftScreenValid()) {
-        lv_obj_set_style_bg_opa(nftSwitch, LV_OPA_30, LV_PART_KNOB);
-    } else {
-        if (GetNftScreenSaver()) {
-            lv_obj_add_state(nftSwitch, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(nftSwitch, LV_STATE_CHECKED);
-        }
-    }
-    lv_obj_clear_flag(nftSwitch, LV_OBJ_FLAG_CLICKABLE);
-    nftTable[0].obj = btn;
-    nftTable[0].position.x = 24;
-    nftTable[1].obj = nftSwitch;
-    nftTable[1].align = LV_ALIGN_RIGHT_MID;
-    nftTable[1].position.x = -24;
-    button = GuiCreateButton(parent, 456, 84, nftTable, NUMBER_OF_ARRAYS(nftTable),
-                             NftScreenSaverSwitchHandler, nftSwitch);
-    GuiAlignToPrevObj(button, LV_ALIGN_OUT_BOTTOM_MID, 0, 25);
     label = GuiCreateTextLabel(parent, _("system_settings_screen_lock_auto_lock"));
     lv_obj_t *imgArrow = GuiCreateImg(parent, &imgArrowRight);
     const char *currentLockTime = GetAutoLockTimeDescByLockTime();
@@ -573,50 +543,3 @@ static const char *GetAutoShutdownTimeDescByLockTime(void)
     return _("system_settings_screen_lock_auto_power_off_never");
 }
 
-static void NftScreenSaverSwitchHandler(lv_event_t * e)
-{
-    lv_obj_t * obj = lv_event_get_user_data(e);
-    if (!IsNftScreenValid()) {
-        return;
-    }
-
-    if (lv_obj_has_state(obj, LV_STATE_CHECKED)) {
-        lv_obj_clear_state(obj, LV_STATE_CHECKED);
-        SetNftScreenSaver(false);
-    } else {
-        lv_obj_add_state(obj, LV_STATE_CHECKED);
-        SetNftScreenSaver(true);
-    }
-    SaveDeviceSettings();
-}
-
-static void OpenNftTutorialHandler(lv_event_t *e)
-{
-    g_noticeWindow = GuiCreateHintBox(704);
-
-    lv_obj_t *qrCodeCont = lv_obj_create(g_noticeWindow);
-    lv_obj_set_size(qrCodeCont, 408, 408);
-    lv_obj_set_style_border_width(qrCodeCont, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(qrCodeCont, 0, 0);
-    lv_obj_set_style_pad_all(qrCodeCont, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(qrCodeCont, 16, LV_PART_MAIN);
-    lv_obj_clear_flag(qrCodeCont, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_clear_flag(qrCodeCont, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_bg_color(qrCodeCont, WHITE_COLOR, LV_PART_MAIN);
-    lv_obj_align(qrCodeCont, LV_ALIGN_BOTTOM_MID, 0, -260);
-
-    lv_obj_t *qrCode = lv_qrcode_create(qrCodeCont, 360, BLACK_COLOR, WHITE_COLOR);
-    lv_obj_align(qrCode, LV_ALIGN_CENTER, 0, 0);
-    lv_qrcode_update(qrCode, _("nft_screen_set_url"), (uint32_t)strnlen_s(_("nft_screen_set_url"), BUFFER_SIZE_128));
-
-    lv_obj_t *label = GuiCreateLittleTitleLabel(g_noticeWindow, _("nft_screen_set_title"));
-    lv_obj_align(label, LV_ALIGN_BOTTOM_LEFT, 36, -156);
-    label = GuiCreateIllustrateLabel(g_noticeWindow, _("nft_screen_set_url"));
-    lv_obj_set_style_text_color(label, lv_color_hex(0x1BE0C6), LV_PART_MAIN);
-    lv_obj_align(label, LV_ALIGN_BOTTOM_LEFT, 36, -114);
-
-    lv_obj_t *button = GuiCreateTextBtn(g_noticeWindow, _("OK"));
-    lv_obj_set_style_bg_color(button, WHITE_COLOR_OPA20, LV_PART_MAIN);
-    lv_obj_align(button, LV_ALIGN_BOTTOM_RIGHT, -36, -24);
-    lv_obj_add_event_cb(button, CloseHintBoxHandler, LV_EVENT_CLICKED, &g_noticeWindow);
-}

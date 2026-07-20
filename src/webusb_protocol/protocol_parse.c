@@ -1,6 +1,5 @@
 #include "internal_protocol_parser.h"
 #include "eapdu_protocol_parser.h"
-#endif
 #include "stdio.h"
 #include "string.h"
 #include "user_utils.h"
@@ -28,7 +27,6 @@ void ProtocolReceivedData(const uint8_t *data, uint32_t len, ProtocolSendCallbac
     if (data[0] == EAPDU_PROTOCOL_HEADER && !GetIsReceivingFile()) {
         currentParser = NewEApduProtocolParser();
     }
-#endif
 
     if (currentParser->getRcvCount() != 0) {
         if (tick - lastTick > PROTOCOL_PARSE_OVERTIME) {

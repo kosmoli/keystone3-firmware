@@ -144,9 +144,7 @@ static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen);
 static int32_t ModelComparePubkey(MnemonicType mnemonicType, uint8_t *ems, uint8_t emsLen, uint16_t id, bool eb, uint8_t ie, uint8_t *index);
 static int32_t ModelBip39ForgetPass(const void *inData, uint32_t inDataLen);
 static int32_t ModelSlip39ForgetPass(const void *inData, uint32_t inDataLen);
-static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen);
 static int32_t ModelWriteLastLockDeviceTime(const void *inData, uint32_t inDataLen);
-static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen);
 static int32_t ModelURGenerateQRCode(const void *indata, uint32_t inDataLen, BackgroundAsyncRunnable_t getUR);
 static int32_t ModelCalculateCheckSum(const void *indata, uint32_t inDataLen);
 static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen);
@@ -158,7 +156,6 @@ static int32_t ModelParseTransaction(const void *indata, uint32_t inDataLen, Bac
 static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen);
 static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataLen);
 static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen);
-static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen);
 static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen);
 static void ModelStopCalculateCheckSum(void);
 static bool ModelGetPassphraseQuickAccess(void);
@@ -926,18 +923,6 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
     case KOSMO_REQ_FORMAT_SD_CARD: {
         SetPageLockScreen(false);
         AsyncExecute(ModelFormatMicroSd, NULL, 0);
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_COPY_SD_CARD_OTA: {
-        AsyncExecute(ModelCopySdCardOta, NULL, 0);
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_UPDATE_BOOT: {
-        AsyncExecute(ModelUpdateBoot, NULL, 0);
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_CALCULATE_WEB_AUTH_CODE: {
-        AsyncExecuteWithPtr(ModelCalculateWebAuthCode, request->raw_ptr.ptr);
         return KOSMO_OK;
     }
     case KOSMO_REQ_CONTROL_QR_DECODE: {
@@ -1948,52 +1933,6 @@ static int32_t ModelChangeAccountPass(const void *inData, uint32_t inDataLen)
     return SUCCESS_CODE;
 }
 
-// calculate auth code
-static int32_t ModelCalculateWebAuthCode(const void *inData, uint32_t inDataLen)
-{
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-#ifndef COMPILE_SIMULATOR
-    uint8_t *key = SRAM_MALLOC(WEB_AUTH_RSA_KEY_LEN);
-    if (key == NULL) {
-        char *authCode = "";
-        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-        SetLockScreen(enable);
-        return SUCCESS_CODE;
-    }
-    int32_t ret = GetWebAuthRsaKey(key);
-    if (ret != SUCCESS_CODE) {
-        memset_s(key, WEB_AUTH_RSA_KEY_LEN, 0, WEB_AUTH_RSA_KEY_LEN);
-        SRAM_FREE(key);
-        char *authCode = "";
-        KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, ret, authCode, strlen(authCode) + 1);
-        SetLockScreen(enable);
-        return SUCCESS_CODE;
-    }
-    char *authCode = calculate_auth_code(inData, key, 512, &key[512], 512);
-    bool shouldFreeAuthCode = authCode != NULL;
-    memset_s(key, WEB_AUTH_RSA_KEY_LEN, 0, WEB_AUTH_RSA_KEY_LEN);
-    SRAM_FREE(key);
-    if (authCode == NULL) {
-        authCode = "";
-    }
-    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-    if (shouldFreeAuthCode) {
-        free_ptr_string(authCode);
-    }
-#else
-    uint8_t *entropy;
-    uint8_t entropyLen;
-    int32_t ret;
-    uint8_t *accountIndex = (uint8_t *)inData;
-
-    char *authCode = "12345Yyq";
-    KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_WEB_AUTH_CODE, SUCCESS_CODE, authCode, strlen(authCode) + 1);
-#endif
-    SetLockScreen(enable);
-    return SUCCESS_CODE;
-}
-
 static uint16_t ModelVerifyPassSuccess(uint16_t *param)
 {
     int32_t ret = SUCCESS_CODE;
@@ -2213,56 +2152,9 @@ static int32_t ModelWriteLastLockDeviceTime(const void *inData, uint32_t inDataL
     return SUCCESS_CODE;
 }
 
-static int32_t ModelCopySdCardOta(const void *inData, uint32_t inDataLen)
-{
-#ifndef COMPILE_SIMULATOR
-    static uint8_t walletAmount;
-    SetPageLockScreen(false);
-    int32_t ret = FatfsFileCopy(SD_CARD_OTA_FILE_PATH, INTERNAL_STORAGE_OTA_FILE_PATH);
-    if (ret == SUCCESS_CODE) {
-        GetExistAccountNum(&walletAmount);
-        if (walletAmount == 0) {
-            SetSetupStep(4);
-            SaveDeviceSettings();
-        }
-        NVIC_SystemReset();
-    } else {
-        SetPageLockScreen(true);
-        KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
-    }
-#else
-    KosmoApi_NotifyResult(KOSMO_REQ_COPY_SD_CARD_OTA, ERR_GENERAL_FAIL, NULL, 0);
-#endif
-    return SUCCESS_CODE;
-}
-
 static bool CheckNeedDelay(ViewType viewType)
 {
     return viewType == ZcashTx;
-}
-
-static int32_t ModelUpdateBoot(const void *inData, uint32_t inDataLen)
-{
-#ifdef BUILD_PRODUCTION
-#ifndef COMPILE_SIMULATOR
-    osDelay(1000);
-    static uint8_t walletAmount;
-    SetPageLockScreen(false);
-    int32_t ret = UpdateBootFromFlash();
-    SetPageLockScreen(true);
-    if (ret == SUCCESS_CODE) {
-        NVIC_SystemReset();
-        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
-    } else {
-        KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, ERR_GENERAL_FAIL, NULL, 0);
-    }
-#else
-    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
-#endif
-#else
-    KosmoApi_NotifyResult(KOSMO_REQ_UPDATE_BOOT, KOSMO_OK, NULL, 0);
-#endif
-    return SUCCESS_CODE;
 }
 
 static int32_t ModelCheckTransaction(const void *inData, uint32_t inDataLen)

@@ -174,6 +174,13 @@ static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen);
+/* Phase 6b */
+static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignXrpTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen);
 
 /* ── ChainType 映射表 ───────────────────────────────── */
 
@@ -1077,6 +1084,54 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         static void *s_urData;
         s_urData = request->sign_zcash_tx.urData;
         AsyncExecute(ModelSignZcashTx, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+    /* Phase 6b: COSMOS, TRX, XRP, ETH */
+    case KOSMO_REQ_SIGN_COSMOS_TX: {
+        static void *s_arr[2];
+        s_arr[0] = request->sign_cosmos_tx.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_cosmos_tx.urType;
+        AsyncExecute(ModelSignCosmosTx, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_TRX_TX: {
+        static void *s_arr[3];
+        s_arr[0] = request->sign_trx_tx.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_trx_tx.urType;
+        s_arr[2] = (void *)(uintptr_t)request->sign_trx_tx.isUnlimited;
+        AsyncExecute(ModelSignTrxTx, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_TRX_MESSAGE: {
+        static void *s_arr[2];
+        s_arr[0] = request->sign_trx_message.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_trx_message.urType;
+        AsyncExecute(ModelSignTrxMessage, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_XRP_TX: {
+        /* Pack: [0]=urData, [1]=isBytes, [2..5]=hdPath (copy 32 bytes) */
+        static struct { void *urData; bool isBytes; char hdPath[32]; } s_xrp;
+        s_xrp.urData = request->sign_xrp_tx.urData;
+        s_xrp.isBytes = request->sign_xrp_tx.isBytes;
+        memcpy(s_xrp.hdPath, request->sign_xrp_tx.hdPath, sizeof(s_xrp.hdPath));
+        AsyncExecute(ModelSignXrpTx, &s_xrp, sizeof(s_xrp));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ETH_TX: {
+        static void *s_arr[5];
+        s_arr[0] = request->sign_eth_tx.urData;
+        s_arr[1] = (void *)(uintptr_t)request->sign_eth_tx.urType;
+        s_arr[2] = (void *)(uintptr_t)request->sign_eth_tx.isUnlimited;
+        s_arr[3] = (void *)(uintptr_t)request->sign_eth_tx.isBytes;
+        s_arr[4] = (void *)(uintptr_t)request->sign_eth_tx.viewType;
+        AsyncExecute(ModelSignEthTx, s_arr, sizeof(s_arr));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_ETH_MESSAGE: {
+        static void *s_urData;
+        s_urData = request->sign_eth_message.urData;
+        AsyncExecute(ModelSignEthMessage, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
 
@@ -2601,4 +2656,164 @@ static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)
 {
     void *urData = *(void **)inData;
     return ModelSignGeneric(KOSMO_REQ_SIGN_ZCASH_TX, urData, sign_zcash_tx);
+}
+
+/* ── Phase 6b: COSMOS, TRX, XRP, ETH Signing ────────── */
+
+static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_COSMOS_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = cosmos_sign_tx(urData, urType, seed, len);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_COSMOS_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+    bool isUnlimited = (bool)(uintptr_t)arr[2];
+    uint8_t mfp[4];
+    GetMasterFingerPrint(mfp);
+    uint32_t fragmentLen = isUnlimited ? FRAGMENT_UNLIMITED_LENGTH : FRAGMENT_MAX_LENGTH_DEFAULT;
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_TRX_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = NULL;
+    if (urType == TronSignRequest) {
+        result = tron_sign_request(urData, seed, len, fragmentLen);
+    } else {
+        result = tron_sign_keystone(urData, urType, mfp, sizeof(mfp),
+                                    (char *)KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX),
+                                    SOFTWARE_VERSION, seed, len);
+    }
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TRX_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+    uint8_t mfp[4];
+    GetMasterFingerPrint(mfp);
+    uint8_t seed[SEED_LEN] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_TRX_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = tron_sign_request(urData, seed, len, FRAGMENT_MAX_LENGTH_DEFAULT);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TRX_MESSAGE, result);
+    return KOSMO_OK;
+}
+
+typedef struct {
+    void *urData;
+    bool isBytes;
+    char hdPath[32];
+} XrpSignParams;
+
+static int32_t ModelSignXrpTx(const void *inData, uint32_t inDataLen)
+{
+    const XrpSignParams *params = (const XrpSignParams *)inData;
+    uint8_t seed[64] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_XRP_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
+    UREncodeResult *result = NULL;
+    if (params->isBytes) {
+        uint8_t mfp[4] = {0};
+        GetMasterFingerPrint(mfp);
+        result = xrp_sign_tx_bytes(params->urData, seed, len, mfp, sizeof(mfp),
+                                   KosmoApi_GetPublicKey(KOSMO_CHAIN_XRP));
+    } else {
+        result = xrp_sign_tx(params->urData, params->hdPath, seed, len);
+    }
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XRP_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen)
+{
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
+    bool isUnlimited = (bool)(uintptr_t)arr[2];
+    bool isBytes = (bool)(uintptr_t)arr[3];
+    uint8_t viewType = (uint8_t)(uintptr_t)arr[4];
+    uint8_t seed[64] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ETH_TX, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : seedLen;
+    UREncodeResult *result = NULL;
+    if (viewType == EthPersonalMessage || viewType == EthTypedData) {
+        /* Personal message / typed data — uses eth_sign_tx_dynamic */
+        result = eth_sign_tx_dynamic(urData, seed, len, FRAGMENT_MAX_LENGTH_DEFAULT);
+    } else if (isBytes) {
+        uint8_t mfp[4] = {0};
+        GetMasterFingerPrint(mfp);
+        result = eth_sign_tx_bytes(urData, seed, len, mfp, sizeof(mfp));
+    } else if (isUnlimited) {
+        result = eth_sign_tx_unlimited(urData, seed, len);
+    } else {
+        result = eth_sign_tx(urData, seed, len);
+    }
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_TX, result);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen)
+{
+    void *urData = *(void **)inData;
+    uint8_t seed[64] = {0};
+    uint32_t seedLen = 0;
+    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
+    if (ret != KOSMO_OK) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ETH_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
+        return ret;
+    }
+    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : seedLen;
+    UREncodeResult *result = eth_sign_tx_dynamic(urData, seed, len, FRAGMENT_MAX_LENGTH_DEFAULT);
+    memset_s(seed, sizeof(seed), 0, sizeof(seed));
+    ClearSecretCache();
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_MESSAGE, result);
+    return KOSMO_OK;
 }

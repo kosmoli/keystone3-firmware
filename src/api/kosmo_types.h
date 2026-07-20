@@ -152,6 +152,14 @@ typedef enum {
     KOSMO_REQ_SIGN_IOTA_HASH,
     KOSMO_REQ_SIGN_ZCASH_TX,
 
+    /* Phase 6b: COSMOS, TRX, XRP, ETH Signing */
+    KOSMO_REQ_SIGN_COSMOS_TX,
+    KOSMO_REQ_SIGN_TRX_TX,
+    KOSMO_REQ_SIGN_TRX_MESSAGE,
+    KOSMO_REQ_SIGN_XRP_TX,
+    KOSMO_REQ_SIGN_ETH_TX,
+    KOSMO_REQ_SIGN_ETH_MESSAGE,
+
     KOSMO_REQ_NUM,
 } KosmoRequestType;
 
@@ -201,6 +209,13 @@ typedef struct {
         struct { void *urData; } sign_iota_tx;
         struct { void *urData; } sign_iota_hash;
         struct { void *urData; } sign_zcash_tx;
+        /* Phase 6b */
+        struct { void *urData; uint32_t urType; } sign_cosmos_tx;
+        struct { void *urData; uint32_t urType; bool isUnlimited; } sign_trx_tx;
+        struct { void *urData; uint32_t urType; } sign_trx_message;
+        struct { void *urData; bool isBytes; char hdPath[32]; } sign_xrp_tx;
+        struct { void *urData; uint32_t urType; bool isUnlimited; bool isBytes; uint8_t viewType; } sign_eth_tx;
+        struct { void *urData; } sign_eth_message;
     };
 } KosmoRequest;
 

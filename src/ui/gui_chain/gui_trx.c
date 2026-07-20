@@ -321,12 +321,26 @@ static UREncodeResult *GuiGetTrxSignUrDataDynamic(bool unLimit)
 
 UREncodeResult *GuiGetTrxSignQrCodeData(void)
 {
-    return GuiGetTrxSignUrDataDynamic(false);
+    void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_TRX_TX,
+        .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = false },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 UREncodeResult *GuiGetTrxSignUrDataUnlimited(void)
 {
-    return GuiGetTrxSignUrDataDynamic(true);
+    void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_TRX_TX,
+        .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = true },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 void *GuiGetTrxPersonalMessage(void)

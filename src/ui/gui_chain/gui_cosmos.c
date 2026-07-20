@@ -628,21 +628,12 @@ uint8_t GuiGetCosmosTxChain(void)
 
 UREncodeResult *GuiGetCosmosSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
-    uint8_t seed[SEED_LEN];
-    do {
-        uint32_t seedLen = 0;
-        int ret = KosmoApi_GetSeed(seed, &seedLen);
-        if (ret != KOSMO_OK) {
-            break;
-        }
-        encodeResult = cosmos_sign_tx(GetCosmosUrData(), GetCosmosUrType(), seed, seedLen);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    void *data = GetCosmosUrData();
+    QRCodeType urType = GetCosmosUrType();
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_COSMOS_TX,
+        .sign_cosmos_tx = { .urData = data, .urType = (uint32_t)urType },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }

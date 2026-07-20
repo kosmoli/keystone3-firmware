@@ -153,30 +153,16 @@ void GetXrpDetail(void *indata, void *param, uint32_t maxLen)
 
 UREncodeResult *GuiGetXrpSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        uint8_t seed[64];
-        uint32_t seedLen = 0;
-        KosmoApi_GetSeed(seed, &seedLen);
-        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-        if (is_keystone_xrp_tx(data)) {
-            uint8_t mfp[4] = {0};
-            GetMasterFingerPrint(mfp);
-            // sign the bytes from keystone hot wallet
-            char pubkey[XPUB_KEY_LEN] = {0};
-            if (g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()] != NULL) {
-                strcpy_s(pubkey, XPUB_KEY_LEN, g_cachedPubkey[KosmoApi_GetCurrentAccountIndex()]);
-            }
-            encodeResult = xrp_sign_tx_bytes(data, seed, len, mfp, sizeof(mfp), KosmoApi_GetPublicKey(KOSMO_CHAIN_XRP));
-        } else {
-            encodeResult = xrp_sign_tx(data, g_hdPath, seed, len);
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    bool isBytes = is_keystone_xrp_tx(data);
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_XRP_TX,
+        .sign_xrp_tx = { .urData = data, .isBytes = isBytes },
+    };
+    if (!isBytes) {
+        strncpy(req.sign_xrp_tx.hdPath, g_hdPath, sizeof(req.sign_xrp_tx.hdPath) - 1);
+        req.sign_xrp_tx.hdPath[sizeof(req.sign_xrp_tx.hdPath) - 1] = '\0';
+    }
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }

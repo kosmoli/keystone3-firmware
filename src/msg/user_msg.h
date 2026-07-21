@@ -46,7 +46,6 @@ enum {
     UI_MSG_PREPARE_RECEIVE_UR_USB,
     UI_MSG_OPEN_VIEW,
     UI_MSG_CLOSE_VIEW,
-    EVENT_USB_HARDWARE_CALL,        /* 业务事件：硬件调用请求（替代 UI_MSG_USB_HARDWARE_VIEW） */
 };
 
 enum {

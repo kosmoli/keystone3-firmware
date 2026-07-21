@@ -109,18 +109,6 @@ static bool IsRequestAllowed(uint32_t requestID)
     return true;
 }
 
-static void HandleHardwareCall(struct URParseResult *urResult)
-{
-    if (GetCurrentAccountIndex() != ACCOUNT_INDEX_LOGOUT) {
-        g_ui_pending_ur_result = urResult;
-        PubValueMsg(EVENT_USB_HARDWARE_CALL, 1);
-        return;
-    }
-
-    const char *data = "Export address is just allowed on specific pages";
-    HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
-    g_requestID = REQUEST_ID_IDLE;
-}
 
 static bool HandleNormalCall(void)
 {
@@ -177,7 +165,9 @@ void ProcessURService(EAPDURequestPayload_t *payload)
         };
 
         if (urResult->ur_type == QRHardwareCall) {
-            HandleHardwareCall(urResult);
+            const char *data = "Hardware call is not supported";
+            HandleURResultViaUSBFunc(data, strlen(data), g_requestID, PRS_PARSING_DISALLOWED);
+            g_requestID = REQUEST_ID_IDLE;
             break;
         }
         if (!HandleNormalCall()) {

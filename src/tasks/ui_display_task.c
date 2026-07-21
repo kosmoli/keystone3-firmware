@@ -18,7 +18,6 @@
 #include "lv_i18n_api.h"
 #include "drv_gd25qxx.h"
 #include "ui_async.h"
-#include "gui_key_derivation_request_widgets.h"
 
 #define LVGL_FAST_TICK_MS                   5
 #define LVGL_IDLE_TICK_MS                   100
@@ -126,20 +125,6 @@ static void UiDisplayTask(void *argument)
                 EXT_FREE(screenData);
 #endif
 #endif
-            }
-            break;
-            case EVENT_USB_HARDWARE_CALL: {
-                /* 业务事件：硬件调用请求。前端自行决定打开密钥派生请求视图。 */
-                if (rcvMsg.value == 1 && g_ui_pending_ur_result != NULL) {
-                    GuiSetKeyDerivationRequestData((void *)g_ui_pending_ur_result, NULL, false);
-                    g_ui_pending_ur_result = NULL;
-                }
-                bool usb = true;
-                if (GuiCheckIfTopView(&g_keyDerivationRequestView)) {
-                    GuiEmitSignal(SIG_USB_HARDWARE_CALL_PARSE_UR, NULL, 0);
-                } else {
-                    GuiFrameOpenViewWithParam(&g_keyDerivationRequestView, &usb, sizeof(usb));
-                }
             }
             break;
             case UI_MSG_PREPARE_RECEIVE_UR_USB: {

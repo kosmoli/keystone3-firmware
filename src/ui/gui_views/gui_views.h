@@ -104,7 +104,6 @@ typedef enum {
     SIG_SETTING_CHANGE_PERMIT_SWITCH,
     SIG_SETTING_CHANGE_BOOT_SECURE_SWITCH,
     SIG_SETTING_CHANGE_RECOVERY_MODE_SWITCH,
-    SIG_USB_HARDWARE_CALL_PARSE_UR,
     SIG_SETTING_BUTT,
 
     SIG_FINGER_REGISTER_STEP_SUCCESS = SIG_SETTING_BUTT + 50,
@@ -155,8 +154,6 @@ typedef enum {
     SIG_SETUP_RSA_PRIVATE_KEY_HIDE_LOADING,
 
 
-    SIG_HARDWARE_CALL_DERIVE_PUBKEY,
-
     /* ── 业务事件信号（Phase 3：后端只发业务事件，前端决定 UI 路由） ── */
     EVENT_DEVICE_LOCKED,           /* 设备已锁定（后端执行 LogoutCurrentAccount 后发送） */
 
@@ -193,8 +190,6 @@ extern GUI_VIEW g_displayView;
 extern GUI_VIEW g_connectionView;
 
 extern GUI_VIEW g_multiAccountsReceiveView;
-extern GUI_VIEW g_keyDerivationRequestView;
-extern GUI_VIEW g_deriveContextHashRequestView;
 extern GUI_VIEW g_ethBatchTxView;
 extern GUI_VIEW g_checkDeleteWalletView;
 extern GUI_VIEW g_scanView;

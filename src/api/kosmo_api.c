@@ -1359,15 +1359,6 @@ void KosmoApi_FreeUrParseResult(void *ptr)
     free_ur_parse_result((PtrT_URParseResult)ptr);
 }
 
-void *KosmoApi_ParseDeriveContextHash(void *ur)
-{
-    return parse_derive_context_hash((PtrUR)ur);
-}
-
-void *KosmoApi_ParseQrHardwareCall(void *ur)
-{
-    return parse_qr_hardware_call((PtrUR)ur);
-}
 
 /* =================================================================
  * Model and Mode execution functions (merged from gui_model.c in Phase 21.3)
@@ -2266,7 +2257,6 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
             *param != SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD &&
             *param != SIG_MULTISIG_WALLET_IMPORT_VERIFY_PASSWORD &&
             *param != SIG_MULTISIG_WALLET_DELETE_VERIFY_PASSWORD &&
-            *param != SIG_HARDWARE_CALL_DERIVE_PUBKEY &&
             *param != SIG_INIT_CONNECT_USB &&
             !strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) &&
             !g_ui_create_wallet_view_opened &&

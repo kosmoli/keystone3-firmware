@@ -11,8 +11,6 @@
 #include "gui_chain.h"
 
 
-#include "gui_key_derivation_request_widgets.h"
-#include "gui_derive_context_hash_request_widgets.h"
 #include "gui_eth_batch_tx_widgets.h"
 
 // The order of the enumeration must be guaranteed
@@ -68,13 +66,6 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
 {
     GuiRemapViewType viewType = ViewTypeReMap(urViewType.viewType);
     switch (urViewType.viewType) {
-
-    case KeyDerivationRequest:
-        GuiSetKeyDerivationRequestData(urResult, urMultiResult, is_multi);
-        break;
-    case DeriveContextHashRequest:
-        GuiSetDeriveContextHashRequestData(urResult, urMultiResult, is_multi);
-        break;
     case EthBatchTx:
         GuiSetEthBatchTxData(urResult, urMultiResult, is_multi);
         break;
@@ -83,19 +74,12 @@ void handleURResult(URParseResult *urResult, URParseMultiResult *urMultiResult, 
         break;
     }
 
-    if (urViewType.viewType == KeyDerivationRequest
-            || urViewType.viewType == DeriveContextHashRequest
-            || urViewType.viewType == EthBatchTx
+    if (urViewType.viewType == EthBatchTx
             || viewType != REMAPVIEW_BUTT) {
         StopQrDecode();
         UserDelay(500);
         GuiApiEmitSignal(SIG_QRCODE_VIEW_SCAN_PASS, &urViewType, sizeof(urViewType));
     } else {
         printf("unhandled viewType=%d\r\n", urViewType.viewType);
-        if (urViewType.viewType == KeyDerivationRequest) {
-            StopQrDecode();
-            UserDelay(500);
-            GuiApiEmitSignal(SIG_QRCODE_VIEW_SCAN_FAIL, &urViewType, sizeof(urViewType));
-        }
     }
 }

@@ -91,20 +91,7 @@ void GuiScanResult(bool result, void *param)
         }
         if (g_chainType == CHAIN_BUTT) {
 
-            if (g_qrcodeViewType == KeyDerivationRequest) {
-                if (!GuiCheckIfTopView(&g_homeView)) {
-                    GuiCloseCurrentWorkingView();
-                }
-                GuiFrameOpenViewWithParam(&g_keyDerivationRequestView, NULL, 0);
-            }
-            if (g_qrcodeViewType == DeriveContextHashRequest) {
-                if (!GuiCheckIfTopView(&g_homeView)) {
-                    GuiCloseCurrentWorkingView();
-                }
-                GuiFrameOpenViewWithParam(&g_deriveContextHashRequestView, NULL, 0);
-            }
 
-            return;
         }
         if (g_qrcodeViewType == EthBatchTx) {
             printf("g_qrcodeViewType == EthBatchTx\n");

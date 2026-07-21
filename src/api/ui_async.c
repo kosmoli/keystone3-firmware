@@ -10,7 +10,6 @@ volatile bool g_ui_need_fp_recognize = false;
 volatile bool g_ui_passphrase_quick_access = false;
 
 /* 后端→前端数据传递指针 */
-volatile void *g_ui_pending_ur_result = NULL;
 
 #ifdef COMPILE_SIMULATOR
 /*

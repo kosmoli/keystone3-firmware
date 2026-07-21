@@ -357,8 +357,6 @@ int KosmoApi_CardanoGetAddress(const char *xPub, uint32_t index, uint8_t type, c
 void KosmoApi_FreeUrEncodeResult(void *ptr);
 void KosmoApi_FreeUrParseMultiResult(void *ptr);
 void KosmoApi_FreeUrParseResult(void *ptr);
-void *KosmoApi_ParseDeriveContextHash(void *ur);
-void *KosmoApi_ParseQrHardwareCall(void *ur);
 
 /* ── 便捷宏 ─────────────────────────────────────────── */
 

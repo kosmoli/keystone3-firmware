@@ -8,7 +8,6 @@
 #include "keystore.h"
 #include "event_groups.h"
 #include "timers.h"
-#include "ui_async.h"
 
 extern EventGroupHandle_t g_fpEventGroup;
 extern char g_intrRecvBuffer[RCV_MSG_MAX_LEN];
@@ -39,17 +38,9 @@ void FpGetAesStateHandle(void *argument)
     SearchFpFwVersion();
 }
 
-void FpRecognizeHandle(void *argument)
-{
-    if (g_ui_need_fp_recognize) {
-        FpRecognize(RECOGNIZE_UNLOCK);
-    }
-}
-
 static void FingerprintTask(void *pvParameter)
 {
     uint8_t len = 0;
-    osTimerId_t fpFpRecognizeTimer = NULL;
 
     FingerprintRestart();
     osDelay(1000);
@@ -67,10 +58,6 @@ static void FingerprintTask(void *pvParameter)
         case FINGER_PRINT_EVENT_RESTART:
             FpResponseHandleStop();
             FingerprintRestart();
-            if (fpFpRecognizeTimer == NULL) {
-                fpFpRecognizeTimer = osTimerNew(FpRecognizeHandle, osTimerOnce, NULL, NULL);
-            }
-            osTimerStart(fpFpRecognizeTimer, 150);
             break;
         case FINGER_PRINT_EVENT_LOW_POWER:
             SetFpLowPowerMode();

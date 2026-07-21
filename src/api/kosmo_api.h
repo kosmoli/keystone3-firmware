@@ -111,11 +111,6 @@ int32_t KosmoApi_GetBip39Word(int index, char *word, int len);
 int32_t KosmoApi_ValidateWord(const char *word, int *index);
 
 /*
- * 查询密码快捷访问状态。
- */
-bool KosmoApi_GetPassphraseQuickAccess(void);
-
-/*
  * 获取当前账户的公钥。
  * @param chain  链类型
  * @return 公钥字符串（只读，不要 free），失败返回 NULL
@@ -147,15 +142,6 @@ const char *KosmoApi_GetPublicKeyRaw(uint32_t xpubType);
  * @return 路径字符串（只读），失败返回 NULL
  */
 const char *KosmoApi_GetPath(KosmoChainType chain);
-
-/*
- * 获取当前账户的种子数据（用于签名）。
- * 自动处理 BIP39（64 字节 seed）vs TON（entropy）差异。
- * @param out      输出缓冲区（调用者分配，至少 64 字节）
- * @param outLen   输出：实际数据长度
- * @return KOSMO_OK 或错误码
- */
-int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen);
 
 /*
  * 获取当前助记词类型。
@@ -204,15 +190,6 @@ void KosmoApi_SetAccountIndex(const char *chainName, uint32_t index);
 /* ── 种子/熵/密码（keystore 包装）───────────────────── */
 
 /*
- * 获取账户种子。
- * @param accountIndex  账户索引
- * @param out           输出缓冲区
- * @param password      设备密码
- * @return KOSMO_OK 或错误码
- */
-int32_t KosmoApi_GetAccountSeed(uint8_t accountIndex, uint8_t *out, const char *password);
-
-/*
  * 获取账户熵。
  */
 int32_t KosmoApi_GetAccountEntropy(uint8_t accountIndex, uint8_t *entropy, uint8_t *entropyLen, const char *password);
@@ -225,7 +202,6 @@ char *KosmoApi_GetPassphrase(uint8_t accountIndex);
 
 /* ── SecretCache 包装 ─────────────────────────────────── */
 
-const char *KosmoApi_CacheGetPassword(void);
 void KosmoApi_CacheSetPassword(const char *password);
 const char *KosmoApi_CacheGetMnemonic(void);
 void KosmoApi_CacheSetPassphrase(const char *passphrase);
@@ -246,7 +222,6 @@ void KosmoApi_CacheSetDiceRollsLen(uint32_t len);
 /* ── 账户管理小函数 ───────────────────────────────────── */
 
 void KosmoApi_GetExistAccountNum(uint8_t *count);
-bool KosmoApi_GetPassphraseQuickAccess(void);
 
 /* ── 账户状态小函数 ───────────────────────────────────── */
 

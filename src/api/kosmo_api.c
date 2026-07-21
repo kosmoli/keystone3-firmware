@@ -162,7 +162,6 @@ static int32_t ModelParseTransactionRawData(const void *inData, uint32_t inDataL
 static int32_t ModelTransactionParseRawDataDelay(const void *inData, uint32_t inDataLen);
 static int32_t ModelRsaGenerateKeyPair(const void *inData, uint32_t inDataLen);
 static void ModelStopCalculateCheckSum(void);
-static bool ModelGetPassphraseQuickAccess(void);
 int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 
 /* Phase 6: Signing Model handlers */
@@ -347,9 +346,14 @@ void KosmoApi_NotifySignResult(KosmoRequestType reqType, void *result)
 {
     UREncodeResult *ur = (UREncodeResult *)result;
     if (ur != NULL && ur->error_code == 0) {
-        KosmoApi_NotifyResult(reqType, KOSMO_OK, ur, sizeof(*ur));
+        // Send UR string data (not the struct) so frontend callbacks
+        // receive valid QR code text via OnGenerateResult → onSuccess.
+        // The persistent KOSMO_REQ_UR_GENERATE_QR callback handles this
+        // because KosmoApi_Request with NULL callback preserves the existing one.
+        uint16_t len = strnlen_s(ur->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1;
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, KOSMO_OK, ur->data, len);
     } else {
-        KosmoApi_NotifyResult(reqType, KOSMO_ERR_GENERAL, NULL, 0);
+        KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, ERR_GENERAL_FAIL, NULL, 0);
     }
 }
 
@@ -398,9 +402,6 @@ int32_t KosmoApi_GetAccountInfo(KosmoAccountInfo *out)
 
     PasscodeType pt = GetPasscodeType();
     out->passcodeType = (pt == PASSCODE_TYPE_PIN) ? KOSMO_PASSCODE_PIN : KOSMO_PASSCODE_PASSWORD;
-
-    out->passphraseMark = GetPassphraseMark();
-    out->passphraseQuickAccess = GetPassphraseQuickAccess();
 
     return KOSMO_OK;
 }
@@ -451,7 +452,7 @@ void KosmoApi_SetAccountIndex(const char *chainName, uint32_t index)
 
 /* ── 种子/熵/密码（keystore 包装）───────────────────── */
 
-int32_t KosmoApi_GetAccountSeed(uint8_t accountIndex, uint8_t *out, const char *password)
+static int32_t KosmoApi_GetAccountSeed(uint8_t accountIndex, uint8_t *out, const char *password)
 {
     return GetAccountSeed(accountIndex, out, password);
 }
@@ -468,7 +469,7 @@ char *KosmoApi_GetPassphrase(uint8_t accountIndex)
 
 /* ── SecretCache 包装 ─────────────────────────────────── */
 
-const char *KosmoApi_CacheGetPassword(void)
+static const char *KosmoApi_CacheGetPassword(void)
 {
     return SecretCacheGetPassword();
 }
@@ -558,11 +559,6 @@ void KosmoApi_CacheSetDiceRollsLen(uint32_t len)
 void KosmoApi_GetExistAccountNum(uint8_t *count)
 {
     GetExistAccountNum(count);
-}
-
-bool KosmoApi_GetPassphraseQuickAccess(void)
-{
-    return GetPassphraseQuickAccess();
 }
 
 /* ── 账户状态小函数 ───────────────────────────────────── */
@@ -678,7 +674,7 @@ const char *KosmoApi_GetPath(KosmoChainType chain)
     return GetCurrentAccountPath((ChainType)xpubType);
 }
 
-int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen)
+static int32_t KosmoApi_GetSeed(uint8_t *out, uint32_t *outLen)
 {
     if (out == NULL || outLen == NULL) return KOSMO_ERR_INVALID;
 
@@ -1513,7 +1509,6 @@ static int32_t ModelWriteEntropyAndSeed(const void *inData, uint32_t inDataLen)
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     MODEL_WRITE_SE_END(KOSMO_REQ_WRITE_SE)
     SetLockScreen(enable);
@@ -1557,7 +1552,6 @@ static int32_t ModelBip39CalWriteEntropyAndSeed(const void *inData, uint32_t inD
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
     CHECK_ERRCODE_BREAK("login error", ret);
@@ -1648,8 +1642,13 @@ static int32_t ModelURGenerateQRCode(const void *indata, uint32_t inDataLen, Bac
 {
     GenerateUR func = (GenerateUR)getUR;
     g_urResult = func();
+    if (g_urResult == NULL) {
+        // Async signing: dataFunc dispatched signing request, returned NULL.
+        // The signing result will arrive via KosmoApi_NotifySignResult →
+        // persistent KOSMO_REQ_UR_GENERATE_QR callback → OnGenerateResult → onSuccess.
+        return SUCCESS_CODE;
+    }
     if (g_urResult->error_code == 0) {
-        // printf("%s\r\n", g_urResult->data);
         KosmoApi_NotifyResult(KOSMO_REQ_UR_GENERATE_QR, KOSMO_OK, g_urResult->data, strnlen_s(g_urResult->data, SIMPLERESPONSE_C_CHAR_MAX_LEN) + 1);
     } else {
         char *message = g_urResult->error_message != NULL ? g_urResult->error_message : "";
@@ -1875,7 +1874,6 @@ static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen)
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     MODEL_WRITE_SE_END(KOSMO_REQ_SLIP39_WRITE_SE)
 
@@ -1935,7 +1933,6 @@ static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t in
     if (strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) > 0) {
         ret = SetPassphrase(GetCurrentAccountIndex(), SecretCacheGetPassphrase(), SecretCacheGetNewPassword());
         CHECK_ERRCODE_BREAK("set passphrase error", ret);
-        SetPassphraseQuickAccess(g_ui_passphrase_quick_access);
     }
     ret = VerifyPasswordAndLogin(&newAccount, SecretCacheGetNewPassword());
     CHECK_ERRCODE_BREAK("login error", ret);
@@ -2222,7 +2219,6 @@ static uint16_t ModelVerifyPassFailed(uint16_t *param)
 static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
 {
     bool enable = IsPreviousLockScreenEnable();
-    static bool firstVerify = true;
     SetLockScreen(false);
     uint8_t accountIndex;
     int32_t ret;
@@ -2240,28 +2236,6 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
         }
     } else {
         ret = VerifyCurrentAccountPassword(SecretCacheGetPassword());
-    }
-
-    if (SIG_LOCK_VIEW_VERIFY_PIN == *param && firstVerify && ModelGetPassphraseQuickAccess()) {
-        *param = SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE;
-        firstVerify = false;
-    }
-
-    // some scene would need clear secret after check
-    if (*param != SIG_SETTING_CHANGE_PASSWORD &&
-            *param != SIG_SETTING_WRITE_PASSPHRASE &&
-            *param != SIG_LOCK_VIEW_SCREEN_ON_VERIFY_PASSPHRASE &&
-            *param != SIG_FINGER_SET_SIGN_TRANSITIONS &&
-            *param != SIG_FINGER_REGISTER_ADD_SUCCESS &&
-            *param != SIG_SIGN_TRANSACTION_WITH_PASSWORD &&
-            *param != SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD &&
-            *param != SIG_MULTISIG_WALLET_IMPORT_VERIFY_PASSWORD &&
-            *param != SIG_MULTISIG_WALLET_DELETE_VERIFY_PASSWORD &&
-            *param != SIG_INIT_CONNECT_USB &&
-            !strnlen_s(SecretCacheGetPassphrase(), PASSPHRASE_MAX_LEN) &&
-            !g_ui_create_wallet_view_opened &&
-            !ModelGetPassphraseQuickAccess()) {
-        ClearSecretCache();
     }
     SetLockScreen(enable);
     uint16_t resultSignal;
@@ -2542,19 +2516,6 @@ static int32_t ModelCalculateBinSha256(const void *indata, uint32_t inDataLen)
     KosmoApi_NotifyResult(KOSMO_REQ_CALCULATE_SHA256, KOSMO_OK, &percent, sizeof(percent));
 #endif
     return SUCCESS_CODE;
-}
-
-static bool ModelGetPassphraseQuickAccess(void)
-{
-#ifdef COMPILE_SIMULATOR
-    return false;
-#else
-    if (PassphraseExist(GetCurrentAccountIndex()) == false && GetPassphraseQuickAccess() == true && GetPassphraseMark() == true) {
-        return true;
-    } else {
-        return false;
-    }
-#endif
 }
 
 static int32_t ModelFormatMicroSd(const void *indata, uint32_t inDataLen)

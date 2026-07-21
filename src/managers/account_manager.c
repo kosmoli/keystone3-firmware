@@ -404,20 +404,6 @@ uint8_t GetSlip39Eb(void)
     return ieEb >> 4;
 }
 
-/// @brief Get a boolean representing whether passphrase exists for the current account.
-/// @return passphrase exists.
-bool GetPassphraseQuickAccess(void)
-{
-    return g_currentAccountInfo.passphraseQuickAccess != 0;
-}
-
-/// @brief Get a boolean representing whether passphrase mark enable for the current account.
-/// @return passphrase exists.
-bool GetPassphraseMark(void)
-{
-    return g_currentAccountInfo.passphraseMark != 0;
-}
-
 /// @brief Get wallet icon index of the current account.
 /// @return wallet icon index.
 uint8_t GetWalletIconIndex(void)
@@ -430,26 +416,6 @@ uint8_t GetWalletIconIndex(void)
 char *GetWalletName(void)
 {
     return g_currentAccountInfo.walletName;
-}
-
-/// @brief Set passphrase quick access enable for the current account.
-/// @param[in] enable Quick access enable.
-void SetPassphraseQuickAccess(bool enable)
-{
-    g_currentAccountInfo.passphraseQuickAccess = enable ? 1 : 0;
-    // should only show quick access after restart.
-    if (PassphraseExist(GetCurrentAccountIndex()) == true) {
-        SetPassphraseMark(true);
-    }
-    SaveCurrentAccountInfo();
-}
-
-/// @brief Set passphrase mark enable for the current account.
-/// @param[in] enable Mark enable.
-void SetPassphraseMark(bool enable)
-{
-    g_currentAccountInfo.passphraseMark = enable ? 1 : 0;
-    SaveCurrentAccountInfo();
 }
 
 /// @brief Set wallet icon index for the current account.

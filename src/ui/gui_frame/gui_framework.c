@@ -251,19 +251,6 @@ static const char *GuiFrameIdToName(SCREEN_ID_ENUM ID)
     return name;
 }
 /*
- * ui_state_sync — 前端状态同步到后端可读的全局变量。
- * Phase 2 清理后仅更新仍在使用的变量。
- * 理想架构中这些变量也应消除（见 KOSMO固件前后端职责越界分析.md）。
+ * ui_state_sync — 已在 Phase 7 中移除。
+ * 所有 volatile 全局变量已消除，前端不再需要同步状态到后端。
  */
-#include "ui_async.h"
-
-/* 前向声明：来自其他前端模块的查询函数 */
-extern bool GuiNeedFpRecognize(void);
-extern bool GuiPassphraseQuickAccess(void);
-
-void ui_state_sync(void)
-{
-    g_ui_create_wallet_view_opened = GuiCheckIfViewOpened(&g_createWalletView);
-    g_ui_need_fp_recognize = GuiNeedFpRecognize();
-    g_ui_passphrase_quick_access = GuiPassphraseQuickAccess();
-}

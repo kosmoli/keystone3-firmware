@@ -429,7 +429,6 @@ int32_t SetPassphrase(uint8_t accountIndex, const char *passphrase, const char *
         }
         SetupZcashSFP(accountIndex, password);
         SetupZcashCache(accountIndex, password);
-        SetPassphraseMark(passphrase[0] != '\0');
     } while (0);
     CLEAR_ARRAY(seed);
 
@@ -925,7 +924,7 @@ void KeyStoreTest(int argc, char *argv[])
         uint8_t mfp[4];
         AccountInfo_t accountInfo;
         printf("current account index=%d\r\n", GetCurrentAccountIndex());
-        printf("GetPasscodeType=%d,GetPassphraseQuickAccess=%d,GetWalletIconIndex=%d\r\n", GetPasscodeType(), GetPassphraseQuickAccess(), GetWalletIconIndex());
+        printf("GetPasscodeType=%d,GetWalletIconIndex=%d\r\n", GetPasscodeType(), GetWalletIconIndex());
         printf("GetMnemonicType=%d,slip39_ID=%d,slip39_IE=%d\r\n", GetMnemonicType(), GetSlip39Id(), GetSlip39Ie());
         printf("wallet name=%s\r\n", GetWalletName());
         GetMasterFingerPrint(mfp);
@@ -949,9 +948,7 @@ void KeyStoreTest(int argc, char *argv[])
             SetMnemonicType(mnemonicType);
             printf("set mnemonic type %d\r\n", mnemonicType);
         } else if (strcmp(argv[1], "passphrase") == 0) {
-            sscanf(argv[2], "%d", &tempI32);
-            SetPassphraseQuickAccess(tempI32 != 0);
-            printf("set passphrase exist %d\r\n", tempI32 != 0);
+            printf("passphrase quick access removed\r\n");
         } else if (strcmp(argv[1], "icon") == 0) {
             sscanf(argv[2], "%d", &tempI32);
             SetWalletIconIndex(tempI32);

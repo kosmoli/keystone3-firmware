@@ -30,19 +30,15 @@ typedef struct PassphraseWidget {
 } PassphraseWidget_t;
 static PassphraseWidget_t g_passphraseWidget;
 
-static void PassphraseQuickAccessHandler(lv_event_t *e);
 static void SetKeyboardTaHandler(lv_event_t *e);
 static void UpdatePassPhraseHandler(lv_event_t *e);
-static void UpdatePassphraseQuickAccess(lv_event_t *e);
 
-static lv_obj_t *g_passphraseQuickAccessSwitch = NULL;
 static KeyBoard_t *g_setPassPhraseKb = NULL;         // setting keyboard
 static bool g_needVerify = false;
 
 void GuiWalletPassphrase(lv_obj_t *parent)
 {
     static uint16_t walletSetting = DEVICE_SETTING_PASSPHRASE_ENTER;
-    uint16_t height = 60;
 
     lv_obj_set_style_bg_opa(parent, LV_OPA_0, LV_PART_SCROLLBAR | LV_STATE_SCROLLED);
     lv_obj_set_style_bg_opa(parent, LV_OPA_0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
@@ -64,40 +60,6 @@ void GuiWalletPassphrase(lv_obj_t *parent)
     };
     lv_obj_t *button = GuiCreateButton(parent, 456, 84, table, 2, WalletSettingHandler, &walletSetting);
     lv_obj_align(button, LV_ALIGN_DEFAULT, 12, 144 - GUI_MAIN_AREA_OFFSET);
-
-    g_passphraseQuickAccessSwitch = lv_switch_create(parent);
-    lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, ORANGE_COLOR, LV_STATE_CHECKED | LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, WHITE_COLOR, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(g_passphraseQuickAccessSwitch, LV_OPA_30, LV_PART_MAIN);
-    if (KosmoApi_GetPassphraseQuickAccess()) {
-        lv_obj_add_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
-    } else {
-        lv_obj_clear_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
-    }
-    lv_obj_clear_flag(g_passphraseQuickAccessSwitch, LV_OBJ_FLAG_CLICKABLE);
-    label = GuiCreateTextLabel(parent, _("passphrase_access_switch_title"));
-    lv_obj_set_width(label, 336);
-    lv_obj_refr_size(label);
-    height += lv_obj_get_self_height(label);
-    lv_obj_t *descLabel = GuiCreateIllustrateLabel(parent, _("passphrase_access_switch_desc"));
-    lv_obj_set_width(descLabel, 336);
-    lv_obj_refr_size(descLabel);
-    height += lv_obj_get_self_height(descLabel);
-    lv_obj_set_style_text_opa(descLabel, LV_OPA_60, LV_PART_MAIN);
-    table[0].obj = label;
-    table[0].align = LV_ALIGN_DEFAULT;
-    table[0].position.x = 24;
-    table[0].position.y = 24;
-    table[1].obj = g_passphraseQuickAccessSwitch;
-    table[1].align = LV_ALIGN_DEFAULT;
-    table[1].position.x = 376;
-    table[1].position.y = 24;
-    table[2].obj = descLabel;
-    table[2].align = LV_ALIGN_BOTTOM_LEFT;
-    table[2].position.x = 24;
-    table[2].position.y = -24;
-    button = GuiCreateButton(parent, 456, height, table, NUMBER_OF_ARRAYS(table), PassphraseQuickAccessHandler, NULL);
-    lv_obj_align(button, LV_ALIGN_DEFAULT, 12, 254 - GUI_MAIN_AREA_OFFSET);
 }
 
 void GuiWalletPassphraseEnter(lv_obj_t *parent, bool needVerify)
@@ -176,23 +138,6 @@ void GuiWalletPassphraseEnter(lv_obj_t *parent, bool needVerify)
     lv_obj_set_style_text_color(label, RED_COLOR, LV_PART_MAIN);
     lv_obj_add_flag(label, LV_OBJ_FLAG_HIDDEN);
     g_passphraseWidget.lenOverLabel = label;
-
-    if (!needVerify) {
-        label = GuiCreateTextLabel(parent, _("passphrase_access_switch_title"));
-        g_passphraseQuickAccessSwitch = lv_switch_create(parent);
-        lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, ORANGE_COLOR, LV_STATE_CHECKED | LV_PART_INDICATOR);
-        lv_obj_set_style_bg_color(g_passphraseQuickAccessSwitch, WHITE_COLOR, LV_PART_MAIN);
-        lv_obj_set_style_bg_opa(g_passphraseQuickAccessSwitch, LV_OPA_30, LV_PART_MAIN);
-        lv_obj_clear_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
-        GuiButton_t tableSwitch[] = {
-            {.obj = label, .align = LV_ALIGN_DEFAULT, .position = {8, 18},},
-            {.obj = GuiCreateNoticeLabel(parent, _("passphrase_access_switch_desc")), .align = LV_ALIGN_DEFAULT, .position = {8, 60},},
-            {.obj = g_passphraseQuickAccessSwitch, .align = LV_ALIGN_TOP_RIGHT, .position = {-8, 16},},
-        };
-        lv_obj_t *button = GuiCreateButton(parent, 432, 132, tableSwitch, NUMBER_OF_ARRAYS(tableSwitch),
-                                           UpdatePassphraseQuickAccess, NULL);
-        lv_obj_align(button, LV_ALIGN_TOP_MID, 0, 336 - GUI_MAIN_AREA_OFFSET);
-    }
 }
 
 static void SetKeyboardTaHandler(lv_event_t *e)
@@ -218,31 +163,6 @@ static void SetKeyboardTaHandler(lv_event_t *e)
             GuiUpdatePassPhraseKb(g_setPassPhraseKb);
         }
     }
-}
-
-static void UpdatePassphraseQuickAccess(lv_event_t *e)
-{
-    lv_obj_t *switchBox = g_passphraseQuickAccessSwitch;
-    bool en = lv_obj_has_state(switchBox, LV_STATE_CHECKED);
-    if (en) {
-        lv_obj_clear_state(switchBox, LV_STATE_CHECKED);
-    } else {
-        lv_obj_add_state(switchBox, LV_STATE_CHECKED);
-    }
-    lv_event_send(switchBox, LV_EVENT_VALUE_CHANGED, NULL);
-}
-
-static void PassphraseQuickAccessHandler(lv_event_t *e)
-{
-    lv_obj_t *switchBox = g_passphraseQuickAccessSwitch;
-    bool en = lv_obj_has_state(switchBox, LV_STATE_CHECKED);
-    UpdatePassphraseQuickAccess(e);
-    SetPassphraseQuickAccess(!en);
-}
-
-bool GuiPassphraseQuickAccess(void)
-{
-    return lv_obj_has_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
 }
 
 static void UpdatePassPhraseHandler(lv_event_t *e)
@@ -306,5 +226,4 @@ void GuiPassphraseWidgetClearText(void)
     if (g_setPassPhraseKb != NULL) {
         lv_keyboard_set_textarea(g_setPassPhraseKb->kb, g_passphraseWidget.inputTa);
     }
-    lv_obj_clear_state(g_passphraseQuickAccessSwitch, LV_STATE_CHECKED);
 }

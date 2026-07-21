@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "gui_wallet.h"
 #include "keystore.h"
+#include "kosmo_api.h"
 #include "account_public_info.h"
 
 #include "version.h"
@@ -290,7 +291,7 @@ UREncodeResult *GuiGetWanderData(void)
     if (arXpub == NULL || strlen(arXpub) != 1024) {
         GuiSetupArConnectWallet();
         arXpub = GetCurrentAccountPublicKey(XPUB_TYPE_ARWEAVE);
-        ClearSecretCache();
+        KosmoApi_CacheCleanSecretCache();
     }
     ASSERT(arXpub != NULL);
     UREncodeResult *urEncode = get_connect_arconnect_wallet_ur_from_xpub(mfp, sizeof(mfp), arXpub);

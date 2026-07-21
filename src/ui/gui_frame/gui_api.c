@@ -72,6 +72,18 @@ void VerifyPasswordCallback(const KosmoResult *result)
         };
         GuiApiEmitSignal(verify->resultSignal, &pwResult, sizeof(pwResult));
     } else {
+        // 密码验证成功：对于不需要后续用密码的操作，清缓存
+        uint16_t sig = verify->originalParam;
+        if (sig != SIG_SETTING_CHANGE_PASSWORD &&
+            sig != SIG_SETTING_WRITE_PASSPHRASE &&
+            sig != SIG_SIGN_TRANSACTION_WITH_PASSWORD &&
+            sig != SIG_SETUP_RSA_PRIVATE_KEY_WITH_PASSWORD &&
+            sig != SIG_FINGER_SET_SIGN_TRANSITIONS &&
+            sig != SIG_FINGER_REGISTER_ADD_SUCCESS &&
+            sig != SIG_MULTISIG_WALLET_IMPORT_VERIFY_PASSWORD &&
+            sig != SIG_MULTISIG_WALLET_DELETE_VERIFY_PASSWORD) {
+            KosmoApi_CacheCleanSecretCache();
+        }
         GuiApiEmitSignal(verify->resultSignal, &verify->originalParam, sizeof(verify->originalParam));
     }
 }

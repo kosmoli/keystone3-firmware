@@ -191,9 +191,6 @@ bool GuiPassphraseLoadingIsTop(void)
 
 static void SkipHandler(lv_event_t *e)
 {
-#ifndef COMPILE_SIMULATOR
-    SetPassphraseMark(false);
-#endif
     GuiCloseCurrentWorkingView();
     GuiLockScreenHidden();
     KosmoApi_CacheCleanSecretCache();
@@ -243,7 +240,6 @@ static void UpdatePassPhraseHandler(lv_event_t *e)
             const char *repeat = lv_textarea_get_text(g_passphraseWidgets.repeatTa);
             if (!strcmp(input, repeat)) {
                 if (strnlen_s(repeat, PASSPHRASE_MAX_LEN) == 0) {
-                    SetPassphraseMark(false);
                     GuiCloseCurrentWorkingView();
                     GuiLockScreenHidden();
                     if (g_homeView.isActive) {

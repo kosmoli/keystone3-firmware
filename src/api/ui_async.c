@@ -1,14 +1,6 @@
 #include "ui_async.h"
 #include <stdio.h>
 
-/*
- * 后端可读的前端状态变量定义。
- * Phase 2 清理后仅保留仍在使用的变量。
- */
-volatile bool g_ui_create_wallet_view_opened = false;
-volatile bool g_ui_need_fp_recognize = false;
-volatile bool g_ui_passphrase_quick_access = false;
-
 /* 后端→前端数据传递指针 */
 
 #ifdef COMPILE_SIMULATOR

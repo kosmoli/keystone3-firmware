@@ -345,14 +345,6 @@ void GuiLockScreenPassCode(bool en)
         } else if (KosmoApi_GetMnemonicType() != KOSMO_MNEMONIC_TON && g_checkDeleteWalletView.isActive) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
             GuiFrameCLoseView(&g_checkDeleteWalletView);
-        } else if (KosmoApi_GetPassphraseQuickAccess()) {
-            lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-            { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
-            GuiEnterPassCodeStatus(g_verifyLock, true);
-            GuiFrameOpenView(&g_passphraseView);
-            if (NeedUpdateBoot()) {
-                GuiFrameOpenView(&g_bootUpdateView);
-            }
         } else if (g_homeView.isActive) {
             GuiLockScreenTurnOff();
         } else if (g_forgetPassView.isActive) {

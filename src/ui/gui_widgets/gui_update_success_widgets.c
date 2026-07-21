@@ -15,9 +15,7 @@ static void UpdateSuccessNextStepHandler(lv_event_t *e)
     GUI_DEL_OBJ(g_updateSuccessCont)
     GuiCloseCurrentWorkingView();
 
-    if (KosmoApi_GetPassphraseQuickAccess()) {
-        GuiFrameOpenView(&g_passphraseView);
-    } else if (GuiIsSetup()) {
+    if (GuiIsSetup()) {
     } else {
         GuiFrameOpenView(&g_homeView);
     }

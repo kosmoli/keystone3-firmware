@@ -56,29 +56,10 @@ void ui_post_notification(uint16_t signal, uint32_t value);
 
 /*
  * === 后端可读的前端状态变量 ===
- *
- * 注意：大部分 UI 状态变量已在 Phase 1/2 重构中移除。
- * 后端应使用自身的业务状态（GetCurrentAccountIndex、GetExistAccountNum 等）
- * 而非读取前端 UI 状态。
- *
- * 以下变量是 Phase 2 清理后的残留，待后续 Phase 进一步消除。
- */
+ /*
+  * 注意：所有 UI 状态变量已在 Phase 7 重构中移除。
+  * 后端应使用自身的业务状态（GetCurrentAccountIndex、GetExistAccountNum 等）
+  * 而非读取前端 UI 状态。
+  */
 
-/* 指纹识别是否被需要（依赖前端错误计数，Phase 2 暂保留） */
-extern volatile bool g_ui_need_fp_recognize;
-
-/* 创建钱包视图是否已打开（kosmo_api.c 仍在读取，Phase 2 暂保留） */
-extern volatile bool g_ui_create_wallet_view_opened;
-
-/* Passphrase 快速访问状态（kosmo_api.c 仍在读取，Phase 2 暂保留） */
-extern volatile bool g_ui_passphrase_quick_access;
-
-
-/*
- * 前端状态同步：在 UI 线程主循环中调用，将前端内部状态
- * 同步到上述全局变量，供后端安全读取。
- * Phase 2 清理后仅更新 3 个仍被使用的变量。
- */
-void ui_state_sync(void);
-
-#endif /* UI_ASYNC_H */
+ #endif /* UI_ASYNC_H */

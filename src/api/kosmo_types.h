@@ -280,8 +280,6 @@ typedef struct {
     uint8_t mfp[4];                /* master fingerprint */
     KosmoMnemonicType mnemonicType;
     KosmoPasscodeType passcodeType;
-    bool passphraseMark;
-    bool passphraseQuickAccess;
 } KosmoAccountInfo;
 
 /* ── 链信息（只读查询用）────────────────────────────── */

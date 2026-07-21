@@ -4,7 +4,7 @@
 #include "screen_manager.h"
 #include "keystore.h"
 #include "account_manager.h"
-#include "secret_cache.h"
+
 #include "assert.h"
 #include "gui_ada.h"
 #include "gui_hintbox.h"

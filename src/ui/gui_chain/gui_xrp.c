@@ -2,7 +2,7 @@
 #include "gui_xrp.h"
 #include "gui_chain.h"
 #include "user_memory.h"
-#include "secret_cache.h"
+
 #include "screen_manager.h"
 #include "librust_c.h"
 #include "kosmo_api.h"

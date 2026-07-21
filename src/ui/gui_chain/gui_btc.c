@@ -6,7 +6,7 @@
 #include "account_public_info.h"
 #include "keystore.h"
 #include "version.h"
-#include "secret_cache.h"
+
 #include "screen_manager.h"
 #include "account_manager.h"
 #include "gui_chain_components.h"

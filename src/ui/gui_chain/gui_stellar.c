@@ -1,6 +1,6 @@
 #include "gui_stellar.h"
 #include "kosmo_api.h"
-#include "secret_cache.h"
+
 
 static bool g_isMulti = false;
 static URParseResult *g_urResult = NULL;

@@ -2,7 +2,7 @@
 #include "kosmo_api.h"
 #include "rust.h"
 #include "account_manager.h"
-#include "secret_cache.h"
+
 #include "gui_chain.h"
 #include "gui_chain_components.h"
 #include "keystore.h"

@@ -1,7 +1,7 @@
 #include "gui_monero.h"
 #include "kosmo_api.h"
 #include "account_manager.h"
-#include "secret_cache.h"
+
 #include "screen_manager.h"
 
 static bool g_isMulti = false;

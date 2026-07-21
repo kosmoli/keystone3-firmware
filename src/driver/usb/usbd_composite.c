@@ -3,7 +3,7 @@
 #include "string.h"
 #include "usb_core.h"
 #include "usbd_msc_core.h"
-#include "usbd_cdc_core.h"
+
 #include "usbd_desc.h"
 #include "usbd_req.h"
 #include "log_print.h"
@@ -49,7 +49,6 @@ __ALIGN_BEGIN static uint8_t CompositeConfigDescriptor[USB_COMPOSITE_CONFIG_DESC
 
 static uint8_t g_interfaceCount = 0;
 static uint8_t g_mscInterfaceNo = 0xFF;
-static uint8_t g_cdcInterfaceNo = 0xFF;
 
 USBD_Class_cb_TypeDef USBCompositeCb = {
     CompositeInit,
@@ -75,8 +74,7 @@ static uint8_t CompositeInit(void *pdev, uint8_t cfgidx)
 #ifdef USBD_ENABLE_MSC
     USBD_MSC_cb.Init(pdev, cfgidx);
 #endif
-    USBD_CDC_cb.Init(pdev, cfgidx);
-    return USBD_OK;
+        return USBD_OK;
 }
 
 static uint8_t CompositeDeInit(void *pdev, uint8_t cfgidx)
@@ -84,8 +82,7 @@ static uint8_t CompositeDeInit(void *pdev, uint8_t cfgidx)
 #ifdef USBD_ENABLE_MSC
     USBD_MSC_cb.DeInit(pdev, cfgidx);
 #endif
-    USBD_CDC_cb.DeInit(pdev, cfgidx);
-    return USBD_OK;
+        return USBD_OK;
 }
 
 static uint8_t CompositeSetup(void *pdev, USB_SETUP_REQ *req)
@@ -101,7 +98,7 @@ static uint8_t CompositeSetup(void *pdev, USB_SETUP_REQ *req)
         return USBD_MSC_cb.Setup(pdev, req);
     }
 #endif
-    return USBD_CDC_cb.Setup(pdev, req);
+    return USBD_OK; // Phase 4: removed CDC
 }
 
 static uint8_t CompositeEP0_TxSent(void *pdev)
@@ -111,7 +108,7 @@ static uint8_t CompositeEP0_TxSent(void *pdev)
 
 static uint8_t CompositeEP0_RxReady(void *pdev)
 {
-    return USBD_CDC_cb.EP0_RxReady(pdev);
+    return USBD_OK; // Phase 4: removed CDC
 }
 
 static uint8_t CompositeDataIn(void *pdev, uint8_t epnum)
@@ -120,7 +117,7 @@ static uint8_t CompositeDataIn(void *pdev, uint8_t epnum)
     if (epnum == MSC_EP_NUM) {
         return USBD_MSC_cb.DataIn(pdev, epnum);
     } else {
-        return USBD_CDC_cb.DataIn(pdev, epnum);
+        return USBD_OK; // Phase 4: removed CDC
     }
 }
 
@@ -130,13 +127,13 @@ static uint8_t CompositeDataOut(void *pdev, uint8_t epnum)
     if (epnum == MSC_EP_NUM) {
         return USBD_MSC_cb.DataOut(pdev, epnum);
     } else {
-        return USBD_CDC_cb.DataOut(pdev, epnum);
+        return USBD_OK; // Phase 4: removed CDC
     }
 }
 
 static uint8_t CompositeSOF(void* pdev)
 {
-    return USBD_CDC_cb.SOF(pdev);
+    return USBD_OK; // Phase 4: removed CDC
 }
 
 static uint8_t AppendClassDescriptor(uint8_t *outDesc, uint16_t *length, uint8_t *descriptor, uint16_t descriptorSize, uint8_t interfaceIndex)
@@ -158,14 +155,8 @@ static uint8_t AppendClassDescriptor(uint8_t *outDesc, uint16_t *length, uint8_t
 
 static uint8_t *GetCompositeConfigDescriptor(uint8_t speed, uint16_t *length)
 {
-    uint16_t descriptorSize = 0;
-    uint8_t *descriptor;
-    uint8_t interfaceIndex = 0;
-    uint8_t appendOk = 0;
-
     g_interfaceCount = 0;
     g_mscInterfaceNo = 0xFF;
-    g_cdcInterfaceNo = 0xFF;
     *length = 9;
 
 #ifdef USBD_ENABLE_MSC
@@ -180,16 +171,6 @@ static uint8_t *GetCompositeConfigDescriptor(uint8_t speed, uint16_t *length)
     interfaceIndex++;
     g_interfaceCount++;
 #endif
-
-    //CDC
-    descriptor = USBD_CDC_cb.GetConfigDescriptor(speed, &descriptorSize);
-    appendOk = AppendClassDescriptor(CompositeConfigDescriptor, length, descriptor, descriptorSize, interfaceIndex);
-    if (!appendOk) {
-        *length = 9;
-        return CompositeConfigDescriptor;
-    }
-    g_cdcInterfaceNo = interfaceIndex;
-    g_interfaceCount++;
 
     CompositeConfigDescriptor[2] = (uint8_t)(*length & 0xFFU);
     CompositeConfigDescriptor[3] = (uint8_t)((*length >> 8) & 0xFFU);
@@ -221,10 +202,6 @@ static uint8_t CompositeSelectClass(USB_SETUP_REQ *req, uint8_t *isMsc)
             return USBD_OK;
         }
 #endif
-        if (index == g_cdcInterfaceNo) {
-            return USBD_OK;
-        }
-        return USBD_FAIL;
 
     case USB_REQ_RECIPIENT_ENDPOINT:
         epNum = index & 0x7FU;
@@ -234,9 +211,6 @@ static uint8_t CompositeSelectClass(USB_SETUP_REQ *req, uint8_t *isMsc)
             return USBD_OK;
         }
 #endif
-        if ((epNum == (CDC_IN_EP & 0x7FU)) || (epNum == (CDC_OUT_EP & 0x7FU))) {
-            return USBD_OK;
-        }
         return USBD_FAIL;
 
     default:
@@ -265,5 +239,5 @@ static uint8_t *USBD_Composite_GetDeviceQualifierDescriptor(uint16_t *length)
 
 static uint8_t *USBD_Composite_WinUSBOSStrDescriptor(uint16_t *length)
 {
-    return USBD_CDC_cb.GetWinUSBOSDescriptor(length);
+    return NULL; // Phase 4: removed CDC
 }

@@ -20,7 +20,6 @@ uint8_t GetCurrentAccountIndex(void);
 uint8_t GetBatterPercent(void);
 uint8_t GetCurrentDisplayPercent(void);
 int Slip39CheckFirstWordList(char *wordsList, uint8_t wordCnt, uint8_t *threshold);
-bool GetPassphraseQuickAccess(void);
 bool SdCardInsert(void);
 void SdCardIntHandler(void);
 bool UsbInitState(void);

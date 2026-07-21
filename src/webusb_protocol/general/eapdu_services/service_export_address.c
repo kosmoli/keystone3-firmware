@@ -10,8 +10,8 @@
 /* DEFINES */
 
 /* TYPEDEFS */
-enum Chain {
-    ETH,
+enum ChainTypeLocal {
+    EXPORT_CHAIN_ETH = 0,
 };
 
 enum {
@@ -33,7 +33,6 @@ typedef struct {
     uint8_t wallet;
     ETHAccountType type;
 } ExportAddressParams_t;
-#endif
 
 
 /* FUNC DECLARATION*/
@@ -174,7 +173,6 @@ static void ExportEthAddress(uint16_t requestID, uint8_t n, ETHAccountType type)
     EXT_FREE(json_str);
     SRAM_FREE(result);
 #endif
-#endif
 }
 
 static bool CheckExportAcceptable(EAPDURequestPayload_t *payload)
@@ -212,7 +210,7 @@ void ExportAddressService(EAPDURequestPayload_t *payload)
         return;
     }
 
-    if (params->chain == ETH) {
+    if (params->chain == EXPORT_CHAIN_ETH) {
         ExportAddressLock();
         if (g_exportAddressParams != NULL) {
             isBusy = true;
@@ -246,5 +244,3 @@ void ExportAddressService(EAPDURequestPayload_t *payload)
 
     SRAM_FREE(params);
 }
-
-#endif

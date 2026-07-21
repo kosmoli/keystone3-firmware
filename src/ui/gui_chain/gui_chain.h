@@ -107,7 +107,6 @@ PtrT_TransactionCheckResult CheckUrResult(uint8_t viewType);
 GenerateUR GetUrGenerator(ViewType viewType);
 GenerateUR GetSingleUrGenerator(ViewType viewType);
 bool CheckViewTypeIsAllow(uint8_t viewType);
-UREncodeResult *SignInternal(SignFn sign_func, void *data);
 bool IsMessageType(uint8_t type);
 bool isTonSignProof(uint8_t type);
 bool isCatalystVotingRegistration(uint8_t type);

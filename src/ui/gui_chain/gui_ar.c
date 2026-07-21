@@ -1,5 +1,6 @@
 #include "gui_ar.h"
 #include "gui_chain_components.h"
+#include "kosmo_api.h"
 #include "rsa.h"
 
 static bool g_isMulti = false;
@@ -282,30 +283,13 @@ void GuiShowArweaveTxDetail(lv_obj_t *parent, void *totalData)
 
 UREncodeResult *GuiGetArweaveSignQrCodeData(void)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
-    Rsa_primes_t *primes = NULL;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    do {
-        primes = FlashReadRsaPrimes();
-        if (primes == NULL) {
-            printf("Failed to read RSA primes\n");
-            ASSERT(false);
-        }
-        encodeResult = ar_sign_tx(data, primes->p, SPI_FLASH_RSA_PRIME_SIZE, primes->q, SPI_FLASH_RSA_PRIME_SIZE);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-
-    if (primes) {
-        memset_s(primes->p, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
-        memset_s(primes->q, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
-        memset_s(primes, sizeof(Rsa_primes_t), 0, sizeof(Rsa_primes_t));
-        SRAM_FREE(primes);
-    }
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_AR_TX,
+        .sign_ar_tx = { .urData = data },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static void GuiArRenderAOTransferOverview(lv_obj_t *parent, DisplayArweaveAOTransfer *txData);

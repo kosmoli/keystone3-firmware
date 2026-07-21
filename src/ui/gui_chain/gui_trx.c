@@ -283,42 +283,6 @@ void TrxCheckVault(lv_event_t *e)
 }
 
 
-static UREncodeResult *GuiGetTrxSignUrDataDynamic(bool unLimit)
-{
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
-
-    void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-    uint8_t seed[SEED_LEN];
-    uint32_t fragmentLen = unLimit ? FRAGMENT_UNLIMITED_LENGTH : FRAGMENT_MAX_LENGTH_DEFAULT;
-
-    do {
-        uint32_t seedLen = 0;
-        int ret = KosmoApi_GetSeed(seed, &seedLen);
-        if (ret != KOSMO_OK) {
-            break;
-        }
-        if (urType == TronSignRequest) {
-            encodeResult = tron_sign_request(data, seed, seedLen, fragmentLen);
-        } else {
-            encodeResult = tron_sign_keystone(data, urType, mfp, sizeof(mfp), (char *)KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX),
-                                              SOFTWARE_VERSION, seed, seedLen);
-        }
-
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-
-    return encodeResult;
-}
-
 UREncodeResult *GuiGetTrxSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;

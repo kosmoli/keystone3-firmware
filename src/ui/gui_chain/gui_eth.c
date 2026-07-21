@@ -676,45 +676,20 @@ void GuiSetEthUrData(URParseResult *urResult, URParseMultiResult *urMultiResult,
 // The results here are released in the close qr timer species
 static UREncodeResult *GetEthSignDataDynamic(bool isUnlimited)
 {
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult;
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
-    // get the urType
-    enum QRCodeType urType = URTypeUnKnown;
-    if (g_isMulti) {
-        urType = g_urMultiResult->ur_type;
-    } else {
-        urType = g_urResult->ur_type;
-    }
-    do {
-        uint8_t seed[64];
-        uint32_t seedLen = 0;
-        KosmoApi_GetSeed(seed, &seedLen);
-        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : seedLen;
-        if (isUnlimited) {
-            if (urType == Bytes) {
-                uint8_t mfp[4] = {0};
-                GetMasterFingerPrint(mfp);
-                // sign the bytes from keystone hot wallet
-                encodeResult = eth_sign_tx_bytes(data, seed, len, mfp, sizeof(mfp));
-            } else {
-                encodeResult = eth_sign_tx_unlimited(data, seed, len);
-            }
-        } else {
-            if (urType == Bytes) {
-                uint8_t mfp[4] = {0};
-                GetMasterFingerPrint(mfp);
-                encodeResult = eth_sign_tx_bytes(data, seed, len, mfp, sizeof(mfp));
-            } else {
-                encodeResult = eth_sign_tx(data, seed, len);
-            }
-        }
-        ClearSecretCache();
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-    SetLockScreen(enable);
-    return encodeResult;
+    enum QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
+    KosmoRequest req = {
+        .type = KOSMO_REQ_SIGN_ETH_TX,
+        .sign_eth_tx = {
+            .urData = data,
+            .urType = urType,
+            .isUnlimited = isUnlimited,
+            .isBytes = (urType == Bytes),
+            .viewType = g_viewType,
+        },
+    };
+    KosmoApi_Request(&req, NULL);
+    return NULL;
 }
 
 static bool isErc20Transfer(void *param)

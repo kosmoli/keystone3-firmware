@@ -80,16 +80,6 @@ void GuiSetupAdaUrData(URParseResult *urResult, URParseMultiResult *urMultiResul
         result = NULL;                                                                                          \
     }
 
-static int32_t GetAccountAdaEntropy(uint8_t accountIndex, uint8_t *entropy, uint8_t *entropyLen, const char *password, bool isSlip39)
-{
-    if (isSlip39) {
-        *entropyLen = GetCurrentAccountEntropyLen();
-        return GetAccountSeed(accountIndex, entropy, password);
-    } else {
-        return GetAccountEntropy(accountIndex, entropy, entropyLen, password);
-    }
-}
-
 void *GuiGetAdaData(void)
 {
     CHECK_FREE_PARSE_RESULT(g_parseResult);

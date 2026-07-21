@@ -66,7 +66,6 @@ static const char *GetSighashWarningText(DisplayTx *data);
 static const char *GetSighashDisplayText(const char *sighashType);
 static void OpenInputRefQrCode(lv_event_t *e);
 static void FormatFeeText(char *out, size_t outLen, const char *feeText, bool isLowerBound, bool isUnknown);
-static UREncodeResult *GetBtcSignDataDynamic(bool unLimit);
 static void PreparePublicKeys(PtrT_CSliceFFI_ExtendedPublicKey public_keys, ExtendedPublicKey *keys);
 
 void GuiSetPsbtUrData(URParseResult *urResult, URParseMultiResult *urMultiResult, bool multi)
@@ -101,11 +100,6 @@ static int32_t GuiGetUtxoPubKeyAndHdPath(ViewType viewType, char **xPub, char **
         ret = -1;
     }
     return ret;
-}
-
-static UREncodeResult *GuiGetSignPsbtBytesCodeData(void)
-{
-    return NULL;
 }
 
 UREncodeResult *GuiGetBtcSignQrCodeData(void)
@@ -193,60 +187,6 @@ static bool SupportSignPsbtExtend(QRCodeType urType)
     return (urType == CryptoPSBTExtend);
 }
 
-// The results here are released in the close qr timer species
-static UREncodeResult *GetBtcSignDataDynamic(bool unLimit)
-{
-    if (SupportSignPsbtFromSDCard() && g_psbtBytes != NULL) {
-        return GuiGetSignPsbtBytesCodeData();
-    }
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    enum QRCodeType urType = URTypeUnKnown;
-    enum ViewType viewType = ViewTypeUnKnown;
-    void *data = NULL;
-    if (g_isMulti) {
-        urType = g_urMultiResult->ur_type;
-        viewType = g_urMultiResult->t;
-        data = g_urMultiResult->data;
-    } else {
-        urType = g_urResult->ur_type;
-        viewType = g_urResult->t;
-        data = g_urResult->data;
-    }
-    UREncodeResult *encodeResult = NULL;
-    uint8_t mfp[4] = {0};
-    GetMasterFingerPrint(mfp);
-    uint8_t seed[64];
-    int len = GetCurrentAccountSeedLen();
-    int ret = GetAccountSeed(GetCurrentAccountIndex(), seed, SecretCacheGetPassword());
-    CHECK_ERRCODE_RETURN_NULL(ret);
-
-    if (urType == CryptoPSBT) {
-        if (GuiGetCurrentTransactionType() == TRANSACTION_TYPE_BTC_MULTISIG) {
-            encodeResult = BtcSignPsbtMultisig(data, seed, len, mfp, sizeof(mfp));
-        } else {
-            encodeResult = BtcSignPsbt(data, seed, len, mfp, sizeof(mfp), unLimit);
-        }
-    } else if (SupportSignLegacyKeystoneTransactions(urType)) {
-        char *hdPath = NULL;
-        char *xPub = NULL;
-        if (0 != GuiGetUtxoPubKeyAndHdPath(viewType, &xPub, &hdPath)) {
-            return NULL;
-        }
-        encodeResult = utxo_sign_keystone(data, urType, mfp, sizeof(mfp), xPub, SOFTWARE_VERSION, seed, len);
-    } else if (urType == BtcSignRequest) {
-        encodeResult = btc_sign_msg(data, seed, len, mfp, sizeof(mfp));
-    } else if (urType == SeedSignerMessage) {
-        encodeResult = sign_seed_signer_message(data, seed, len);
-    } else if (SupportSignPsbtExtend(urType)) {
-        encodeResult = utxo_sign_psbt_extend(data, seed, len, mfp, sizeof(mfp), unLimit);
-    }
-    CHECK_CHAIN_PRINT(encodeResult);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-    return encodeResult;
-}
 static void *GuiGetParsedPsbtStrData(void)
 {
     return NULL;

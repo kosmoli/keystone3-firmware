@@ -182,29 +182,3 @@ static const ViewHandlerEntry *GetViewHandlerEntry(ViewType viewType)
     return NULL;
 }
 
-UREncodeResult *SignInternal(SignFn sign_func, void *data)
-{
-    bool enable = IsPreviousLockScreenEnable();
-    SetLockScreen(false);
-    UREncodeResult *encodeResult = NULL;
-    uint8_t seed[SEED_LEN] = {0};
-    int ret = 0;
-
-    do {
-        uint32_t seedLen = 0;
-        ret = KosmoApi_GetSeed(seed, &seedLen);
-        if (ret != KOSMO_OK) {
-            break;
-        }
-
-        int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-        encodeResult = sign_func(data, seed, len);
-        CHECK_CHAIN_BREAK(encodeResult);
-    } while (0);
-
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    SetLockScreen(enable);
-
-    return encodeResult;
-}

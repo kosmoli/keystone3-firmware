@@ -160,6 +160,12 @@ static void GuiSetLanguageWidget(lv_obj_t *parent)
     lv_obj_set_align(cont, LV_ALIGN_BOTTOM_MID);
     g_selectLanguageCont = cont;
     lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_t *btn = GuiCreateBtn(cont, USR_SYMBOL_ARROW_NEXT);
+    lv_obj_set_size(btn, 96, 96);
+    lv_obj_set_style_radius(btn, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -9);
+    lv_obj_add_event_cb(btn, NextTileHandler, LV_EVENT_CLICKED, NULL);
 }
 
 void GuiSetupAreaInit(void)
@@ -188,8 +194,11 @@ uint8_t GuiSetupNextTile(void)
         SetNavBarLeftBtn(g_pageWidget->navBarWidget, NVS_BAR_RETURN, ReturnHandler, NULL);
         lv_obj_clear_flag(g_selectLanguageCont, LV_OBJ_FLAG_HIDDEN);
         break;
-    case SETUP_SET_LANGUAGE:
+    case SETUP_SET_LANGUAGE: {
+        uint8_t walletMethod = WALLET_METHOD_CREATE;
+        GuiFrameOpenViewWithParam(&g_createWalletView, &walletMethod, sizeof(walletMethod));
         return SUCCESS_CODE;
+    }
     }
     g_setupTileView.currentTile++;
     lv_obj_set_tile_id(g_setupTileView.tileView, g_setupTileView.currentTile, 0, LV_ANIM_OFF);

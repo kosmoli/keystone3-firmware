@@ -44,11 +44,9 @@ uint8_t *SecretCacheGetDiceRollHash();
 void SecretCacheSetDiceRollsLen(uint32_t len);
 uint32_t SecretCacheGetDiceRollsLen(void);
 
-void SecretCacheSetWalletIndex(uint8_t iconIndex);
-uint8_t SecretCacheGetWalletIconIndex();
-
-void SecretCacheSetWalletName(const char* walletName);
-char *SecretCacheGetWalletName();
+void SecretCacheSetCustomField(const uint8_t *data, uint8_t len);
+const uint8_t *SecretCacheGetCustomField(void);
+uint8_t SecretCacheGetCustomFieldLen(void);
 
 void SecretCacheSetExtendable(bool flag);
 bool SecretCacheGetExtendable(void);

@@ -18,8 +18,8 @@ static uint8_t g_checksumCache[32] = {0};
 static uint32_t g_emsLen;
 static char *g_mnemonicCache = NULL;
 static char *g_slip39MnemonicCache[SLIP39_MAX_MEMBER];
-static uint8_t g_walletIconIndex = 0;
-static char *g_walletName = NULL;
+static uint8_t g_customField[18] = {0};
+static uint8_t g_customFieldLen = 0;
 static uint8_t g_diceRollHashCache[32] = {0};
 static uint32_t g_diceRollsLen = 0;
 static uint16_t g_identifier;
@@ -36,30 +36,22 @@ void SecretCacheGetChecksum(char *checksum)
     ByteArrayToHexStr(g_checksumCache, sizeof(g_checksumCache), checksum);
 }
 
-void SecretCacheSetWalletIndex(uint8_t iconIndex)
+void SecretCacheSetCustomField(const uint8_t *data, uint8_t len)
 {
-    g_walletIconIndex = iconIndex;
+    memset(g_customField, 0, sizeof(g_customField));
+    uint8_t copyLen = (len < sizeof(g_customField)) ? len : sizeof(g_customField);
+    memcpy(g_customField, data, copyLen);
+    g_customFieldLen = copyLen;
 }
 
-uint8_t SecretCacheGetWalletIconIndex()
+const uint8_t *SecretCacheGetCustomField(void)
 {
-    return g_walletIconIndex;
+    return g_customField;
 }
 
-void SecretCacheSetWalletName(const char* walletName)
+uint8_t SecretCacheGetCustomFieldLen(void)
 {
-    if (g_walletName) {
-        size_t oldLen = strnlen_s(g_walletName, WALLET_NAME_MAX_LEN + 1);
-        memset_s(g_walletName, WALLET_NAME_MAX_LEN + 1, 0, oldLen);
-        SRAM_FREE(g_walletName);
-    }
-    g_walletName = SRAM_MALLOC(WALLET_NAME_MAX_LEN + 1);
-    strcpy_s(g_walletName, WALLET_NAME_MAX_LEN + 1, walletName);
-}
-
-char *SecretCacheGetWalletName()
-{
-    return g_walletName;
+    return g_customFieldLen;
 }
 
 void SecretCacheSetPassword(char *password)
@@ -286,12 +278,8 @@ void ClearSecretCache(void)
         g_mnemonicCache = NULL;
     }
 
-    if (g_walletName != NULL) {
-        size_t len = strnlen_s(g_walletName, WALLET_NAME_MAX_LEN + 1);
-        memset_s(g_walletName, WALLET_NAME_MAX_LEN + 1, 0, len);
-        SRAM_FREE(g_walletName);
-        g_walletName = NULL;
-    }
+    memset(g_customField, 0, sizeof(g_customField));
+    g_customFieldLen = 0;
 
     for (int i = 0; i < SLIP39_MAX_MEMBER; i++) {
         if (g_slip39MnemonicCache[i] != NULL) {

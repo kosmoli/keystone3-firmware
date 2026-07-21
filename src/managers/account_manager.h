@@ -6,7 +6,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 
-#define WALLET_NAME_MAX_LEN                 16
+#define CUSTOM_FIELD_LEN                    18
 #define ZCASH_UFVK_MAX_LEN                  384
 
 typedef enum {
@@ -42,8 +42,7 @@ typedef struct {
     uint8_t mfp[4];
     uint8_t slip39IeEb[1];                  //slip39 Iteration exponent together with Extendabla backup flag.
     uint8_t reserved2[5];                   //byte 9~13 reserved.
-    uint8_t iconIndex;
-    char walletName[WALLET_NAME_MAX_LEN + 1];
+    uint8_t customField[CUSTOM_FIELD_LEN];  //byte 14~31, opaque bytes for frontend use.
 } AccountInfo_t;
 
 typedef struct {
@@ -75,10 +74,8 @@ int32_t DestroyAccount(uint8_t accountIndex);
 int32_t SaveCurrentAccountInfo(void);
 void SetCurrentAccountMfp(uint8_t* mfp);
 void SetCurrentAccountEntropyLen(uint8_t entropyLen);
-uint8_t GetWalletIconIndex(void);
-char *GetWalletName(void);
-void SetWalletIconIndex(uint8_t iconIndex);
-void SetWalletName(const char *walletName);
+void GetCustomField(uint8_t *outField, uint8_t *outLen);
+void SetCustomField(const uint8_t *field, uint8_t len);
 uint8_t GetLoginPasswordErrorCount(void);
 uint8_t GetCurrentPasswordErrorCount(void);
 uint32_t GetLastLockDeviceTime(void);

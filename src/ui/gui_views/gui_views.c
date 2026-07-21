@@ -203,13 +203,16 @@ void GuiWriteSeResult(bool en, int32_t errCode)
 {
     GuiStopCircleAroundAnimation();
     if (en) {
-        WalletDesc_t wallet = {
-            .iconIndex = GuiGetEmojiIconIndex(),
-        };
+        uint8_t customField[18] = {0};
+        customField[0] = GuiGetEmojiIconIndex();
+        const char *kbName = GetCurrentKbWalletName();
+        if (kbName != NULL) {
+            strncpy((char *)&customField[1], kbName, 16);
+            customField[17] = '\0';
+        }
         GuiSetupKeyboardWidgetMode();
-        SetStatusBarEmojiIndex(wallet.iconIndex);
-        strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, GetCurrentKbWalletName());
-        GuiNvsBarSetWalletName(GetCurrentKbWalletName());
+        SetStatusBarEmojiIndex(customField[0]);
+        GuiNvsBarSetWalletName((const char *)&customField[1]);
         GuiNvsBarSetWalletIcon(GuiGetEmojiIconImg());
         // Defer view stack operations to next event loop iteration.
         // GuiWriteSeResult is called from a callback chain (WriteSECallback →

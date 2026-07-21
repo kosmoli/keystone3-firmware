@@ -584,11 +584,14 @@ static void OpenManageAssetsHandler(lv_event_t *e)
     SetNavBarRightBtn(g_pageWidget->navBarWidget, NVS_RIGHT_BUTTON_BUTT, NULL, NULL);
 }
 
-void GuiHomeSetWalletDesc(KosmoWalletDesc_t *wallet)
+void GuiHomeSetCustomField(const uint8_t *data, uint8_t len)
 {
-    GuiNvsBarSetWalletName((const char *)wallet->name);
-    GuiSetEmojiIconIndex(wallet->iconIndex);
-    SetStatusBarEmojiIndex(wallet->iconIndex);
+    if (len < 2) return;
+    uint8_t iconIndex = data[0];
+    const char *name = (const char *)&data[1];
+    GuiNvsBarSetWalletName(name);
+    GuiSetEmojiIconIndex(iconIndex);
+    SetStatusBarEmojiIndex(iconIndex);
     GuiNvsBarSetWalletIcon(GuiGetEmojiIconImg());
 }
 

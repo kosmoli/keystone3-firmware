@@ -3,6 +3,7 @@
 #include "keystore.h"
 #include "kosmo_api.h"
 #include "account_public_info.h"
+#include "gui_status_bar.h"
 
 #include "version.h"
 #include "user_memory.h"
@@ -145,7 +146,7 @@ typedef UREncodeResult *MetamaskUrGetter(PtrBytes master_fingerprint, uint32_t m
 
 static UREncodeResult *get_unlimited_connect_metamask_ur(PtrBytes master_fingerprint, uint32_t master_fingerprint_length, enum ETHAccountType account_type, PtrT_CSliceFFI_ExtendedPublicKey public_keys)
 {
-    return get_connect_metamask_ur_unlimited(master_fingerprint, master_fingerprint_length, account_type, public_keys, GetWalletName());
+    return get_connect_metamask_ur_unlimited(master_fingerprint, master_fingerprint_length, account_type, public_keys, (char *)GuiNvsBarGetWalletName());
 }
 
 static UREncodeResult *BasicGetMetamaskDataForAccountType(ETHAccountType accountType, MetamaskUrGetter func)
@@ -187,7 +188,7 @@ static UREncodeResult *BasicGetMetamaskDataForAccountType(ETHAccountType account
         return NULL;
     }
 
-    UREncodeResult *urEncode = func(mfp, sizeof(mfp), accountType, public_keys, GetWalletName());
+    UREncodeResult *urEncode = func(mfp, sizeof(mfp), accountType, public_keys, (char *)GuiNvsBarGetWalletName());
     if (urEncode == NULL) {
         SRAM_FREE(public_keys);
         return NULL;

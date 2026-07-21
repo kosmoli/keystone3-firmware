@@ -66,7 +66,7 @@ int32_t GuiLockViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
         SetCurrentAccountIndex();
         GuiFpRecognizeResult(true);
         {
-            KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+            KosmoRequest req = { .type = KOSMO_REQ_GET_CUSTOM_FIELD };
             KosmoApi_Request(&req, NULL);
         }
     case SIG_LOCK_VIEW_SCREEN_ON_PASSPHRASE_PASS:

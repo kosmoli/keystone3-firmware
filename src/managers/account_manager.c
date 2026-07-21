@@ -153,8 +153,7 @@ int32_t CreateNewAccount(uint8_t accountIndex, const uint8_t *entropy, uint8_t e
     DestroyAccount(accountIndex);
     CLEAR_OBJECT(g_currentAccountInfo);
     g_currentAccountIndex = accountIndex;
-    SetWalletName(SecretCacheGetWalletName());
-    SetWalletIconIndex(SecretCacheGetWalletIconIndex());
+    SetCustomField(SecretCacheGetCustomField(), SecretCacheGetCustomFieldLen());
 
     int32_t ret = SaveNewBip39Entropy(accountIndex, entropy, entropyLen, password);
     CHECK_ERRCODE_RETURN_INT(ret);
@@ -177,8 +176,7 @@ int32_t CreateNewSlip39Account(uint8_t accountIndex, const uint8_t *ems, const u
     CLEAR_OBJECT(g_currentAccountInfo);
     g_currentAccountIndex = accountIndex;
     g_currentAccountInfo.isSlip39 = true;
-    SetWalletName(SecretCacheGetWalletName());
-    SetWalletIconIndex(SecretCacheGetWalletIconIndex());
+    SetCustomField(SecretCacheGetCustomField(), SecretCacheGetCustomFieldLen());
 
     int32_t ret = SaveNewSlip39Entropy(accountIndex, ems, entropy, entropyLen, password, id, ie);
     CHECK_ERRCODE_RETURN_INT(ret);
@@ -404,34 +402,23 @@ uint8_t GetSlip39Eb(void)
     return ieEb >> 4;
 }
 
-/// @brief Get wallet icon index of the current account.
-/// @return wallet icon index.
-uint8_t GetWalletIconIndex(void)
+/// @brief Get custom field of the current account.
+/// @param[out] outField Buffer to receive custom field data (at least CUSTOM_FIELD_LEN bytes).
+/// @param[out] outLen Actual length of valid data in custom field.
+void GetCustomField(uint8_t *outField, uint8_t *outLen)
 {
-    return g_currentAccountInfo.iconIndex;
+    memcpy(outField, g_currentAccountInfo.customField, CUSTOM_FIELD_LEN);
+    *outLen = CUSTOM_FIELD_LEN;
 }
 
-/// @brief Get wallet name of the current account.
-/// @return wallet name string.
-char *GetWalletName(void)
+/// @brief Set custom field for the current account.
+/// @param[in] field Opaque bytes to store.
+/// @param[in] len Length of data (max CUSTOM_FIELD_LEN).
+void SetCustomField(const uint8_t *field, uint8_t len)
 {
-    return g_currentAccountInfo.walletName;
-}
-
-/// @brief Set wallet icon index for the current account.
-/// @param[in] iconIndex
-void SetWalletIconIndex(uint8_t iconIndex)
-{
-    g_currentAccountInfo.iconIndex = iconIndex;
-    SaveCurrentAccountInfo();
-}
-
-/// @brief Set wallet name for the current account.
-/// @param[in] walletName
-void SetWalletName(const char *walletName)
-{
-    memset_s(g_currentAccountInfo.walletName, sizeof(g_currentAccountInfo.walletName), 0, sizeof(g_currentAccountInfo.walletName));
-    strcpy_s(g_currentAccountInfo.walletName, WALLET_NAME_MAX_LEN + 1, walletName);
+    memset(g_currentAccountInfo.customField, 0, CUSTOM_FIELD_LEN);
+    uint8_t copyLen = (len < CUSTOM_FIELD_LEN) ? len : CUSTOM_FIELD_LEN;
+    memcpy(g_currentAccountInfo.customField, field, copyLen);
     SaveCurrentAccountInfo();
 }
 

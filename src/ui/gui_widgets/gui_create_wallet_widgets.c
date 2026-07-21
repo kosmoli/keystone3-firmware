@@ -352,10 +352,17 @@ int8_t GuiCreateWalletNextTile(void)
             return GuiFrameOpenViewWithParam(&g_diceRollsView, &index, sizeof(index));
         }
         break;
-    case CREATE_WALLET_NAMEWALLET:
-        KosmoApi_CacheSetWalletIndex(GuiGetEmojiIconIndex());
-        KosmoApi_CacheSetWalletName(GetCurrentKbWalletName());
+    case CREATE_WALLET_NAMEWALLET: {
+        uint8_t customField[18] = {0};
+        customField[0] = GuiGetEmojiIconIndex();
+        const char *name = GetCurrentKbWalletName();
+        if (name != NULL) {
+            strncpy((char *)&customField[1], name, 16);
+            customField[17] = '\0';
+        }
+        KosmoApi_CacheSetCustomField(customField, 18);
         break;
+    }
     case CREATE_WALLET_SETPIN:
         if (g_repeatPassCode == NULL) {
             g_repeatPassCode = GuiCreateEnterPasscode(g_repeatPinTile, NULL, NULL,

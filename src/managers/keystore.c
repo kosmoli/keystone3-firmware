@@ -924,9 +924,12 @@ void KeyStoreTest(int argc, char *argv[])
         uint8_t mfp[4];
         AccountInfo_t accountInfo;
         printf("current account index=%d\r\n", GetCurrentAccountIndex());
-        printf("GetPasscodeType=%d,GetWalletIconIndex=%d\r\n", GetPasscodeType(), GetWalletIconIndex());
+        printf("GetPasscodeType=%d\r\n", GetPasscodeType());
         printf("GetMnemonicType=%d,slip39_ID=%d,slip39_IE=%d\r\n", GetMnemonicType(), GetSlip39Id(), GetSlip39Ie());
-        printf("wallet name=%s\r\n", GetWalletName());
+        uint8_t customField[18];
+        uint8_t customFieldLen;
+        GetCustomField(customField, &customFieldLen);
+        PrintArray("customField", customField, customFieldLen);
         GetMasterFingerPrint(mfp);
         PrintArray("mfp", mfp, 4);
         for (accountIndex = 0; accountIndex < 3; accountIndex++) {
@@ -950,12 +953,16 @@ void KeyStoreTest(int argc, char *argv[])
         } else if (strcmp(argv[1], "passphrase") == 0) {
             printf("passphrase quick access removed\r\n");
         } else if (strcmp(argv[1], "icon") == 0) {
-            sscanf(argv[2], "%d", &tempI32);
-            SetWalletIconIndex(tempI32);
-            printf("set icon %d\r\n", tempI32);
+            printf("icon is now part of customField, use 'set_info custom' instead\r\n");
         } else if (strcmp(argv[1], "name") == 0) {
-            SetWalletName(argv[2]);
-            printf("set name %s\r\n", argv[2]);
+            printf("name is now part of customField, use 'set_info custom' instead\r\n");
+        } else if (strcmp(argv[1], "custom") == 0) {
+            uint8_t field[18] = {0};
+            uint8_t len = (uint8_t)strlen(argv[2]);
+            if (len > 18) len = 18;
+            memcpy(field, argv[2], len);
+            SetCustomField(field, len);
+            printf("set customField\r\n");
         } else {
             printf("set_info input err\r\n");
         }

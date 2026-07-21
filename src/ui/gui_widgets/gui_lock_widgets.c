@@ -307,7 +307,7 @@ void GuiLockScreenToHome(void)
 {
     GuiLockScreenHideVerifyLoading();
     lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-    { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
+    { KosmoRequest req = { .type = KOSMO_REQ_GET_CUSTOM_FIELD }; KosmoApi_Request(&req, NULL); }
     GuiEnterPassCodeStatus(g_verifyLock, true);
     GuiCloseToTargetView(&g_homeView);
     HardwareInitAfterWake();
@@ -331,7 +331,7 @@ void GuiLockScreenPassCode(bool en)
 
         if (IsUpdateSuccess()) {
             lv_obj_add_flag(g_pageWidget->page, LV_OBJ_FLAG_HIDDEN);
-            { KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC }; KosmoApi_Request(&req, NULL); }
+            { KosmoRequest req = { .type = KOSMO_REQ_GET_CUSTOM_FIELD }; KosmoApi_Request(&req, NULL); }
             GuiEnterPassCodeStatus(g_verifyLock, true);
             GuiFrameOpenView(&g_homeView);
             GuiFrameOpenView(&g_updateSuccessView);

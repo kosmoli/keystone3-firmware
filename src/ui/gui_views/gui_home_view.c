@@ -12,7 +12,7 @@ static int32_t GuiHomeViewInit(void)
 {
     GuiHomeAreaInit();
     {
-        KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+        KosmoRequest req = { .type = KOSMO_REQ_GET_CUSTOM_FIELD };
         KosmoApi_Request(&req, NULL);
     }
     return SUCCESS_CODE;
@@ -44,16 +44,18 @@ int32_t GuiHomeViewEventProcess(void *self, uint16_t usEvent, void *param, uint1
     case GUI_EVENT_REFRESH:
         GuiHomeRefresh();
         if (param != NULL) {
-            KosmoRequest req = { .type = KOSMO_REQ_GET_WALLET_DESC };
+            KosmoRequest req = { .type = KOSMO_REQ_GET_CUSTOM_FIELD };
             KosmoApi_Request(&req, NULL);
         }
         break;
     case SIG_SETUP_VIEW_TILE_PREV:
         GuiHomeRefresh();
         break;
-    case SIG_INIT_GET_CURRENT_WALLET_DESC:
-        GuiHomeSetWalletDesc((WalletDesc_t *)param);
+    case SIG_INIT_GET_CURRENT_WALLET_DESC: {
+        CustomFieldData_t *field = (CustomFieldData_t *)param;
+        GuiHomeSetCustomField(field->data, CUSTOM_FIELD_LEN);
         break;
+    }
     case SIG_SETUP_RSA_PRIVATE_KEY_PARSER_CONFIRM:
     case SIG_SETUP_RSA_PRIVATE_KEY_RECEIVE_CONFIRM:
         GuiShowRsaSetupasswordHintbox();

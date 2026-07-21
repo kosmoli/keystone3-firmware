@@ -16,14 +16,13 @@
 
 /* ── 常量 ──────────────────────────────────────────────── */
 
-#define KOSMO_WALLET_NAME_MAX_LEN  16
+#define CUSTOM_FIELD_LEN  18
 
-/* ── 钱包描述 ─────────────────────────────────────────── */
+/* ── 自定义字段 ─────────────────────────────────────────── */
 
 typedef struct {
-    uint8_t iconIndex;
-    char name[KOSMO_WALLET_NAME_MAX_LEN + 1];
-} KosmoWalletDesc_t;
+    uint8_t data[CUSTOM_FIELD_LEN];
+} KosmoCustomField_t;
 
 /* ── 密码验证结果 ─────────────────────────────────────── */
 
@@ -104,8 +103,8 @@ typedef enum {
 
     /* 账户管理 */
     KOSMO_REQ_GET_ACCOUNT,                   /* 获取账户列表 */
-    KOSMO_REQ_GET_WALLET_DESC,               /* 获取钱包描述 */
-    KOSMO_REQ_SAVE_WALLET_DESC,              /* 保存钱包描述 */
+    KOSMO_REQ_GET_CUSTOM_FIELD,              /* 获取自定义字段 */
+    KOSMO_REQ_SAVE_CUSTOM_FIELD,             /* 保存自定义字段 */
     KOSMO_REQ_DEL_WALLET_DESC,               /* 删除钱包描述 */
     KOSMO_REQ_DEL_ALL_WALLET_DESC,           /* 删除所有钱包描述 */
     KOSMO_REQ_WRITE_PASSPHRASE,              /* 写入 passphrase */
@@ -203,7 +202,7 @@ typedef struct {
         struct { uint8_t threshold; uint8_t memberCnt; uint8_t wordCnt; bool forget; } slip39_forget;
 
         /* 账户 */
-        struct { uint8_t iconIndex; char name[17]; } save_wallet_desc;
+        struct { uint8_t data[18]; } save_custom_field;
         struct { uint16_t signalId; } verify_password;  /* original signal identifying the caller context */
 
         /* 通用 */
@@ -275,8 +274,7 @@ typedef void (*KosmoCallback)(const KosmoResult *result);
 
 typedef struct {
     uint8_t accountIndex;
-    uint8_t iconIndex;
-    char walletName[17];
+    uint8_t customField[18];        /* opaque bytes for frontend to interpret */
     uint8_t mfp[4];                /* master fingerprint */
     KosmoMnemonicType mnemonicType;
     KosmoPasscodeType passcodeType;
@@ -492,9 +490,8 @@ typedef struct {
 } TonData_t;
 
 typedef struct {
-    uint8_t iconIndex;
-    char name[WALLET_NAME_MAX_LEN + 1];
-} WalletDesc_t;
+    uint8_t data[CUSTOM_FIELD_LEN];
+} CustomFieldData_t;
 
 typedef void *(*ReturnVoidPointerFunc)(void);
 #endif /* _KOSMO_TYPES_H */

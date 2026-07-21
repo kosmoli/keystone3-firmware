@@ -126,7 +126,7 @@ int32_t AsyncExecuteRunnable(BackgroundAsyncFuncWithRunnable_t func, const void 
 
 /* ── Model* forward declarations ────────────────────────── */
 
-static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen);
+static int32_t ModelSaveCustomField(const void *inData, uint32_t inDataLen);
 static int32_t ModelDelWallet(const void *inData, uint32_t inDataLen);
 static int32_t ModelDelAllWallet(const void *inData, uint32_t inDataLen);
 static int32_t ModelWritePassphrase(const void *inData, uint32_t inDataLen);
@@ -141,7 +141,7 @@ static int32_t ModelGenerateSlip39Entropy(const void *inData, uint32_t inDataLen
 static int32_t ModelGenerateSlip39EntropyWithDiceRolls(const void *inData, uint32_t inDataLen);
 static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t inDataLen);
 static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen);
-static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen);
+static int32_t ModeGetCustomField(const void *inData, uint32_t inDataLen);
 static int32_t ModeControlQrDecode(const void *inData, uint32_t inDataLen);
 static int32_t ModelSlip39WriteEntropy(const void *inData, uint32_t inDataLen);
 static int32_t ModelComparePubkey(MnemonicType mnemonicType, uint8_t *ems, uint8_t emsLen, uint16_t id, bool eb, uint8_t ie, uint8_t *index);
@@ -381,12 +381,9 @@ int32_t KosmoApi_GetAccountInfo(KosmoAccountInfo *out)
 
     memset(out, 0, sizeof(*out));
     out->accountIndex = GetCurrentAccountIndex();
-    out->iconIndex = GetWalletIconIndex();
 
-    const char *name = GetWalletName();
-    if (name != NULL) {
-        strncpy(out->walletName, name, sizeof(out->walletName) - 1);
-    }
+    uint8_t fieldLen;
+    GetCustomField(out->customField, &fieldLen);
 
     uint8_t *mfp = GetCurrentAccountMfp();
     if (mfp != NULL) {
@@ -494,14 +491,9 @@ void KosmoApi_CacheGetChecksum(char *checksum)
     SecretCacheGetChecksum(checksum);
 }
 
-void KosmoApi_CacheSetWalletIndex(uint8_t index)
+void KosmoApi_CacheSetCustomField(const uint8_t *data, uint8_t len)
 {
-    SecretCacheSetWalletIndex(index);
-}
-
-void KosmoApi_CacheSetWalletName(const char *name)
-{
-    SecretCacheSetWalletName(name);
+    SecretCacheSetCustomField(data, len);
 }
 
 const char *KosmoApi_CacheGetNewPassword(void)
@@ -908,16 +900,14 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         AsyncExecute(ModeGetAccount, NULL, 0);
         return KOSMO_OK;
     }
-    case KOSMO_REQ_GET_WALLET_DESC: {
-        AsyncExecute(ModeGetWalletDesc, NULL, 0);
+    case KOSMO_REQ_GET_CUSTOM_FIELD: {
+        AsyncExecute(ModeGetCustomField, NULL, 0);
         return KOSMO_OK;
     }
-    case KOSMO_REQ_SAVE_WALLET_DESC: {
-        static WalletDesc_t s_walletDesc;
-        s_walletDesc.iconIndex = request->save_wallet_desc.iconIndex;
-        strncpy(s_walletDesc.name, request->save_wallet_desc.name, WALLET_NAME_MAX_LEN);
-        s_walletDesc.name[WALLET_NAME_MAX_LEN] = '\0';
-        AsyncExecute(ModelSaveWalletDesc, &s_walletDesc, sizeof(s_walletDesc));
+    case KOSMO_REQ_SAVE_CUSTOM_FIELD: {
+        static CustomFieldData_t s_customField;
+        memcpy(s_customField.data, request->save_custom_field.data, CUSTOM_FIELD_LEN);
+        AsyncExecute(ModelSaveCustomField, &s_customField, sizeof(s_customField));
         return KOSMO_OK;
     }
     case KOSMO_REQ_DEL_WALLET_DESC: {
@@ -1557,8 +1547,7 @@ static int32_t ModelBip39CalWriteEntropyAndSeed(const void *inData, uint32_t inD
     CHECK_ERRCODE_BREAK("login error", ret);
     UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
     if (bip39Data->forget) {
-        SetWalletName(accountInfo.walletName);
-        SetWalletIconIndex(accountInfo.iconIndex);
+        SetCustomField(accountInfo.customField, CUSTOM_FIELD_LEN);
         LogoutCurrentAccount();
         CloseUsb();
     }
@@ -1938,8 +1927,7 @@ static int32_t ModelSlip39CalWriteEntropyAndSeed(const void *inData, uint32_t in
     CHECK_ERRCODE_BREAK("login error", ret);
     UpdateFingerSignFlag(GetCurrentAccountIndex(), false);
     if (slip39->forget) {
-        SetWalletName(accountInfo.walletName);
-        SetWalletIconIndex(accountInfo.iconIndex);
+        SetCustomField(accountInfo.customField, CUSTOM_FIELD_LEN);
         LogoutCurrentAccount();
         CloseUsb();
     }
@@ -2012,15 +2000,14 @@ static int32_t ModelSlip39ForgetPass(const void *inData, uint32_t inDataLen)
 }
 
 // save wallet desc
-static int32_t ModelSaveWalletDesc(const void *inData, uint32_t inDataLen)
+static int32_t ModelSaveCustomField(const void *inData, uint32_t inDataLen)
 {
     bool enable = IsPreviousLockScreenEnable();
     SetLockScreen(false);
-    WalletDesc_t *wallet = (WalletDesc_t *)inData;
-    SetWalletName(wallet->name);
-    SetWalletIconIndex(wallet->iconIndex);
+    CustomFieldData_t *field = (CustomFieldData_t *)inData;
+    SetCustomField(field->data, CUSTOM_FIELD_LEN);
 
-    KosmoApi_NotifyResult(KOSMO_REQ_SAVE_WALLET_DESC, SUCCESS_CODE, NULL, 0);
+    KosmoApi_NotifyResult(KOSMO_REQ_SAVE_CUSTOM_FIELD, SUCCESS_CODE, NULL, 0);
     SetLockScreen(enable);
     return SUCCESS_CODE;
 }
@@ -2232,7 +2219,7 @@ static int32_t ModelVerifyAccountPass(const void *inData, uint32_t inDataLen)
             SetLockScreen(enable);
             return ret;
         } else if (ret == SUCCESS_CODE) {
-            ModeGetWalletDesc(NULL, 0);
+            ModeGetCustomField(NULL, 0);
         }
     } else {
         ret = VerifyCurrentAccountPassword(SecretCacheGetPassword());
@@ -2271,20 +2258,20 @@ static int32_t ModeGetAccount(const void *inData, uint32_t inDataLen)
 }
 
 // get wallet desc
-static int32_t ModeGetWalletDesc(const void *inData, uint32_t inDataLen)
+static int32_t ModeGetCustomField(const void *inData, uint32_t inDataLen)
 {
     bool enable = IsPreviousLockScreenEnable();
     SetLockScreen(false);
-    static WalletDesc_t wallet;
+    static CustomFieldData_t field;
     uint8_t accountNum = 0;
     GetExistAccountNum(&accountNum);
     if (accountNum == 0 || GetCurrentAccountIndex() > 2) {
         SetLockScreen(enable);
         return SUCCESS_CODE;
     }
-    wallet.iconIndex = GetWalletIconIndex();
-    strcpy_s(wallet.name, WALLET_NAME_MAX_LEN + 1, GetWalletName());
-    KosmoApi_NotifyResult(KOSMO_REQ_GET_WALLET_DESC, KOSMO_OK, &wallet, sizeof(wallet));
+    uint8_t fieldLen;
+    GetCustomField(field.data, &fieldLen);
+    KosmoApi_NotifyResult(KOSMO_REQ_GET_CUSTOM_FIELD, KOSMO_OK, &field, sizeof(field));
     SetLockScreen(enable);
     return SUCCESS_CODE;
 }

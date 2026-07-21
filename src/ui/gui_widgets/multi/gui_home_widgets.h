@@ -35,7 +35,7 @@ typedef struct {
 void GuiHomeRefresh(void);
 void GuiHomeAreaInit(void);
 void GuiHomeDisActive(void);
-void GuiHomeSetWalletDesc(KosmoWalletDesc_t *wallet);
+void GuiHomeSetCustomField(const uint8_t *data, uint8_t len);
 void GuiHomeRestart(void);
 bool GuiHomePageIsTop(void);
 void GuiHomePasswordErrorCount(void *param);

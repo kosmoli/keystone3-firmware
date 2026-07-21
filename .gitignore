@@ -14,5 +14,8 @@ pyenv
 !/rust/apps/Cargo.lock
 *.rustfmt.toml
 /tools/boot.sig
-/targetbuild_sim/
-simulator
+/build_sim/
+/build_final/
+/build_test/
+/simulator
+/30.projects/

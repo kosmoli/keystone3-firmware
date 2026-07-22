@@ -12,19 +12,12 @@ use alloc::vec::Vec;
 use app_utils::impl_public_struct;
 use bitcoin::bip32::DerivationPath;
 
-pub mod backpack;
-pub mod bitget;
+// Plan v10: wallet-specific modules removed
 pub mod blue_wallet;
 mod common;
-pub mod core_wallet;
 pub mod keplr;
-pub mod keystone_connect;
 pub mod metamask;
-pub mod okx;
-pub mod thor_wallet;
-pub mod tonkeeper;
 mod utils;
-pub mod xrp_toolkit;
 pub mod zcash;
 //TODO: get these value from device
 pub const DEVICE_TYPE: &str = "Keystone 3 Pro";

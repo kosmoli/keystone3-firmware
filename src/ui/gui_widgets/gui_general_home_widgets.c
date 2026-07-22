@@ -437,11 +437,17 @@ static void OpenMoreViewHandler(lv_event_t *e)
     GuiFrameOpenView(lv_event_get_user_data(e));
 }
 
+static void OpenExportXpubViewHandler(lv_event_t *e)
+{
+    GUI_DEL_OBJ(g_moreHintbox)
+    GuiFrameOpenView(&g_exportXpubView);
+}
+
 static void OpenMoreSettingHandler(lv_event_t *e)
 {
     MoreInfoTable_t moreInfoTable[] = {
-
         {.name = _("device_setting_mid_btn"), .src = &imgSettings, .callBack = OpenMoreViewHandler, &g_settingView},
+        {.name = "Export View Keys",          .src = &imgExport,   .callBack = OpenExportXpubViewHandler, NULL},
     };
     g_moreHintbox = GuiCreateMoreInfoHintBox(NULL, NULL, moreInfoTable, NUMBER_OF_ARRAYS(moreInfoTable), true, &g_moreHintbox);
 }

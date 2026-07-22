@@ -1,16 +1,6 @@
-pub mod arconnect;
-pub mod backpack;
-pub mod bitget;
-pub mod keplr;
-pub mod keystone_connect;
-pub mod okx;
+// Plan v10: wallet-specific modules removed — use ur_generators.rs instead
 pub mod structs;
-pub mod tonkeeper;
 mod utils;
-pub mod xrp_toolkit;
-
-pub mod core_wallet;
-pub mod thor_wallet;
 
 use alloc::format;
 use alloc::string::String;

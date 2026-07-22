@@ -1240,18 +1240,7 @@ char *KosmoApi_GetAdaBaseAddressByXPub(char *xpub) {
     return GuiGetADABaseAddressByXPub(xpub);
 }
 
-UREncodeResult *KosmoApi_GetXrpToolkitDataByIndex(uint16_t index) {
-    return GuiGetXrpToolkitDataByIndex(index);
-}
-
-UREncodeResult *KosmoApi_GetTonkeeperWalletUr(const char *xpub, const char *walletName,
-                                               const char *mfp, uint32_t mfpLen, const char *path) {
-    return get_tonkeeper_wallet_ur((char *)xpub, (char *)walletName, (char *)mfp, mfpLen, (char *)path);
-}
-
-UREncodeResult *KosmoApi_GetFewchaData(bool isSui) {
-    return GuiGetFewchaDataByCoin(isSui ? CHAIN_SUI : CHAIN_APT);
-}
+// Plan v10: wallet-specific UR generation removed — use generate_ur_* functions directly
 
 /* ═══════════════════════════════════════════════════════════
  * Phase 9: 链操作工具函数包装

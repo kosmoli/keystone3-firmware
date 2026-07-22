@@ -197,6 +197,7 @@ extern GUI_VIEW g_transactionDetailView;
 extern GUI_VIEW g_transactionSignatureView;
 extern GUI_VIEW g_diceRollsView;
 extern GUI_VIEW g_exportPubkeyView;
+extern GUI_VIEW g_exportXpubView;
 extern GUI_VIEW g_updateSuccessView;
 extern GUI_VIEW g_bootUpdateView;
 

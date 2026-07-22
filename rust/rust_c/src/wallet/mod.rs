@@ -6,6 +6,7 @@ pub mod babylon;
 pub mod cypherpunk_wallet;
 #[cfg(feature = "multi-coins")]
 pub mod multi_coins_wallet;
+pub mod ur_generators;
 mod structs;
 
 use alloc::collections::BTreeMap;

@@ -274,7 +274,43 @@ static UREncodeResult *GenerateExportViewKeys(void)
 4. 签名流程不受影响（签名 UR 编码不在此 plan 范围内）
 5. 无钱包名出现在后端代码中（grep 验证）
 
-## 6. 后续工作（不在本 plan 范围内）
+## 6. 执行结果 (2026-07-22)
+
+### 6.1 各 Phases 完成情况
+
+| Phase | 描述 | 状态 |
+|---|---|---|
+| Phase 1 | Rust 层通用 UR API | ✅ `ur_generators.rs` (284 行) |
+| Phase 2 | 统一密钥类型判断 | ✅ 合并到 `ur_generators.rs` |
+| Phase 3 | 清理 Rust FFI 层 | ✅ 删除 `multi_coins_wallet/` 10 个文件 |
+| Phase 4 | 清理 app_wallets 层 | ✅ 删除 8 个模块 |
+| Phase 5 | ETH 特殊处理 | ✅ metamask.rs 保留 |
+| Phase 6 | 清理 C 层 gui_wallet.c | ✅ 790→4 个 stub |
+| Phase 7 | 更新 Export View Keys | ✅ 直接调用通用 API |
+
+### 6.2 实际 vs 预估
+
+| 指标 | 预估 | 实际 |
+|---|---|---|
+| 删除行数 | ~1,650 | **3,484** |
+| 新增行数 | ~450 | 1,070 |
+| 净减少 | ~1,200 | **2,414** |
+
+### 6.3 编译验证
+
+- [x] ARM 编译零错误
+- [x] 模拟器编译零错误
+- [ ] Export View Keys 功能测试（待硬件）
+- [x] 后端代码中无钱包名
+
+### 6.4 Git
+
+```
+feature/frontend-backend-decoupling
+33 files changed, +1070, -3484
+```
+
+## 7. 后续工作（不在本 plan 范围内）
 
 - 签名 UR 的解耦（`EthSignRequest`、`SolSignRequest` 等按链划分，已有 Feature Flag，不需要额外解耦）
 - MetaMask LedgerLive 派生逻辑的前端迁移

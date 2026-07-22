@@ -21,7 +21,6 @@
 #include "bip39.h"
 #include "slip39.h"
 #include "wordlist.h"
-#include "gui_wallet.h"
 #include "gui_xrp.h"
 #include "gui_ada.h"
 #include "rust.h"

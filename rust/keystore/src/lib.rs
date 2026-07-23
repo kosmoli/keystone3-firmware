@@ -1,7 +1,7 @@
 #![no_std]
 
 pub mod algorithms;
-mod bindings;
+pub mod bindings;
 pub mod errors;
 pub mod structs;
 

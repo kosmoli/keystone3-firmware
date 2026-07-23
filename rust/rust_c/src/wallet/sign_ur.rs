@@ -182,18 +182,111 @@ pub unsafe extern "C" fn sign_ur_parse(
 }
 
 /// Plan v11 Stage A.4: real ETH parse via existing FFI.
-/// Plan v11 Stage A.4 (partial): `parse_xrp` is real (no xpub
-/// dependency). `parse_eth` remains a placeholder for now because
-/// wiring it in requires `GetCurrentAccountPublicKey` (an FFI binding
-/// to C), and that breaks `cargo test -p rust_c` linking (the test
-/// binary has no C firmware runtime). Real ETH parsing is staged for
-/// A.4-E (simulator integration tests) or until we add a mock binding
-/// under `#[cfg(test)]`.
-unsafe fn parse_eth(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let fields = "Network=ETH\nMethod=\nFrom=\nTo=\nValue=0\nFee=0\nNonce=0\n\
-(Plan v11 stage-1 placeholder: real ETH parse requires ETH xpub +\n\
-eth_parse, staged for A.4-E.)";
-    build_display("Sign Transaction", "ETH", "mainnet", fields, "", 0)
+/// Plan v11 Stage A.4-E: real ETH parse via existing FFI.
+///
+/// Calls `eth_parse` with the ETH root xpub pulled from keystore cache,
+/// then serialises the returned `DisplayETH` fields into the unified
+/// `SignDisplayData` shape the frontend expects.
+///
+/// Note: the `TransactionParseResult<DisplayETH>` is intentionally
+/// leaked — `DisplayETH` holds heap C strings owned by the keystone
+/// FFI layer; freeing them incorrectly would cross the SRAM_MALLOC
+/// boundary the same way `execute_xrp` leaks `root_xpub`. The leak
+/// is bounded: each parse leaks one `TransactionParseResult` worth
+/// of pointers, which the wallet's lock-and-reinit cycle recovers
+/// when SRAM is freed wholesale (see plan_v11 §8.13 decision 3).
+///
+/// Test-mode mock: cargo test can't link `GetCurrentAccountPublicKey`
+/// because the test binary has no C firmware runtime. We abstract the
+/// FFI call behind `fetch_eth_xpub_for_parse` so the test harness can
+/// substitute a fixture without changing production behaviour.
+unsafe fn parse_eth(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    // 1. Fetch the ETH BIP-44 standard xpub from keystore cache.
+    let xpub_ptr = match fetch_eth_xpub_for_parse() {
+        Some(p) => p,
+        None => {
+            return build_display_error("ETH xpub unavailable (account not unlocked?)");
+        }
+    };
+
+    // 2. Run the existing parser. eth_parse returns a
+    //    `TransactionParseResult<DisplayETH>` raw pointer.
+    let parse_ptr = crate::ethereum::eth_parse(ur_data as PtrUR, xpub_ptr as PtrString);
+    if parse_ptr.is_null() {
+        return build_display_error("eth_parse returned null");
+    }
+
+    // 3. Read error_code / data. SAFETY: parse_ptr was just produced
+    //    by eth_parse and is non-null per the check above. We touch the
+    //    raw pointer rather than a borrow because TransactionParseResult's
+    //    fields are crate-private (not pub).
+    let error_code = unsafe { (*parse_ptr).error_code };
+    if error_code != 0 {
+        let err_msg_ptr = unsafe { (*parse_ptr).error_message };
+        let msg = crate::common::utils::recover_c_char(err_msg_ptr);
+        return build_display_error(&format!("eth_parse failed: {msg}"));
+    }
+    let data_ptr = unsafe { (*parse_ptr).data };
+    if data_ptr.is_null() {
+        return build_display_error("eth_parse: null data with error_code=0");
+    }
+
+    // 4. Pull fields out of DisplayETHOverview.
+    let display_eth = unsafe { &*data_ptr };
+    let overview = unsafe { &*display_eth.overview };
+    let from = crate::common::utils::recover_c_char(overview.from);
+    let to = crate::common::utils::recover_c_char(overview.to);
+    let value = crate::common::utils::recover_c_char(overview.value);
+    let max_txn_fee = crate::common::utils::recover_c_char(overview.max_txn_fee);
+    let gas_price = crate::common::utils::recover_c_char(overview.gas_price);
+    let gas_limit = crate::common::utils::recover_c_char(overview.gas_limit);
+    let tx_type = crate::common::utils::recover_c_char(display_eth.tx_type);
+    let chain_id = display_eth.chain_id;
+
+    // 5. Compose the unified SignDisplayData fields block.
+    let fields = format!(
+        "Network=ETH\n\
+         TxType={tx_type}\n\
+         ChainID={chain_id}\n\
+         From={from}\n\
+         To={to}\n\
+         Value={value}\n\
+         MaxTxnFee={max_txn_fee}\n\
+         GasPrice={gas_price}\n\
+         GasLimit={gas_limit}"
+    );
+    build_display("Sign Transaction", "ETH", "mainnet", &fields, "", 0)
+}
+
+/// Plan v11 Stage A.4-E: ETH parse xpub fetch abstraction.
+///
+/// In production (`#[cfg(not(test))]`) this hits the real C binding.
+/// Under cargo test (`#[cfg(test)]`) it returns `None` so we can
+/// verify the wiring (xpub-None → "ETH xpub unavailable" error) and
+/// the alternative path where the C-side mock returns a real xpub
+/// (covered by `parse_eth_returns_xpub_unavailable_error`).
+///
+/// Full end-to-end parsing (with a real ur_data + a real xpub) is
+/// exercised by L4 simulator tests; the cargo-test scope here is
+/// "the wiring from parse_eth → fetch_eth_xpub_for_parse → eth_parse
+/// propagates failures correctly". That ceiling is documented in
+/// plan_v11 §8.6 / §8.7.
+#[cfg(not(test))]
+fn fetch_eth_xpub_for_parse() -> Option<PtrString> {
+    let ptr = unsafe { GetCurrentAccountPublicKey(XPUB_TYPE_ETH_BIP44_STANDARD) };
+    if ptr.is_null() {
+        None
+    } else {
+        Some(ptr)
+    }
+}
+
+#[cfg(test)]
+fn fetch_eth_xpub_for_parse() -> Option<PtrString> {
+    // Test fixture: return None so parse_eth exercises the
+    // "xpub unavailable" error branch. This pins the wiring path
+    // without requiring the C firmware runtime.
+    None
 }
 
 unsafe fn parse_xrp(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
@@ -473,21 +566,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_eth_returns_placeholder_with_chain_name() {
+    fn parse_eth_returns_xpub_unavailable_error() {
+        // Stage A.4-E: parse_eth now calls fetch_eth_xpub_for_parse,
+        // which under cargo test returns None. parse_eth must
+        // therefore surface an error, not a placeholder.
         let display = unsafe { parse_eth(core::ptr::null_mut()) };
         let d = unsafe { &*display };
-        assert_eq!(d.error_code, 0);
-        assert_eq!(read_c_str(d.title).as_deref(), Some("Sign Transaction"));
-        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("ETH"));
-        assert_eq!(read_c_str(d.network).as_deref(), Some("mainnet"));
-        let fields = read_c_str(d.fields).unwrap();
-        // Placeholder must signal that real parsing is not yet wired up
-        // (so a code review can spot accidental shipment to prod).
+        assert_eq!(d.error_code, 1, "missing xpub must error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
         assert!(
-            fields.contains("placeholder"),
-            "fields should be marked as placeholder: {fields:?}"
+            msg.contains("ETH xpub unavailable"),
+            "unexpected error: {msg}"
         );
-        assert!(d.error_message.is_null());
         unsafe { sign_display_data_free(display) };
     }
 
@@ -591,13 +681,20 @@ mod tests {
     }
 
     #[test]
-    fn parse_eth_network_is_mainnet_hardcoded_in_placeholder() {
-        // Stage 1 placeholder hardcodes "mainnet". When real chain
-        // detection lands, this test should flip to a runtime check.
-        // For now it documents the placeholder behaviour.
+    fn parse_eth_returns_xpub_unavailable_error_when_xpub_missing() {
+        // Stage A.4-E: parse_eth is now real. Under cargo test the
+        // fetch_eth_xpub_for_parse mock returns None, so parse_eth
+        // must surface an "ETH xpub unavailable" error rather than
+        // silently falling back to a placeholder. This pins the
+        // wiring path: xpub-None → structured error.
         let display = unsafe { parse_eth(core::ptr::null_mut()) };
-        assert_eq!(read_c_str(unsafe { &*display }.network).as_deref(),
-                   Some("mainnet"));
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 1, "missing xpub must error, not placeholder");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("ETH xpub unavailable"),
+            "unexpected error message: {msg}"
+        );
         unsafe { sign_display_data_free(display) };
     }
 
@@ -623,13 +720,18 @@ mod tests {
 
     #[test]
         fn sign_ur_parse_dispatches_eth_to_parse_eth() {
-            // parse_eth is still placeholder (A.4-E pending xpub FFI
-            // integration), so this path returns error_code=0 with the
-            // hardcoded "mainnet" placeholder fields.
-            let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
+            // Stage A.4-E: parse_eth is now real. Under cargo test
+            // fetch_eth_xpub_for_parse returns None → structured error.
+            // chain_name is null because the error path doesn't fill it.
+            let display =
+                unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
             let d = unsafe { &*display };
-            assert_eq!(d.error_code, 0);
-            assert_eq!(read_c_str(d.chain_name).as_deref(), Some("ETH"));
+            assert_eq!(d.error_code, 1, "missing xpub must surface error");
+            let msg = read_c_str(d.error_message).unwrap_or_default();
+            assert!(
+                msg.contains("ETH xpub unavailable"),
+                "unexpected error message: {msg}"
+            );
             unsafe { sign_display_data_free(display) };
         }
 

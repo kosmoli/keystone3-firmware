@@ -18,9 +18,9 @@ use crate::{
 
 #[repr(C)]
 pub struct TransactionParseResult<T> {
-    data: *mut T,
-    error_code: u32,
-    error_message: PtrString,
+    pub(crate) data: *mut T,
+    pub(crate) error_code: u32,
+    pub(crate) error_message: PtrString,
 }
 
 impl<T> TransactionParseResult<T> {

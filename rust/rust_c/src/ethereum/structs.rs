@@ -132,14 +132,14 @@ impl TryFrom<EthTx> for DisplayETH {
 
 #[repr(C)]
 pub struct DisplayETHOverview {
-    value: PtrString,
+    pub(crate) value: PtrString,
 
-    max_txn_fee: PtrString,
-    gas_price: PtrString,
-    gas_limit: PtrString,
+    pub(crate) max_txn_fee: PtrString,
+    pub(crate) gas_price: PtrString,
+    pub(crate) gas_limit: PtrString,
 
-    from: PtrString,
-    to: PtrString,
+    pub(crate) from: PtrString,
+    pub(crate) to: PtrString,
 }
 
 impl_c_ptr!(DisplayETHOverview);

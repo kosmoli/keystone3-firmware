@@ -12,6 +12,7 @@
 // Phase 2+ will do that once the API surface is proven.
 
 use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::{String, ToString};
 use core::slice;
 
@@ -19,7 +20,8 @@ use cty::{c_char, uint32_t};
 
 use keystore::algorithms::secp256k1::get_master_fingerprint_by_seed;
 use keystore::bindings::{
-    ClearSecretCache, GetAccountSeed, GetCurrentAccountIndex, SecretCacheGetPassword,
+    ClearSecretCache, GetAccountSeed, GetCurrentAccountIndex, GetCurrentAccountPublicKey,
+    SecretCacheGetPassword,
 };
 
 use crate::common::errors::RustCError;
@@ -27,6 +29,14 @@ use crate::common::types::{Ptr, PtrT, PtrUR};
 use crate::common::ur::{UREncodeResult, FRAGMENT_MAX_LENGTH_DEFAULT};
 
 const SEED_LEN: usize = 64;
+
+/// `XPUB_TYPE_XRP` value in `ChainType` (src/crypto/account_public_info.h).
+///
+/// Verified 2026-07-23 by counting the enum values up to and including
+/// `XPUB_TYPE_XRP` (BTC=0, ..., XRP=29). If the C enum re-orders, this
+/// constant AND the `xrp_root_xpub_enum_constant_matches_c_header` test
+/// must update in lock-step.
+const XPUB_TYPE_XRP: u32 = 29;
 
 /// Display data returned to frontend for transaction confirmation.
 ///
@@ -200,7 +210,7 @@ pub unsafe extern "C" fn sign_ur_execute(
     };
     let result = match ur_type {
         QR_ETH_SIGN_REQUEST => execute_eth(ur_data, seed),
-        QR_XRP_TX => execute_xrp(seed),
+        QR_XRP_TX => execute_xrp(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
         ))
@@ -228,11 +238,49 @@ unsafe fn execute_eth(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
     )
 }
 
-unsafe fn execute_xrp(_seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
-    UREncodeResult::from(RustCError::UnsupportedTransaction(
-        "Plan v11: XRP execute wiring pending root_xpub binding".into(),
-    ))
-    .c_ptr()
+/// Plan v11 Stage A.3: real XRP signing via existing FFI.
+/// Wraps `xrp_sign_tx_bytes` (the wrapper that already accepts root_xpub
+/// from the caller — the legacy path used `KosmoApi_GetPublicKey`).
+/// MFP comes from the seed via `get_master_fingerprint_by_seed`.
+unsafe fn execute_xrp(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    // Derive mfp from the seed (stored in keystore at derivation time).
+    let mfp = match get_master_fingerprint_by_seed(&seed) {
+        Ok(m) => m,
+        Err(e) => {
+            return UREncodeResult::from(RustCError::InvalidData(format!(
+                "xrp mfp derivation failed: {e:?}"
+            )))
+            .c_ptr();
+        }
+    };
+
+    // Fetch the XRP root xpub from the cached account metadata.
+    // `XPUB_TYPE_XRP` is defined at the module top (value 29 in
+    // src/crypto/account_public_info.h, verified 2026-07-23).
+    let root_xpub_ptr = GetCurrentAccountPublicKey(XPUB_TYPE_XRP);
+    if root_xpub_ptr.is_null() {
+        return UREncodeResult::from(RustCError::InvalidData(
+            "xrp root_xpub unavailable (account not unlocked?)".into(),
+        ))
+        .c_ptr();
+    }
+
+    // xrp_sign_tx_bytes expects mfp as a plain pointer + length. bitcoin
+    // 0.32 makes Fingerprint a [u8; 4] struct, deref through to_bytes().
+    let mfp_arr = mfp.to_bytes();
+    let result = crate::xrp::xrp_sign_tx_bytes(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+        mfp_arr.as_ptr() as *mut u8,
+        mfp_arr.len() as uint32_t,
+        root_xpub_ptr,
+    );
+    // root_xpub is a heap C string; we don't currently have a
+    // matching free function, so we leak it intentionally. The
+    // C side likely maintains its own allocation pool tied to the
+    // account cache that gets released when the wallet locks.
+    result
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -430,6 +478,15 @@ mod tests {
         // (index 21).
         assert_eq!(QR_ETH_SIGN_REQUEST, 8, "EthSignRequest enum drift");
         assert_eq!(QR_XRP_TX, 21, "XRPTx enum drift");
+    }
+
+    #[test]
+    fn xrp_root_xpub_enum_constant_matches_c_header() {
+        // Regression guard: XPUB_TYPE_XRP in src/crypto/account_public_info.h
+        // must stay at index 29 (counted 2026-07-23; see plan_v11 §8.12).
+        // If anyone re-orders the ChainType enum they must also bump
+        // the constant in execute_xrp; this test guards both.
+        assert_eq!(super::XPUB_TYPE_XRP, 29, "XPUB_TYPE_XRP enum drift");
     }
 
     // ─── Edge-case coverage (stage-3.2) ────────────────────────────

@@ -51,7 +51,8 @@ pub struct SignDisplayData {
 }
 
 unsafe fn to_c_ptr(s: String) -> Ptr<c_char> {
-    let bytes = s.into_bytes();
+    let mut bytes = s.into_bytes();
+    bytes.push(0); // NUL terminator for C string
     let mut boxed = bytes.into_boxed_slice();
     let ptr = boxed.as_mut_ptr();
     core::mem::forget(boxed);
@@ -68,7 +69,8 @@ unsafe fn len_to_null(ptr: Ptr<c_char>) -> usize {
 
 unsafe fn free_c_string(ptr: Ptr<c_char>) {
     if !ptr.is_null() {
-        let _ = Box::from_raw(slice::from_raw_parts_mut(ptr, len_to_null(ptr)));
+        let len = len_to_null(ptr);
+        let _ = Box::from_raw(slice::from_raw_parts_mut(ptr, len));
     }
 }
 
@@ -226,4 +228,93 @@ unsafe fn execute_xrp(_seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
         "Plan v11: XRP execute wiring pending root_xpub binding".into(),
     ))
     .c_ptr()
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────
+//
+// Stage-2 FFI-level tests. The full sign_ur_execute path requires the C
+// keystore::bindings symbols (GetAccountSeed etc.) so it cannot run under
+// `cargo test -p rust_c` without linking the firmware. The tests below
+// therefore exercise:
+//   - the pure helper constructors (build_display_*, to_c_ptr, free_c_string)
+//   - the placeholder parse path for unsupported ur_types (which is the
+//     roundtrip that does NOT depend on chain-specific FFI).
+//
+// The first integration test that exercises the full sign_ur_execute ETH
+// path is staged in Plan v11 §8.5 to run via the simulator harness; the
+// raw EthSignRequest bytes are constructed by test_get_eth_sign_request()
+// in rust_c/src/test_cmd/general_test_cmd.rs.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn read_c_str(ptr: *mut c_char) -> Option<String> {
+        if ptr.is_null() {
+            return None;
+        }
+        let mut len = 0;
+        unsafe {
+            while *ptr.offset(len) != 0 {
+                len += 1;
+            }
+            let slice = core::slice::from_raw_parts(ptr as *const u8, len as usize);
+            Some(String::from_utf8_lossy(slice).into_owned())
+        }
+    }
+
+    #[test]
+    fn build_display_roundtrip() {
+        let display = unsafe {
+            build_display(
+                "Sign Transaction",
+                "ETH",
+                "mainnet",
+                "Network=ETH\nFrom=0x",
+                "",
+                0,
+            )
+        };
+        assert!(!display.is_null());
+        let d = unsafe { &*display };
+        assert_eq!(read_c_str(d.title).as_deref(), Some("Sign Transaction"));
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("ETH"));
+        assert_eq!(read_c_str(d.network).as_deref(), Some("mainnet"));
+        assert_eq!(
+            read_c_str(d.fields).as_deref(),
+            Some("Network=ETH\nFrom=0x")
+        );
+        assert_eq!(read_c_str(d.warning).as_deref(), Some(""));
+        assert_eq!(d.detail_kind, 0);
+        assert_eq!(d.error_code, 0);
+        assert!(d.error_message.is_null());
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn build_display_error_sets_error_code() {
+        let display = unsafe { build_display_error("unsupported") };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 1);
+        assert_eq!(read_c_str(d.error_message).as_deref(), Some("unsupported"));
+        assert!(d.title.is_null());
+        assert!(d.fields.is_null());
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_parse_returns_error_for_unsupported_ur_type() {
+        // QRCodeType::QRHardwareCall = 22 (anything not ETH/XRP triggers
+        // the error branch, but ETH and XRP are wired in stage 2).
+        // Pick a value that is definitely NOT 10 (ETH) or 22 (XRP) so we
+        // hit the placeholder error path without hitting real FFI.
+        const UNUSED_UR_TYPE: u32 = 99;
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, UNUSED_UR_TYPE) };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 1);
+        assert!(read_c_str(d.error_message)
+            .unwrap()
+            .contains("not yet wired up"));
+        unsafe { sign_display_data_free(display) };
+    }
 }

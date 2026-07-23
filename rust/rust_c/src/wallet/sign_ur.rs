@@ -431,4 +431,100 @@ mod tests {
         assert_eq!(QR_ETH_SIGN_REQUEST, 8, "EthSignRequest enum drift");
         assert_eq!(QR_XRP_TX, 21, "XRPTx enum drift");
     }
+
+    // ─── Edge-case coverage (stage-3.2) ────────────────────────────
+
+    #[test]
+    fn build_display_with_long_warning_preserves_content() {
+        // Long warning (e.g. multi-line risk note) must round-trip
+        // without truncation or NUL injection.
+        let warn = "WARNING line 1\nWARNING line 2\nWARNING line 3\n\
+                    WARNING line 4 with unicode: ⚠\n";
+        let display = unsafe {
+            build_display("Sign Transaction", "ETH", "mainnet", "", warn, 0)
+        };
+        let d = unsafe { &*display };
+        assert_eq!(read_c_str(d.warning).as_deref(), Some(warn));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn build_display_with_non_ascii_chain_name() {
+        // Some localisations may put Chinese chain labels in the future.
+        // Verify non-ASCII bytes round-trip without crashing the NUL
+        // terminator logic (UTF-8 has no embedded 0x00 bytes in valid
+        // strings, but the test guards against an accidental CString
+        // misinterpretation).
+        let display = unsafe {
+            build_display("签名交易", "以太坊", "主网", "字段=值", "警告", 0)
+        };
+        let d = unsafe { &*display };
+        assert_eq!(read_c_str(d.title).as_deref(), Some("签名交易"));
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("以太坊"));
+        assert_eq!(read_c_str(d.network).as_deref(), Some("主网"));
+        assert_eq!(read_c_str(d.fields).as_deref(), Some("字段=值"));
+        assert_eq!(read_c_str(d.warning).as_deref(), Some("警告"));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn build_display_detail_kind_non_zero_propagates() {
+        // detail_kind is opaque to C, but must be stored verbatim so
+        // that the future generic layout engine can branch on it.
+        for k in [0u32, 1, 2, 3, 99, u32::MAX] {
+            let display =
+                unsafe { build_display("t", "c", "n", "f", "", k) };
+            let d = unsafe { &*display };
+            assert_eq!(d.detail_kind, k);
+            unsafe { sign_display_data_free(display) };
+        }
+    }
+
+    #[test]
+    fn parse_eth_network_is_mainnet_hardcoded_in_placeholder() {
+        // Stage 1 placeholder hardcodes "mainnet". When real chain
+        // detection lands, this test should flip to a runtime check.
+        // For now it documents the placeholder behaviour.
+        let display = unsafe { parse_eth() };
+        assert_eq!(read_c_str(unsafe { &*display }.network).as_deref(),
+                   Some("mainnet"));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn parse_xrp_network_is_mainnet_hardcoded_in_placeholder() {
+        // Same as parse_eth above — pin the placeholder contract.
+        let display = unsafe { parse_xrp() };
+        assert_eq!(read_c_str(unsafe { &*display }.network).as_deref(),
+                   Some("mainnet"));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn to_c_ptr_roundtrip_preserves_embedded_special_chars() {
+        // Verify C-string round-trip survives tabs, newlines, and quotes
+        // — the kind of content that GUI templates will eventually
+        // splice into JSON layouts.
+        let s = "key1=\"value with \\\"quote\\\"\"\nkey2\t=\ttabbed";
+        let p = unsafe { to_c_ptr(s.to_string()) };
+        assert_eq!(read_c_str(p).as_deref(), Some(s));
+        unsafe { free_c_string(p) };
+    }
+
+    #[test]
+    fn sign_ur_parse_zero_ur_data_len_is_safe() {
+        // The current parse path ignores ur_data entirely, so a zero
+        // length must not panic. When real parsing lands, this test
+        // will catch out-of-bounds reads.
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
+        assert_eq!(unsafe { &*display }.error_code, 0);
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_parse_zero_ur_data_len_xrp_is_safe() {
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XRP_TX) };
+        assert_eq!(unsafe { &*display }.error_code, 0);
+        unsafe { sign_display_data_free(display) };
+    }
 }

@@ -150,9 +150,12 @@ pub unsafe extern "C" fn sign_ur_parse(
     _ur_data_len: uint32_t,
     ur_type: uint32_t,
 ) -> PtrT<SignDisplayData> {
-    // QRCodeType values from librust_c.h enum.
-    const QR_ETH_SIGN_REQUEST: u32 = 10;
-    const QR_XRP_TX: u32 = 22;
+    // QRCodeType values from librust_c.h enum (zero-indexed):
+    //   EthSignRequest = 8
+    //   XRPTx = 21
+    // Verified against ui_simulator/lib/rust-builds/librust_c.h.
+    const QR_ETH_SIGN_REQUEST: u32 = 8;
+    const QR_XRP_TX: u32 = 21;
     match ur_type {
         QR_ETH_SIGN_REQUEST => parse_eth(),
         QR_XRP_TX => parse_xrp(),
@@ -182,9 +185,11 @@ pub unsafe extern "C" fn sign_ur_execute(
     ur_data_len: uint32_t,
     ur_type: uint32_t,
 ) -> PtrT<UREncodeResult> {
-    // QRCodeType enum values from librust_c.h.
-    const QR_ETH_SIGN_REQUEST: u32 = 10;
-    const QR_XRP_TX: u32 = 22;
+    // QRCodeType enum values from librust_c.h (zero-indexed):
+    //   EthSignRequest = 8
+    //   XRPTx = 21
+    const QR_ETH_SIGN_REQUEST: u32 = 8;
+    const QR_XRP_TX: u32 = 21;
 
     let seed = match fetch_seed() {
         Some(s) => s,
@@ -263,6 +268,10 @@ mod tests {
         }
     }
 
+    // QRCodeType enum values verified against librust_c.h (zero-indexed):
+    const QR_ETH_SIGN_REQUEST: u32 = 8;
+    const QR_XRP_TX: u32 = 21;
+
     #[test]
     fn build_display_roundtrip() {
         let display = unsafe {
@@ -303,11 +312,103 @@ mod tests {
     }
 
     #[test]
+    fn to_c_ptr_nul_terminated() {
+        // Build a C string and verify the byte immediately after the
+        // payload is 0 (NUL terminator).
+        let p = unsafe { to_c_ptr("abc".to_string()) };
+        unsafe {
+            assert_eq!(*p.offset(0), b'a' as c_char);
+            assert_eq!(*p.offset(1), b'b' as c_char);
+            assert_eq!(*p.offset(2), b'c' as c_char);
+            assert_eq!(*p.offset(3), 0); // NUL
+            let len = len_to_null(p);
+            assert_eq!(len, 3);
+            free_c_string(p);
+        }
+    }
+
+    #[test]
+    fn len_to_null_empty_string() {
+        // Empty string should have len 0 and p[0] == 0 immediately.
+        let p = unsafe { to_c_ptr(String::new()) };
+        unsafe {
+            assert_eq!(*p, 0);
+            assert_eq!(len_to_null(p), 0);
+            free_c_string(p);
+        }
+    }
+
+    #[test]
+    fn free_c_string_handles_null() {
+        // free_c_string must not crash on null input.
+        unsafe { free_c_string(core::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn sign_display_data_free_handles_null() {
+        // C contract: passing null must be a safe no-op.
+        unsafe { sign_display_data_free(core::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn parse_eth_returns_placeholder_with_chain_name() {
+        let display = unsafe { parse_eth() };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 0);
+        assert_eq!(read_c_str(d.title).as_deref(), Some("Sign Transaction"));
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("ETH"));
+        assert_eq!(read_c_str(d.network).as_deref(), Some("mainnet"));
+        let fields = read_c_str(d.fields).unwrap();
+        // Placeholder must signal that real parsing is not yet wired up
+        // (so a code review can spot accidental shipment to prod).
+        assert!(
+            fields.contains("placeholder"),
+            "fields should be marked as placeholder: {fields:?}"
+        );
+        assert!(d.error_message.is_null());
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn parse_xrp_returns_placeholder_with_chain_name() {
+        let display = unsafe { parse_xrp() };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 0);
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("XRP"));
+        let fields = read_c_str(d.fields).unwrap();
+        assert!(
+            fields.contains("placeholder"),
+            "fields should be marked as placeholder: {fields:?}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_eth_to_parse_eth() {
+        let display = unsafe {
+            sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST)
+        };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 0);
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("ETH"));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_xrp_to_parse_xrp() {
+        let display =
+            unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XRP_TX) };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 0);
+        assert_eq!(read_c_str(d.chain_name).as_deref(), Some("XRP"));
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
     fn sign_ur_parse_returns_error_for_unsupported_ur_type() {
-        // QRCodeType::QRHardwareCall = 22 (anything not ETH/XRP triggers
-        // the error branch, but ETH and XRP are wired in stage 2).
-        // Pick a value that is definitely NOT 10 (ETH) or 22 (XRP) so we
-        // hit the placeholder error path without hitting real FFI.
+        // 99 is not a valid QRCodeType value; the catch-all error branch
+        // should fire, but it must NOT panic and must NOT null-deref the
+        // ur_data pointer (which is intentionally null here).
         const UNUSED_UR_TYPE: u32 = 99;
         let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, UNUSED_UR_TYPE) };
         let d = unsafe { &*display };
@@ -315,6 +416,19 @@ mod tests {
         assert!(read_c_str(d.error_message)
             .unwrap()
             .contains("not yet wired up"));
+        assert!(d.title.is_null());
         unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn ur_type_constants_match_header() {
+        // Regression guard: if someone renames or inserts entries in the
+        // QRCodeType enum in librust_c.h, these literals must be updated
+        // to match. The values were verified on 2026-07-23 against
+        // ui_simulator/lib/rust-builds/librust_c.h, where EthSignRequest
+        // is the 9th entry (index 8) and XRPTx is the 22nd entry
+        // (index 21).
+        assert_eq!(QR_ETH_SIGN_REQUEST, 8, "EthSignRequest enum drift");
+        assert_eq!(QR_XRP_TX, 21, "XRPTx enum drift");
     }
 }

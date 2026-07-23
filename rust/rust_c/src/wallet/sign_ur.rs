@@ -23,8 +23,8 @@ use keystore::bindings::{
 };
 
 use crate::common::errors::RustCError;
-use crate::common::types::{Ptr, PtrT};
-use crate::common::ur::UREncodeResult;
+use crate::common::types::{Ptr, PtrT, PtrUR};
+use crate::common::ur::{UREncodeResult, FRAGMENT_MAX_LENGTH_DEFAULT};
 
 const SEED_LEN: usize = 64;
 
@@ -173,13 +173,14 @@ unsafe fn parse_xrp() -> PtrT<SignDisplayData> {
     build_display("Sign Transaction", "XRP", "mainnet", fields, "", 0)
 }
 
-/// Unified execute entry. Stage 1: ETH + XRP placeholders only.
+/// Unified execute entry. Stage 1: ETH real implementation, XRP placeholder.
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_execute(
-    _ur_data: Ptr<u8>,
-    _ur_data_len: uint32_t,
+    ur_data: Ptr<u8>,
+    ur_data_len: uint32_t,
     ur_type: uint32_t,
 ) -> PtrT<UREncodeResult> {
+    // QRCodeType enum values from librust_c.h.
     const QR_ETH_SIGN_REQUEST: u32 = 10;
     const QR_XRP_TX: u32 = 22;
 
@@ -191,10 +192,10 @@ pub unsafe extern "C" fn sign_ur_execute(
         }
     };
     let result = match ur_type {
-        QR_ETH_SIGN_REQUEST => execute_eth(seed),
+        QR_ETH_SIGN_REQUEST => execute_eth(ur_data, seed),
         QR_XRP_TX => execute_xrp(seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
-            "Plan v11 stage-1: chain not wired up yet".into(),
+            "Plan v11 stage-2: chain not wired up yet".into(),
         ))
         .c_ptr(),
     };
@@ -207,16 +208,22 @@ pub unsafe extern "C" fn sign_ur_execute(
     result
 }
 
-unsafe fn execute_eth(_seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
-    UREncodeResult::from(RustCError::UnsupportedTransaction(
-        "Plan v11 stage-1: ETH execute wiring pending".into(),
-    ))
-    .c_ptr()
+/// Plan v11 Stage 2: real ETH signing via existing FFI.
+/// Wraps `eth_sign_tx_dynamic` with default fragment length (the only public
+/// entry point the existing per-chain GuiGet*SignQrCodeData uses via
+/// `eth_sign_tx` / `eth_sign_tx_unlimited` wrapper functions).
+unsafe fn execute_eth(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::ethereum::eth_sign_tx_dynamic(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+        FRAGMENT_MAX_LENGTH_DEFAULT,
+    )
 }
 
 unsafe fn execute_xrp(_seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
     UREncodeResult::from(RustCError::UnsupportedTransaction(
-        "Plan v11 stage-1: XRP execute wiring pending".into(),
+        "Plan v11: XRP execute wiring pending root_xpub binding".into(),
     ))
     .c_ptr()
 }

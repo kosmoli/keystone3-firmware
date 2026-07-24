@@ -61,7 +61,12 @@ SET(CMAKE_CXX_FLAGS "-O3")
 include_directories(
     external/lvgl/src
     ui_simulator
-    ui_simulator/lib/rust-builds
+    # Plan v11 stage-A.6: use cmake binary dir directly so the
+    # cbindgen-generated header from the latest cargo build is
+    # picked up automatically. The previous path
+    # (ui_simulator/lib/rust-builds) was a hand-maintained copy
+    # that drifted out of sync whenever new FFI symbols landed.
+    ${CMAKE_BINARY_DIR}/rust-builds
     ${SRC_INCLUDE_PATH}
     ${EXTERNAL_INCLUDE_PATH}
     ${GUI_INCLUDE_PATH}

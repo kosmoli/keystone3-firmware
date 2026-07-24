@@ -327,7 +327,12 @@ else()
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
     add_dependencies(${PROJECT_NAME} rust_c)
-    target_link_libraries(${PROJECT_NAME} PRIVATE SDL2 ${CMAKE_SOURCE_DIR}/ui_simulator/lib/rust-builds/librust_c.a)
+    # Plan v11 stage-A.6: link the freshly built librust_c.a from
+    # the cmake binary dir (where `add_dependencies(rust_c)` placed
+    # the cargo build output). The old path
+    # (ui_simulator/lib/rust-builds/librust_c.a) was a hand-maintained
+    # copy that could drift; this removes the manual sync.
+    target_link_libraries(${PROJECT_NAME} PRIVATE SDL2 ${CMAKE_BINARY_DIR}/rust-builds/librust_c.a)
     if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
       target_link_libraries(${PROJECT_NAME} PRIVATE m dl pthread xcb)
     endif()

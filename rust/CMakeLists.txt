@@ -22,7 +22,12 @@ endif()
 
 if(BUILD_ENVIRONMENT STREQUAL "SIMULATOR")
     set(FEATURE_ENVIRONMENT "simulator")
-    set(TARGET_PATH	${CMAKE_SOURCE_DIR}/ui_simulator/lib/rust-builds)
+    # Plan v11 stage-A.6: align the simulator target path with
+    # PRODUCTION/DEBUG so the freshly built librust_c.{a,h} lands
+    # in the cmake binary dir. Previously this was a separate
+    # hand-maintained copy under ui_simulator/lib/rust-builds
+    # that drifted out of sync whenever new FFI symbols landed.
+    set(TARGET_PATH	${CMAKE_BINARY_DIR}/rust-builds)
 elseif(BUILD_ENVIRONMENT STREQUAL "PRODUCTION")
     set(FEATURE_ENVIRONMENT "production")
     set(TARGET_PATH	${CMAKE_BINARY_DIR}/rust-builds)

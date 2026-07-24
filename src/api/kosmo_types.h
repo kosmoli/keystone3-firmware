@@ -176,6 +176,14 @@ typedef enum {
     KOSMO_REQ_SIGN_ADA_SIGN_DATA,
     KOSMO_REQ_SIGN_ADA_CATALYST,
 
+    /* Plan v11 stage-A.5: unified sign-ur Rust API.
+     * New path used to validate the wrapper before swapping the
+     * 31 chain-specific cases over. Caller picks one of these
+     * explicitly so we can run the new path side-by-side with the
+     * existing dispatch until we trust it. */
+    KOSMO_REQ_SIGN_UR_PARSE,
+    KOSMO_REQ_SIGN_UR_EXECUTE,
+
     KOSMO_REQ_NUM,
 } KosmoRequestType;
 
@@ -246,6 +254,15 @@ typedef struct {
         struct { void *urData; } sign_ada_tx_hash;
         struct { void *urData; } sign_ada_sign_data;
         struct { void *urData; } sign_ada_catalyst;
+        /* Plan v11 stage-A.5: unified sign-ur Rust API.
+         * Caller passes the UR bytes + ur_type (QRCodeType enum from
+         * librust_c.h). The Rust side does parse/sign and returns
+         * SignDisplayData / UREncodeResult. The 31 chain-specific
+         * cases above remain in place; the frontend picks one of
+         * the two paths explicitly so we can validate the wrapper
+         * before swapping the dispatch default. */
+        struct { void *urData; uint32_t urDataLen; uint32_t urType; } sign_ur_parse;
+        struct { void *urData; uint32_t urDataLen; uint32_t urType; } sign_ur_execute;
     };
 } KosmoRequest;
 

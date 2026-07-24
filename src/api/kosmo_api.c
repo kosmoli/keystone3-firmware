@@ -197,6 +197,13 @@ static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen);
 
+/* Plan v11 stage-A.5: wrappers around the unified Rust sign-ur API.
+ * `inData` is `void *[3] = { urData, (void*)urDataLen, (void*)urType }`.
+ * Returned `void *` is the SignDisplayData / UREncodeResult pointer
+ * from Rust; we push it through the existing notify helpers. */
+static int32_t ModelSignUrParse(const void *inData, uint32_t inDataLen);
+static int32_t ModelSignUrExecute(const void *inData, uint32_t inDataLen);
+
 /* ── ChainType 映射表 ───────────────────────────────── */
 
 typedef struct {
@@ -1220,6 +1227,35 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         static void *s_urData;
         s_urData = request->sign_ada_catalyst.urData;
         AsyncExecute(ModelSignAdaCatalyst, &s_urData, sizeof(s_urData));
+        return KOSMO_OK;
+    }
+
+    /* ── Plan v11 stage-A.5: unified sign-ur Rust API ─────────
+     *
+     * Caller (frontend or simulator probe) hands us UR bytes +
+     * ur_type. We forward into the Rust `sign_ur_parse` /
+     * `sign_ur_execute` FFI entry points. These return
+     * `SignDisplayData *` / `UREncodeResult *` respectively —
+     * existing helpers (`KosmoApi_NotifyResult` /
+     * `KosmoApi_NotifySignResult`) push them to the right frontend
+     * callbacks unchanged.
+     *
+     * The 31 chain-specific cases above stay in place; this new
+     * path is opt-in until validated end-to-end. */
+    case KOSMO_REQ_SIGN_UR_PARSE: {
+        static void *s_args[3];
+        s_args[0] = request->sign_ur_parse.urData;
+        s_args[1] = (void *)(uintptr_t)request->sign_ur_parse.urDataLen;
+        s_args[2] = (void *)(uintptr_t)request->sign_ur_parse.urType;
+        AsyncExecute(ModelSignUrParse, s_args, sizeof(s_args));
+        return KOSMO_OK;
+    }
+    case KOSMO_REQ_SIGN_UR_EXECUTE: {
+        static void *s_args[3];
+        s_args[0] = request->sign_ur_execute.urData;
+        s_args[1] = (void *)(uintptr_t)request->sign_ur_execute.urDataLen;
+        s_args[2] = (void *)(uintptr_t)request->sign_ur_execute.urType;
+        AsyncExecute(ModelSignUrExecute, s_args, sizeof(s_args));
         return KOSMO_OK;
     }
 
@@ -3282,5 +3318,55 @@ static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen)
     memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
     ClearSecretCache();
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_CATALYST, result);
+    return KOSMO_OK;
+}
+
+/* ── Plan v11 stage-A.5: unified sign-ur Rust API wrappers ─────
+ *
+ * These wrappers are intentionally minimal. The Rust side
+ * (`sign_ur_parse` / `sign_ur_execute` in `rust/rust_c/src/wallet/sign_ur.rs`)
+ * owns the seed/cache lookup; the C side just forwards
+ * {urData, urDataLen, urType} and pushes the result through the
+ * existing notify helpers. Per the plan v11 contract the 31
+ * chain-specific ModelSign* functions stay in place — these new
+ * paths are opt-in until validated end-to-end on hardware. */
+
+static int32_t ModelSignUrParse(const void *inData, uint32_t inDataLen)
+{
+    (void)inDataLen;
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    uint32_t urDataLen = (uint32_t)(uintptr_t)arr[1];
+    uint32_t urType = (uint32_t)(uintptr_t)arr[2];
+    /* sign_ur_parse returns SignDisplayData * (cbindgen alias for
+     * PtrT_SignDisplayData). Push it through the generic notify so
+     * the frontend callback receives the raw struct; the frontend
+     * (or the L4 simulator probe) is responsible for unpacking the
+     * fields it cares about. */
+    void *display = sign_ur_parse(urData, urDataLen, urType);
+    if (display == NULL) {
+        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_UR_PARSE, KOSMO_ERR_GENERAL, NULL, 0);
+        return KOSMO_ERR_GENERAL;
+    }
+    KosmoApi_NotifyResult(KOSMO_REQ_SIGN_UR_PARSE, KOSMO_OK, display, 0);
+    return KOSMO_OK;
+}
+
+static int32_t ModelSignUrExecute(const void *inData, uint32_t inDataLen)
+{
+    (void)inDataLen;
+    void **arr = (void **)inData;
+    void *urData = arr[0];
+    uint32_t urDataLen = (uint32_t)(uintptr_t)arr[1];
+    uint32_t urType = (uint32_t)(uintptr_t)arr[2];
+    /* sign_ur_execute returns UREncodeResult *; reuse the existing
+     * sign-result helper which knows how to push the UR string to
+     * the QR-generate callback. */
+    void *result = sign_ur_execute(urData, urDataLen, urType);
+    if (result == NULL) {
+        KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_UR_EXECUTE, NULL);
+        return KOSMO_ERR_GENERAL;
+    }
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_UR_EXECUTE, result);
     return KOSMO_OK;
 }

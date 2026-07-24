@@ -355,4 +355,49 @@ else()
             COMMENT "Signing the executable"
         )
     endif()
+
+    # ── Plan v11 stage-A.7: L4 simulator integration test ────
+    # Verifies the wiring of the opt-in sign_ur_parse/execute path
+    # through kosmo_api.c on a real simulator build (no GUI, no
+    # SDL — just the C dispatch + Rust FFI + NotifyResult).
+    #
+    # Built only when BUILD_TYPE=Simulator; ARM-only includes are
+    # excluded via the same COMPILE_SIMULATOR guards used by
+    # kosmo_api.c itself.
+    #
+    # Note: we deliberately exclude ui_simulator/main.c because it
+    # defines its own main(); the L4 test supplies its own. The L4
+    # target re-uses the simulator's ${GUI} glob (which already
+    # includes gui_frame, gui_assets/font, api/*.c, etc.) to keep
+    # symbol coverage consistent with the main simulator binary.
+    file(GLOB_RECURSE L4_SIMULATOR_SRC
+        ui_simulator/*.c
+    )
+    list(REMOVE_ITEM L4_SIMULATOR_SRC "${CMAKE_SOURCE_DIR}/ui_simulator/main.c")
+    add_executable(l4_sign_ur_test
+        tests/l4_sign_ur/l4_main.c
+        ${L4_SIMULATOR_SRC}
+        ${EXTERNAL}
+        ${SOURCES}
+        ${INCLUDES}
+        ${GUI}
+        ${LVGL}
+        ${CRYPTO}
+        ${UTILS}
+        ${CRYPTO_SLIP39}
+    )
+    set_target_properties(l4_sign_ur_test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/l4_sign_ur
+    )
+    target_compile_definitions(l4_sign_ur_test PRIVATE COMPILE_SIMULATOR)
+    target_include_directories(l4_sign_ur_test PRIVATE
+        ${CMAKE_BINARY_DIR}/rust-builds
+    )
+    add_dependencies(l4_sign_ur_test rust_c)
+    # libm MUST come after librust_c.a (Rust crates reference
+    # log2f/sinf/etc.); the linker resolves left-to-right so the
+    # static library must precede the system libs.
+    target_link_libraries(l4_sign_ur_test PRIVATE
+        ${CMAKE_BINARY_DIR}/rust-builds/librust_c.a
+        SDL2 m dl pthread xcb)
 endif()

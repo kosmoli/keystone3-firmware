@@ -12,30 +12,30 @@ use ur_registry::tron::tron_sign_request::DataType;
 
 #[repr(C)]
 pub struct DisplayTron {
-    overview: *mut DisplayTronOverview,
-    detail: *mut DisplayTronDetail,
+    pub(crate) overview: *mut DisplayTronOverview,
+    pub(crate) detail: *mut DisplayTronDetail,
 }
 
 #[repr(C)]
 pub struct DisplayTronOverview {
-    value: PtrString,
-    method: PtrString,
-    from: PtrString,
-    to: PtrString,
-    network: PtrString,
+    pub(crate) value: PtrString,
+    pub(crate) method: PtrString,
+    pub(crate) from: PtrString,
+    pub(crate) to: PtrString,
+    pub(crate) network: PtrString,
 }
 
 impl_c_ptr!(DisplayTronOverview);
 
 #[repr(C)]
 pub struct DisplayTronDetail {
-    value: PtrString,
-    method: PtrString,
-    from: PtrString,
-    to: PtrString,
-    network: PtrString,
-    token: PtrString,
-    contract_address: PtrString,
+    pub(crate) value: PtrString,
+    pub(crate) method: PtrString,
+    pub(crate) from: PtrString,
+    pub(crate) to: PtrString,
+    pub(crate) network: PtrString,
+    pub(crate) token: PtrString,
+    pub(crate) contract_address: PtrString,
     pub memo: PtrString,
     pub expiration: PtrString,
     pub raw_value: PtrString,

@@ -157,3 +157,13 @@ int FlashWriteRsaPrimes(const uint8_t *data)
     CLEAR_ARRAY(seed);
     return ret;
 }
+
+void FreeRsaPrimes(Rsa_primes_t *primes)
+{
+    if (primes == NULL) {
+        return;
+    }
+    CLEAR_ARRAY(primes->p);
+    CLEAR_ARRAY(primes->q);
+    SRAM_FREE(primes);
+}

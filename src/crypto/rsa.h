@@ -32,5 +32,6 @@ typedef struct {
 
 Rsa_primes_t *FlashReadRsaPrimes(void);
 int FlashWriteRsaPrimes(const uint8_t *data);
+void FreeRsaPrimes(Rsa_primes_t *primes);
 
 #endif

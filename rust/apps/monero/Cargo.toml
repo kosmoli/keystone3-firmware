@@ -18,7 +18,7 @@ rust_tools = { path = "../../tools" }
 chacha20 = { version = "0.9.1", default-features = false }
 rand_chacha = { workspace = true }
 thiserror = { workspace = true }
-keystore = { workspace = true, default-features = false }
+keystore = { workspace = true, default-features = false, features = ["multi_coins"] }
 cuprate-cryptonight = { git = "https://github.com/KeystoneHQ/cuprate", default-features = false, features = ["no_std"] }
 # Plan v11 §4.12: monero-serai → monero-oxide migration.
 # monero-serai is the historical dep (KeystoneHQ/serai#c784e6c6); monero-oxide

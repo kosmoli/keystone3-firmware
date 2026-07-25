@@ -48,9 +48,13 @@ const XPUB_TYPE_ETH_BIP44_STANDARD: u32 = 9;
 /// counting enum values up to each label). If the C enum re-orders,
 /// these constants AND their tripwire tests must update in lock-step.
 const XPUB_TYPE_COSMOS: u32 = 22;
+const XPUB_TYPE_TRX: u32 = 21;
 const XPUB_TYPE_AVAX_BIP44_STANDARD: u32 = 31;
 const XPUB_TYPE_SOL_BIP44_0: u32 = 52;
-const XPUB_TYPE_APT_0: u32 = 179;
+const XPUB_TYPE_SUI_0: u32 = 153;
+const XPUB_TYPE_APT_0: u32 = 163;
+const XPUB_TYPE_ARWEAVE: u32 = 221;
+const XPUB_TYPE_TON_BIP39: u32 = 227;
 
 /// Display data returned to frontend for transaction confirmation.
 ///
@@ -178,22 +182,33 @@ fn fetch_seed() -> Option<[u8; SEED_LEN]> {
 
 // QRCodeType values from librust_c.h enum (zero-indexed):
 //   EthSignRequest = 8
-//   XRPTx = 21
 //   SolSignRequest = 10
+//   TronSignRequest = 11
 //   CosmosSignRequest = 17
 //   EvmSignRequest = 18
-//   AvaxSignRequest = 28
+//   SuiSignRequest = 19
+//   SuiSignHashRequest = 20
+//   XRPTx = 21
 //   AptosSignRequest = 23
-// Verified against ui_simulator/lib/rust-builds/librust_c.h.
+//   ArweaveSignRequest = 25
+//   TonSignRequest = 27
+//   AvaxSignRequest = 28
+// Verified against rust/rust_c/bindings/simulator-kosmo/librust_c.h
+// (cbindgen output of `pub enum QRCodeType`).
 // Module-level so inner parse_* / execute_* helpers can reference
 // them (e.g. parse_cosmos labels the chain_name by ur_type).
 const QR_ETH_SIGN_REQUEST: u32 = 8;
-const QR_XRP_TX: u32 = 21;
 const QR_SOL_SIGN_REQUEST: u32 = 10;
+const QR_TRX_SIGN_REQUEST: u32 = 11;
 const QR_COSMOS_SIGN_REQUEST: u32 = 17;
 const QR_EVM_SIGN_REQUEST: u32 = 18;
-const QR_AVAX_SIGN_REQUEST: u32 = 28;
+const QR_SUI_SIGN_REQUEST: u32 = 19;
+const QR_SUI_SIGN_HASH: u32 = 20;
+const QR_XRP_TX: u32 = 21;
 const QR_APTOS_SIGN_REQUEST: u32 = 23;
+const QR_ARWEAVE_SIGN_REQUEST: u32 = 25;
+const QR_TON_SIGN_REQUEST: u32 = 27;
+const QR_AVAX_SIGN_REQUEST: u32 = 28;
 
 /// Unified parse entry. Stage 1: ETH + XRP placeholders only.
 #[no_mangle]
@@ -205,6 +220,10 @@ pub unsafe extern "C" fn sign_ur_parse(
     match ur_type {
         QR_ETH_SIGN_REQUEST => parse_eth(ur_data),
         QR_XRP_TX => parse_xrp(ur_data),
+        QR_TRX_SIGN_REQUEST => parse_trx(ur_data),
+        QR_TON_SIGN_REQUEST => parse_ton(ur_data),
+        QR_SUI_SIGN_REQUEST => parse_sui(ur_data),
+        QR_ARWEAVE_SIGN_REQUEST => parse_arweave(ur_data),
         QR_SOL_SIGN_REQUEST => parse_sol(ur_data),
         QR_COSMOS_SIGN_REQUEST => parse_cosmos(ur_data, QR_COSMOS_SIGN_REQUEST),
         QR_EVM_SIGN_REQUEST => parse_cosmos(ur_data, QR_EVM_SIGN_REQUEST),
@@ -387,8 +406,6 @@ unsafe fn parse_xrp(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     );
     build_display("Sign Transaction", "XRP", "mainnet", &fields, "", 0)
 }
-
-// ── Phase B-L1 real implementations ──────────────────────────
 
 /// Plan v11 Phase B-L1: Solana (SOL) parse.
 ///
@@ -614,6 +631,10 @@ pub unsafe extern "C" fn sign_ur_execute(
     let result = match ur_type {
         QR_ETH_SIGN_REQUEST => execute_eth(ur_data, seed),
         QR_XRP_TX => execute_xrp(ur_data, seed),
+        QR_TRX_SIGN_REQUEST => execute_trx(ur_data, seed),
+        QR_TON_SIGN_REQUEST => execute_ton(ur_data, seed),
+        QR_SUI_SIGN_REQUEST => execute_sui(ur_data, seed),
+        QR_ARWEAVE_SIGN_REQUEST => execute_arweave(ur_data, seed),
         QR_SOL_SIGN_REQUEST => execute_sol(ur_data, seed),
         QR_COSMOS_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_COSMOS_SIGN_REQUEST),
         QR_EVM_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_EVM_SIGN_REQUEST),
@@ -798,6 +819,77 @@ fn fetch_aptos_pub_key() -> Option<PtrString> {
 #[cfg(test)]
 fn fetch_aptos_pub_key() -> Option<PtrString> {
     None
+}
+
+// ── Phase B-L2 stubs (real impl in subsequent patches) ────────
+
+/// Plan v11 Phase B-L2: Tron (TRX) parse. Stub — full impl follows.
+unsafe fn parse_trx(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("TRX parse not yet implemented (Phase B-L2)")
+}
+
+/// Plan v11 Phase B-L2: TON parse. Stub — full impl follows.
+unsafe fn parse_ton(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("TON parse not yet implemented (Phase B-L2)")
+}
+
+/// Plan v11 Phase B-L2: Sui (SUI) parse. Stub — full impl follows.
+unsafe fn parse_sui(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("SUI parse not yet implemented (Phase B-L2)")
+}
+
+/// Plan v11 Phase B-L2: Arweave (AR) parse. Stub — full impl follows.
+unsafe fn parse_arweave(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("AR parse not yet implemented (Phase B-L2)")
+}
+
+// ── Phase B-L2 execute stubs ──────────────────────────────────
+
+/// Plan v11 Phase B-L2: Tron (TRX) execute. Stub — full impl follows.
+unsafe fn execute_trx(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "TRX execute not yet implemented (Phase B-L2)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L2: TON execute. Stub — full impl follows.
+unsafe fn execute_ton(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "TON execute not yet implemented (Phase B-L2)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L2: Sui (SUI) execute. Stub — full impl follows.
+unsafe fn execute_sui(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "SUI execute not yet implemented (Phase B-L2)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L2: Arweave (AR) execute. Note that AR uses
+/// RSA (p, q) instead of seed — the dispatcher will pass seed
+/// through; the real impl will fetch the RSA primes from the
+/// keystore's encrypted RSA blob. Stub for now.
+unsafe fn execute_arweave(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "AR execute not yet implemented (Phase B-L2, requires RSA primes from keystore)".into(),
+    ))
+    .c_ptr()
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -1182,4 +1274,73 @@ mod tests {
             // call the real C binding.
             assert!(fetch_aptos_pub_key().is_none());
         }
-}
+
+        // ── Phase B-L2 dispatcher tripwires ────────────────────────────
+        //
+        // Like B-L1: we only test that the dispatcher allocates
+        // UREncodeResult. The underlying parse_*/execute_* for these
+        // chains are still stubs at this point (returning
+        // UnsupportedTransaction).
+
+        #[test]
+        fn sign_ur_parse_dispatches_trx_to_parse_trx() {
+            let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_TRX_SIGN_REQUEST) };
+            let d = unsafe { &*display };
+            // Stub returns structured error → error_code != 0.
+            // We only assert the dispatcher wired the arm.
+            assert!(d.error_code != 0);
+            unsafe { sign_display_data_free(display) };
+        }
+
+        #[test]
+        fn sign_ur_parse_dispatches_ton_to_parse_ton() {
+            let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_TON_SIGN_REQUEST) };
+            let d = unsafe { &*display };
+            assert!(d.error_code != 0);
+            unsafe { sign_display_data_free(display) };
+        }
+
+        #[test]
+        fn sign_ur_parse_dispatches_sui_to_parse_sui() {
+            let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_SUI_SIGN_REQUEST) };
+            let d = unsafe { &*display };
+            assert!(d.error_code != 0);
+            unsafe { sign_display_data_free(display) };
+        }
+
+        #[test]
+        fn sign_ur_parse_dispatches_arweave_to_parse_arweave() {
+            let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ARWEAVE_SIGN_REQUEST) };
+            let d = unsafe { &*display };
+            assert!(d.error_code != 0);
+            unsafe { sign_display_data_free(display) };
+        }
+
+        #[test]
+        fn sign_ur_execute_dispatches_trx_to_execute_trx() {
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TRX_SIGN_REQUEST) };
+            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
+            let _ = unsafe { &*result };
+        }
+
+        #[test]
+        fn sign_ur_execute_dispatches_ton_to_execute_ton() {
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TON_SIGN_REQUEST) };
+            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
+            let _ = unsafe { &*result };
+        }
+
+        #[test]
+        fn sign_ur_execute_dispatches_sui_to_execute_sui() {
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_REQUEST) };
+            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
+            let _ = unsafe { &*result };
+        }
+
+        #[test]
+        fn sign_ur_execute_dispatches_arweave_to_execute_arweave() {
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ARWEAVE_SIGN_REQUEST) };
+            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
+            let _ = unsafe { &*result };
+        }
+        }

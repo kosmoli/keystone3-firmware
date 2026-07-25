@@ -120,3 +120,17 @@ getrandom = "0.2"
 minicbor = { version = "0.19", features = ["alloc"] }
 zeroize = { version = "1.8.2", default-features = false }
 # third party dependencies end
+
+# Plan v11 Stage B: monero-serai (KeystoneHQ/serai fork) sets
+# `[profile.release] panic = "unwind"` in its own workspace root, which
+# collides with rust_c's no_std panic_handler under use-allocator.
+# Per Cargo doc: "Profile settings defined in dependencies will be
+# ignored" — workspace root profiles override dep profiles. Forcing
+# panic = "abort" here eliminates the unwinding panic error in
+# debug-kosmo / production-kosmo builds that include cypherpunk/monero.
+# (See plan_v11 §4 / §8.5 for context.)
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"

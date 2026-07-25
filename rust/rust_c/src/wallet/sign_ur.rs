@@ -44,6 +44,14 @@ const XPUB_TYPE_XRP: u32 = 29;
 /// `eth_root_xpub_enum_constant_matches_c_header` test.
 const XPUB_TYPE_ETH_BIP44_STANDARD: u32 = 9;
 
+/// Phase B-L1 chain XPUB_TYPE constants (verified 2026-07-25 by
+/// counting enum values up to each label). If the C enum re-orders,
+/// these constants AND their tripwire tests must update in lock-step.
+const XPUB_TYPE_COSMOS: u32 = 22;
+const XPUB_TYPE_AVAX_BIP44_STANDARD: u32 = 31;
+const XPUB_TYPE_SOL_BIP44_0: u32 = 52;
+const XPUB_TYPE_APT_0: u32 = 179;
+
 /// Display data returned to frontend for transaction confirmation.
 ///
 /// Field semantics:
@@ -169,15 +177,28 @@ pub unsafe extern "C" fn sign_ur_parse(
     // QRCodeType values from librust_c.h enum (zero-indexed):
     //   EthSignRequest = 8
     //   XRPTx = 21
+    //   SolSignRequest = 10
+    //   CosmosSignRequest = 17
+    //   EvmSignRequest = 18
+    //   AvaxSignRequest = 28
+    //   AptosSignRequest = 23
     // Verified against ui_simulator/lib/rust-builds/librust_c.h.
     const QR_ETH_SIGN_REQUEST: u32 = 8;
     const QR_XRP_TX: u32 = 21;
+    const QR_SOL_SIGN_REQUEST: u32 = 10;
+    const QR_COSMOS_SIGN_REQUEST: u32 = 17;
+    const QR_EVM_SIGN_REQUEST: u32 = 18;
+    const QR_AVAX_SIGN_REQUEST: u32 = 28;
+    const QR_APTOS_SIGN_REQUEST: u32 = 23;
     match ur_type {
         QR_ETH_SIGN_REQUEST => parse_eth(ur_data),
         QR_XRP_TX => parse_xrp(ur_data),
-        _ => build_display_error(
-            "Plan v11 stage-1: chain not yet wired up to unified API",
-        ),
+        QR_SOL_SIGN_REQUEST => parse_sol(ur_data),
+        QR_COSMOS_SIGN_REQUEST => parse_cosmos(ur_data, QR_COSMOS_SIGN_REQUEST),
+        QR_EVM_SIGN_REQUEST => parse_cosmos(ur_data, QR_EVM_SIGN_REQUEST),
+        QR_AVAX_SIGN_REQUEST => parse_avax(ur_data),
+        QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
+        _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
     }
 }
 
@@ -355,6 +376,33 @@ unsafe fn parse_xrp(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     build_display("Sign Transaction", "XRP", "mainnet", &fields, "", 0)
 }
 
+// ── Phase B-L1 stubs (real impl in subsequent patches) ────────
+
+/// Plan v11 Phase B-L1: Solana (SOL) parse. Stub — full impl follows.
+unsafe fn parse_sol(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("SOL parse not yet implemented (Phase B-L1)")
+}
+
+/// Plan v11 Phase B-L1: Cosmos / Evm parse. Both share the cosmos
+/// parser; ur_type selects the registry tag downstream. Stub — full
+/// impl follows.
+unsafe fn parse_cosmos(
+    _ur_data: Ptr<u8>,
+    _ur_type: u32,
+) -> PtrT<SignDisplayData> {
+    build_display_error("COSMOS parse not yet implemented (Phase B-L1)")
+}
+
+/// Plan v11 Phase B-L1: Avalanche (AVAX) parse. Stub — full impl follows.
+unsafe fn parse_avax(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("AVAX parse not yet implemented (Phase B-L1)")
+}
+
+/// Plan v11 Phase B-L1: Aptos (APT) parse. Stub — full impl follows.
+unsafe fn parse_aptos(_ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    build_display_error("APT parse not yet implemented (Phase B-L1)")
+}
+
 /// Unified execute entry. Stage 1: ETH real implementation, XRP placeholder.
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_execute(
@@ -365,8 +413,18 @@ pub unsafe extern "C" fn sign_ur_execute(
     // QRCodeType enum values from librust_c.h (zero-indexed):
     //   EthSignRequest = 8
     //   XRPTx = 21
+    //   SolSignRequest = 10
+    //   CosmosSignRequest = 17
+    //   EvmSignRequest = 18
+    //   AvaxSignRequest = 28
+    //   AptosSignRequest = 23
     const QR_ETH_SIGN_REQUEST: u32 = 8;
     const QR_XRP_TX: u32 = 21;
+    const QR_SOL_SIGN_REQUEST: u32 = 10;
+    const QR_COSMOS_SIGN_REQUEST: u32 = 17;
+    const QR_EVM_SIGN_REQUEST: u32 = 18;
+    const QR_AVAX_SIGN_REQUEST: u32 = 28;
+    const QR_APTOS_SIGN_REQUEST: u32 = 23;
 
     let seed = match fetch_seed() {
         Some(s) => s,
@@ -378,6 +436,11 @@ pub unsafe extern "C" fn sign_ur_execute(
     let result = match ur_type {
         QR_ETH_SIGN_REQUEST => execute_eth(ur_data, seed),
         QR_XRP_TX => execute_xrp(ur_data, seed),
+        QR_SOL_SIGN_REQUEST => execute_sol(ur_data, seed),
+        QR_COSMOS_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_COSMOS_SIGN_REQUEST),
+        QR_EVM_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_EVM_SIGN_REQUEST),
+        QR_AVAX_SIGN_REQUEST => execute_avax(ur_data, seed),
+        QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
         ))
@@ -448,6 +511,57 @@ unsafe fn execute_xrp(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
     // C side likely maintains its own allocation pool tied to the
     // account cache that gets released when the wallet locks.
     result
+}
+
+// ── Phase B-L1 execute stubs (real impl in subsequent patches) ────────
+
+/// Plan v11 Phase B-L1: Solana (SOL) execute. Stub — full impl follows.
+unsafe fn execute_sol(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "SOL execute not yet implemented (Phase B-L1)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L1: Cosmos / Evm execute. Both share the cosmos
+/// signer; ur_type selects the registry tag downstream. Stub — full
+/// impl follows.
+unsafe fn execute_cosmos(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+    _ur_type: u32,
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "COSMOS execute not yet implemented (Phase B-L1)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L1: Avalanche (AVAX) execute. Stub — full impl follows.
+unsafe fn execute_avax(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "AVAX execute not yet implemented (Phase B-L1)".into(),
+    ))
+    .c_ptr()
+}
+
+/// Plan v11 Phase B-L1: Aptos (APT) execute. APT signature takes a
+/// pub_key argument in addition to seed, so the full impl needs to
+/// fetch the APT pubkey from keystore cache. Stub for now.
+unsafe fn execute_aptos(
+    _ur_data: Ptr<u8>,
+    _seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    UREncodeResult::from(RustCError::UnsupportedTransaction(
+        "APT execute not yet implemented (Phase B-L1)".into(),
+    ))
+    .c_ptr()
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────

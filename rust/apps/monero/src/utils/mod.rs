@@ -13,7 +13,7 @@ use cuprate_cryptonight::cryptonight_hash_v0;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::{IsIdentity, MultiscalarMul};
-use monero_serai::transaction::Input;
+use monero_oxide::transaction::Input;
 use rand_core::{CryptoRng, OsRng, RngCore};
 
 pub mod constants;
@@ -21,6 +21,19 @@ pub mod hash;
 pub mod io;
 pub mod sign;
 pub mod varinteger;
+
+/// Plan v11 §4.12 thin adapter: forward `hash_to_point` to monero-oxide's
+/// audited `Point::biased_hash`. This is **not** a re-implementation — it's
+/// a one-line wrapper to translate keystone's `EdwardsPoint` (curve25519_dalek)
+/// world to monero-oxide's `Point` newtype and back. All crypto lives in
+/// the upstream fork.
+///
+/// The 5 callers in key.rs / utils/sign.rs / key_images.rs / transfer.rs
+/// keep their existing API surface: `hash_to_point(bytes: [u8; 32]) ->
+/// EdwardsPoint`.
+pub fn hash_to_point(bytes: [u8; 32]) -> curve25519_dalek::edwards::EdwardsPoint {
+    monero_oxide::ed25519::Point::biased_hash(bytes).into()
+}
 
 pub struct DecryptUrData {
     pub pk1: Option<PublicKey>,
@@ -197,7 +210,10 @@ pub fn generate_random_scalar<R: RngCore + CryptoRng>(rng: &mut R) -> Scalar {
 
 pub fn get_key_image_from_input(input: Input) -> Result<Keyimage> {
     match input {
-        Input::ToKey { key_image, .. } => Ok(Keyimage::new(key_image.compress().to_bytes())),
+        // Plan v11 §4.12: monero-oxide's CompressedPoint is a newtype with
+        // `to_bytes()` (returns [u8; 32]); serai's required `.compress()` →
+        // `.to_bytes()`. Adapt.
+        Input::ToKey { key_image, .. } => Ok(Keyimage::new(key_image.to_bytes())),
         _ => Err(MoneroError::UnsupportedInputType),
     }
 }

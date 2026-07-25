@@ -47,18 +47,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ahash"
-version = "0.8.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
-dependencies = [
- "cfg-if",
- "once_cell",
- "version_check",
- "zerocopy",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -306,7 +294,7 @@ dependencies = [
  "curve25519-dalek",
  "hex",
  "keystore",
- "monero-serai",
+ "monero-oxide",
  "monero-wallet",
  "rand_chacha",
  "rand_core 0.6.4",
@@ -1359,7 +1347,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dc92fb57ca44df6db8059111ab3af99a63d5d0f8375d9972e319a379c6bab76"
 dependencies = [
  "subtle",
- "zeroize",
 ]
 
 [[package]]
@@ -1425,10 +1412,7 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "curve25519-dalek-derive",
- "digest 0.10.7",
  "fiat-crypto",
- "group",
- "rand_core 0.6.4",
  "rustc_version",
  "subtle",
  "zeroize",
@@ -1443,22 +1427,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.104",
-]
-
-[[package]]
-name = "dalek-ff-group"
-version = "0.4.1"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
-dependencies = [
- "crypto-bigint",
- "curve25519-dalek",
- "digest 0.10.7",
- "ff",
- "group",
- "rand_core 0.6.4",
- "rustversion",
- "subtle",
- "zeroize",
 ]
 
 [[package]]
@@ -2014,7 +1982,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bb81d22191b89b117cd12d6549544bfcba0da741efdcec7c7d2fd06a0f56363"
 dependencies = [
- "ahash 0.7.8",
+ "ahash",
  "hashbrown 0.11.2",
 ]
 
@@ -2119,7 +2087,7 @@ version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 dependencies = [
- "ahash 0.7.8",
+ "ahash",
 ]
 
 [[package]]
@@ -2127,15 +2095,6 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-
-[[package]]
-name = "hashbrown"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
-dependencies = [
- "ahash 0.8.12",
-]
 
 [[package]]
 name = "hashbrown"
@@ -2164,7 +2123,7 @@ dependencies = [
  "hash32",
  "rustc_version",
  "serde",
- "spin",
+ "spin 0.9.8",
  "stable_deref_trait",
 ]
 
@@ -2482,7 +2441,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
- "spin",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -2538,7 +2497,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.53.2",
 ]
 
 [[package]]
@@ -2677,24 +2636,30 @@ dependencies = [
 [[package]]
 name = "monero-address"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
- "curve25519-dalek",
+ "monero-base58",
+ "monero-ed25519",
  "monero-io",
  "monero-primitives",
- "std-shims",
+ "thiserror 2.0.12",
  "zeroize",
+]
+
+[[package]]
+name = "monero-base58"
+version = "0.1.0"
+dependencies = [
+ "monero-primitives",
+ "std-shims",
 ]
 
 [[package]]
 name = "monero-borromean"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
+ "monero-ed25519",
  "monero-io",
- "monero-primitives",
  "std-shims",
  "zeroize",
 ]
@@ -2702,107 +2667,97 @@ dependencies = [
 [[package]]
 name = "monero-bulletproofs"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
+ "monero-bulletproofs-generators",
+ "monero-ed25519",
  "monero-io",
  "monero-primitives",
  "rand_core 0.6.4",
  "std-shims",
+ "thiserror 2.0.12",
  "zeroize",
+]
+
+[[package]]
+name = "monero-bulletproofs-generators"
+version = "0.1.0"
+dependencies = [
+ "curve25519-dalek",
+ "monero-ed25519",
+ "monero-io",
+ "monero-primitives",
+ "std-shims",
 ]
 
 [[package]]
 name = "monero-clsag"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
+ "monero-ed25519",
  "monero-io",
- "monero-primitives",
  "rand_core 0.6.4",
+ "std-shims",
+ "subtle",
+ "thiserror 2.0.12",
+ "zeroize",
+]
+
+[[package]]
+name = "monero-ed25519"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+ "curve25519-dalek",
+ "monero-io",
+ "rand_core 0.6.4",
+ "sha3 0.10.8",
  "std-shims",
  "subtle",
  "zeroize",
 ]
 
 [[package]]
-name = "monero-generators"
-version = "0.4.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
+name = "monero-interface"
+version = "0.1.0"
 dependencies = [
- "curve25519-dalek",
- "dalek-ff-group",
- "group",
- "monero-io",
- "sha3 0.10.8",
+ "hex",
+ "monero-oxide",
  "std-shims",
- "subtle",
+ "thiserror 2.0.12",
+ "zeroize",
 ]
 
 [[package]]
 name = "monero-io"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
- "curve25519-dalek",
  "std-shims",
 ]
 
 [[package]]
 name = "monero-mlsag"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "monero-generators",
+ "monero-ed25519",
  "monero-io",
- "monero-primitives",
  "std-shims",
+ "thiserror 2.0.12",
  "zeroize",
 ]
 
 [[package]]
-name = "monero-primitives"
-version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
-dependencies = [
- "curve25519-dalek",
- "monero-generators",
- "monero-io",
- "sha3 0.10.8",
- "std-shims",
- "zeroize",
-]
-
-[[package]]
-name = "monero-rpc"
-version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
-dependencies = [
- "curve25519-dalek",
- "hex",
- "monero-address",
- "monero-serai",
- "serde",
- "serde_json",
- "std-shims",
- "zeroize",
-]
-
-[[package]]
-name = "monero-serai"
+name = "monero-oxide"
 version = "0.1.4-alpha"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
  "hex-literal",
  "monero-borromean",
  "monero-bulletproofs",
  "monero-clsag",
- "monero-generators",
+ "monero-ed25519",
  "monero-io",
  "monero-mlsag",
  "monero-primitives",
@@ -2811,21 +2766,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "monero-primitives"
+version = "0.1.0"
+dependencies = [
+ "sha3 0.10.8",
+]
+
+[[package]]
 name = "monero-wallet"
 version = "0.1.0"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
  "hex",
  "monero-address",
  "monero-clsag",
- "monero-rpc",
- "monero-serai",
+ "monero-interface",
+ "monero-oxide",
  "rand",
  "rand_chacha",
  "rand_core 0.6.4",
  "rand_distr",
  "std-shims",
+ "subtle",
+ "thiserror 2.0.12",
  "zeroize",
 ]
 
@@ -3769,7 +3732,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98f2771d255fd99f0294f13249fecd0cae6e074f86b4197ec1f1689d537b44d3"
 dependencies = [
- "ahash 0.7.8",
+ "ahash",
  "griddle",
  "hashbrown 0.11.2",
 ]
@@ -4370,6 +4333,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "spin"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
+
+[[package]]
 name = "spki"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4393,11 +4362,13 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "std-shims"
-version = "0.1.1"
-source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "227c4f8561598188d0df96dbe749824576174bba278b5b6bb2eacff1066067d0"
 dependencies = [
- "hashbrown 0.14.5",
- "spin",
+ "hashbrown 0.16.1",
+ "rustversion",
+ "spin 0.10.1",
 ]
 
 [[package]]

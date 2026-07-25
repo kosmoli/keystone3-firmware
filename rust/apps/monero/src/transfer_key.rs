@@ -6,8 +6,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
-use monero_serai::primitives::Commitment;
-use monero_serai::ringct::EncryptedAmount;
+use monero_oxide::ed25519::Commitment;
+use monero_oxide::ringct::EncryptedAmount;
 use monero_wallet::SharedKeyDerivations;
 use rand_core::OsRng;
 use zeroize::Zeroizing;
@@ -115,7 +115,9 @@ impl TxConstructionData {
     ) -> Vec<[u8; 8]> {
         let mut res = Vec::with_capacity(self.splitted_dsts.len());
         for ecdh in self.ecdhs(keypair, tx_key, additional_keys, tx_key_pub) {
-            res.push(SharedKeyDerivations::payment_id_xor(Zeroizing::new(ecdh)));
+            res.push(SharedKeyDerivations::payment_id_xor(Zeroizing::new(
+                monero_oxide::ed25519::Point::from(ecdh),
+            )));
         }
         res
     }
@@ -158,7 +160,7 @@ impl TxConstructionData {
         for (i, (_, ecdh)) in self.splitted_dsts.iter().zip(ecdhs).enumerate() {
             res.push(SharedKeyDerivations::output_derivations(
                 None,
-                Zeroizing::new(ecdh),
+                Zeroizing::new(monero_oxide::ed25519::Point::from(ecdh)),
                 i,
             ));
         }
@@ -200,6 +202,7 @@ impl TxConstructionData {
         self.commitments_and_encrypted_amounts(keypair, tx_key, additional_keys, tx_key_pub)
             .into_iter()
             .map(|(commitment, _)| commitment.mask)
+            .map(|mask: monero_oxide::ed25519::Scalar| mask.into())
             .sum()
     }
 }

@@ -3,7 +3,7 @@ use crate::key::{generate_key_image_from_priavte_key, KeyPair, PrivateKey, Publi
 use crate::outputs::{ExportedTransferDetail, ExportedTransferDetails};
 use crate::utils::{
     constants::*, decrypt_data_with_pvk, encrypt_data_with_pvk, hash::hash_to_scalar,
-    sign::generate_ring_signature, varinteger::*,
+    hash_to_point, sign::generate_ring_signature, varinteger::*,
 };
 use alloc::string::{String, ToString};
 use alloc::vec;
@@ -12,7 +12,6 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::EdwardsPoint;
 use hex;
-use monero_serai::generators::hash_to_point;
 use rand_core::{CryptoRng, RngCore};
 
 #[derive(Debug, Clone, Copy)]
@@ -28,6 +27,14 @@ impl Keyimage {
             .unwrap()
             .decompress()
             .unwrap()
+    }
+
+    /// Plan v11 §4.12 monero-serai → monero-oxide migration adapter: return
+    /// the key image as `monero_oxide::ed25519::CompressedPoint` (monero-oxide's
+    /// 32-byte compressed point representation; structurally identical to
+    /// dalek's `CompressedEdwardsY` but a distinct newtype).
+    pub fn to_compressed_point(&self) -> monero_oxide::ed25519::CompressedPoint {
+        monero_oxide::ed25519::CompressedPoint::from(self.0)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

@@ -1,12 +1,11 @@
 use crate::errors::{MoneroError, Result};
-use crate::utils::{constants::PUBKEY_LEH, hash::hash_to_scalar};
+use crate::utils::{constants::PUBKEY_LEH, hash::hash_to_scalar, hash_to_point};
 use alloc::format;
 use alloc::string::{String, ToString};
 use bitcoin::{Network, PrivateKey as PrvKey};
 use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
 use curve25519_dalek::scalar::Scalar;
 use hex;
-use monero_serai::generators::hash_to_point;
 
 #[derive(Debug, Clone, Default)]
 pub struct PrivateKey {

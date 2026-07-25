@@ -14,12 +14,12 @@ use alloc::vec::Vec;
 use core::fmt::Display;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::EdwardsPoint;
-use monero_serai::primitives::Commitment;
-use monero_serai::primitives::Decoys;
-use monero_serai::ringct::bulletproofs::Bulletproof;
-use monero_serai::ringct::clsag::{Clsag, ClsagContext};
-use monero_serai::ringct::{RctBase, RctProofs, RctPrunable};
-use monero_serai::transaction::{Input, Output, Timelock, Transaction, TransactionPrefix};
+use monero_oxide::ed25519::Commitment;
+use monero_oxide::ringct::clsag::Decoys;
+use monero_oxide::ringct::bulletproofs::Bulletproof;
+use monero_oxide::ringct::clsag::{Clsag, ClsagContext};
+use monero_oxide::ringct::{RctBase, RctProofs, RctPrunable};
+use monero_oxide::transaction::{Input, Output, Timelock, Transaction, TransactionPrefix};
 use rand_core::OsRng;
 use zeroize::Zeroizing;
 
@@ -274,7 +274,7 @@ impl TxConstructionData {
             let input = Input::ToKey {
                 amount: None,
                 key_offsets: key_offsets.clone(),
-                key_image: key_image.to_point(),
+                key_image: key_image.to_compressed_point(),
             };
             res.push(InnerInput {
                 key_offsets,
@@ -324,8 +324,14 @@ impl TxConstructionData {
             self.shared_key_derivations(keypair, tx_key, additional_keys, tx_key_pub);
         let mut res = InnerOutputs::new();
         for (dest, shared_key_derivation) in self.splitted_dsts.iter().zip(shared_key_derivations) {
+            // Plan v11 §4.12: monero-oxide SharedKeyDerivations.shared_key is
+            // `monero_oxide::ed25519::Scalar` (newtype around dalek).
+            // Unwrap to dalek::Scalar for keystone's existing crypto code
+            // (PrivateKey::new / EdwardsPoint::mul_base both want dalek::Scalar).
+            let shared_key_dalek: curve25519_dalek::scalar::Scalar =
+                shared_key_derivation.shared_key.into();
             let image = generate_key_image_from_priavte_key(&PrivateKey::new(
-                shared_key_derivation.shared_key,
+                shared_key_dalek,
             ));
 
             let key = PublicKey::from_bytes(&dest.addr.spend_public_key)
@@ -333,11 +339,13 @@ impl TxConstructionData {
                 .point
                 .decompress()
                 .unwrap()
-                + EdwardsPoint::mul_base(&shared_key_derivation.shared_key);
+                + EdwardsPoint::mul_base(&shared_key_dalek);
 
             res.push(InnerOutput {
                 output: Output {
-                    key: key.compress(),
+                    key: monero_oxide::ed25519::CompressedPoint::from(
+                        key.compress().to_bytes(),
+                    ),
                     amount: None,
                     view_tag: (match self.rct_config.bp_version {
                         RctType::RCTTypeFull => false,
@@ -582,7 +590,9 @@ impl UnsignedTx {
         let mut bp_commitments = Vec::with_capacity(tx.splitted_dsts.len());
         let mut encrypted_amounts = Vec::with_capacity(tx.splitted_dsts.len());
         for (commitment, encrypted_amount) in commitments_and_encrypted_amounts {
-            commitments.push(commitment.calculate());
+            // RctBase.commitments is Vec<CompressedPoint>; commit returns
+            // monero_oxide::Point which compresses to CompressedPoint.
+            commitments.push(commitment.commit().compress());
             bp_commitments.push(commitment);
             encrypted_amounts.push(encrypted_amount);
         }
@@ -646,30 +656,43 @@ impl UnsignedTx {
 
             let mask_sum =
                 unsigned_tx.sum_output_masks(keypair, &tx_key, &additional_keys, &tx_key_pub);
+            let mask_sum = monero_oxide::ed25519::Scalar::from(mask_sum);
             let inputs = unsigned_tx.inputs(keypair)?;
             let mut clsag_signs = Vec::with_capacity(inputs.0.len());
             for (i, input) in inputs.0.iter().enumerate() {
-                let ring: Vec<[EdwardsPoint; 2]> = input
+                // Plan v11 §4.12: Decoys::new wants monero_oxide::ed25519::Point
+                // pairs, not dalek EdwardsPoints. Each ring member's `(dest,
+                // mask)` is dalek::CompressedEdwardsY → decompress →
+                // wrap in monero_oxide::ed25519::Point.
+                let ring: Vec<[monero_oxide::ed25519::Point; 2]> = input
                     .source
                     .outputs
                     .iter()
                     .map(|output| {
                         [
-                            PublicKey::from_bytes(&output.key.dest)
-                                .unwrap()
-                                .point
-                                .decompress()
-                                .unwrap(),
-                            PublicKey::from_bytes(&output.key.mask)
-                                .unwrap()
-                                .point
-                                .decompress()
-                                .unwrap(),
+                            monero_oxide::ed25519::Point::from(
+                                PublicKey::from_bytes(&output.key.dest)
+                                    .unwrap()
+                                    .point
+                                    .decompress()
+                                    .unwrap(),
+                            ),
+                            monero_oxide::ed25519::Point::from(
+                                PublicKey::from_bytes(&output.key.mask)
+                                    .unwrap()
+                                    .point
+                                    .decompress()
+                                    .unwrap(),
+                            ),
                         ]
                     })
                     .collect();
                 clsag_signs.push((
-                    Zeroizing::new(keypair.spend.scalar + input.key_offset),
+                    // ClsagContext's Commitment.mask is monero_oxide::Scalar;
+                    // wrap the dalek::Scalar addition result.
+                    Zeroizing::new(monero_oxide::ed25519::Scalar::from(
+                        keypair.spend.scalar + input.key_offset,
+                    )),
                     ClsagContext::new(
                         Decoys::new(
                             unsigned_tx.inputs(keypair)?.get_key_offsets(i),
@@ -678,7 +701,9 @@ impl UnsignedTx {
                         )
                         .unwrap(),
                         Commitment {
-                            mask: Scalar::from_bytes_mod_order(input.source.mask),
+                            mask: monero_oxide::ed25519::Scalar::from(
+                                Scalar::from_bytes_mod_order(input.source.mask),
+                            ),
                             amount: input.source.amount,
                         },
                     )
@@ -712,7 +737,7 @@ impl UnsignedTx {
             *pseudo_outs = Vec::with_capacity(inputs_len);
             for (clsag, pseudo_out) in clsags_and_pseudo_outs.iter() {
                 clsags.push(clsag.to_owned());
-                pseudo_outs.push(*pseudo_out);
+                pseudo_outs.push(pseudo_out.compress());
             }
 
             let key_images = unsigned_tx.calc_key_images(keypair)?;
@@ -734,7 +759,12 @@ impl UnsignedTx {
                 .0
                 .iter()
             {
-                tx_key_images.push((PublicKey::new(item.output.key), item.key_image));
+                tx_key_images.push((
+                    PublicKey::new(curve25519_dalek::edwards::CompressedEdwardsY::from_slice(
+                        &item.output.key.to_bytes(),
+                    ).unwrap()),
+                    item.key_image,
+                ));
             }
 
             penging_tx.push(PendingTx::new(
@@ -818,7 +848,6 @@ mod tests {
     use core::ops::Deref;
     use curve25519_dalek::edwards::EdwardsPoint;
     use curve25519_dalek::scalar::Scalar;
-    use monero_serai::generators::hash_to_point;
     use rand_core::{RngCore, SeedableRng};
 
     #[test]
@@ -833,7 +862,7 @@ mod tests {
             let msg = [1; PUBKEY_LEH];
 
             let mut secrets = (Zeroizing::new(Scalar::ZERO), Scalar::ZERO);
-            let mut ring = vec![];
+            let mut ring: Vec<[EdwardsPoint; 2]> = vec![];
             for i in 0..RING_LEN {
                 let dest = Zeroizing::new(generate_random_scalar(&mut rng));
                 let mask = generate_random_scalar(&mut rng);
@@ -847,24 +876,34 @@ mod tests {
                 let point = EdwardsPoint::mul_base(dest.deref());
                 ring.push([
                     point,
-                    monero_serai::primitives::Commitment::new(mask, amount).calculate(),
+                    monero_oxide::ed25519::Commitment::new(
+                        monero_oxide::ed25519::Scalar::from(mask),
+                        amount,
+                    ).commit().into(),
                 ]);
             }
 
             let sum_outputs = generate_random_scalar(&mut rng);
+            let sum_outputs = monero_oxide::ed25519::Scalar::from(sum_outputs);
 
             let (clsag, pseudo_out) = Clsag::sign(
                 &mut rng,
                 vec![(
-                    secrets.0.clone(),
+                    Zeroizing::new(monero_oxide::ed25519::Scalar::from(*secrets.0.clone())),
                     ClsagContext::new(
-                        monero_serai::primitives::Decoys::new(
+                        monero_oxide::ringct::clsag::Decoys::new(
                             (1..=RING_LEN).collect(),
                             u8::try_from(real).unwrap(),
-                            ring.clone(),
+                            ring.iter().map(|[d, m]| [
+                                monero_oxide::ed25519::Point::from(*d),
+                                monero_oxide::ed25519::Point::from(*m),
+                            ]).collect(),
                         )
                         .unwrap(),
-                        monero_serai::primitives::Commitment::new(secrets.1, AMOUNT),
+                        monero_oxide::ed25519::Commitment::new(
+                            monero_oxide::ed25519::Scalar::from(secrets.1),
+                            AMOUNT,
+                        ),
                     )
                     .unwrap(),
                 )],
@@ -877,7 +916,28 @@ mod tests {
             let image = hash_to_point((EdwardsPoint::mul_base(secrets.0.deref())).compress().0)
                 * secrets.0.deref();
 
-            assert_eq!(clsag.verify(&ring, &image, &pseudo_out, &msg), Ok(()));
+            // clsag.verify expects Vec<[CompressedPoint; 2]> and image as &[u8; 32].
+            let ring_for_verify: Vec<[monero_oxide::ed25519::CompressedPoint; 2]> = ring
+                .iter()
+                .map(|[d, m]| {
+                    [
+                        monero_oxide::ed25519::CompressedPoint::from(d.compress().to_bytes()),
+                        monero_oxide::ed25519::CompressedPoint::from(m.compress().to_bytes()),
+                    ]
+                })
+                .collect();
+            let image_compressed = monero_oxide::ed25519::CompressedPoint::from(
+                image.compress().to_bytes(),
+            );
+            assert_eq!(
+                clsag.verify(
+                    ring_for_verify,
+                    &image_compressed,
+                    &pseudo_out.compress(),
+                    &msg,
+                ),
+                Ok(())
+            );
         }
     }
 

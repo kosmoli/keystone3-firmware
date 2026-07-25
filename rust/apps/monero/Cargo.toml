@@ -20,8 +20,26 @@ rand_chacha = { workspace = true }
 thiserror = { workspace = true }
 keystore = { workspace = true, default-features = false, features = ["multi_coins"] }
 cuprate-cryptonight = { git = "https://github.com/KeystoneHQ/cuprate", default-features = false, features = ["no_std"] }
-monero-serai = { git = "https://github.com/KeystoneHQ/serai", default-features = false }
-monero-wallet = { git = "https://github.com/KeystoneHQ/serai", default-features = false }
+# Plan v11 §4.12: monero-serai → monero-oxide migration. Step 2 of the
+# migration: replace monero-serai / monero-wallet (KeystoneHQ/serai) with
+# the kosmoli/monero-oxide fork. The fork is a fork of the upstream
+# monorepo (https://github.com/monero-oxide/monero-oxide) with 7 'pub'
+# keywords added to expose SharedKeyDerivations + 6 methods that
+# keystone's transfer_key.rs/transfer.rs need.
+#
+# We use a local `path` dependency (../monero-oxide/monero-oxide) rather
+# than git subdirectory because monero-oxide is a Cargo workspace and
+# `monero-oxide/wallet/Cargo.toml` references `path = "primitives"` —
+# `subdirectory` would only pull the wallet crate, breaking the
+# workspace path resolution.
+#
+# The kosmoli fork repo: /home/komo/works/monero-oxide, HEAD e04de31.
+monero-oxide = { path = "../../../../monero-oxide/monero-oxide", default-features = false }
+# monero-wallet is the keystone-needed sibling crate (keystone used to
+# import `monero_wallet::SharedKeyDerivations` from the serai monorepo).
+# In monero-oxide, this is its own crate `monero-wallet` (note the
+# hyphen, not underscore). Same path relative to the monorepo root.
+monero-wallet = { path = "../../../../monero-oxide/monero-oxide/wallet", default-features = false }
 
 [dev-dependencies]
 keystore = { workspace = true, features = ["cypherpunk"] }

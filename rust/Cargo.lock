@@ -306,7 +306,6 @@ dependencies = [
  "curve25519-dalek",
  "hex",
  "keystore",
- "monero-oxide",
  "monero-serai",
  "monero-wallet",
  "rand_chacha",
@@ -2165,7 +2164,7 @@ dependencies = [
  "hash32",
  "rustc_version",
  "serde",
- "spin 0.9.8",
+ "spin",
  "stable_deref_trait",
 ]
 
@@ -2483,7 +2482,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
- "spin 0.9.8",
+ "spin",
 ]
 
 [[package]]
@@ -2681,9 +2680,9 @@ version = "0.1.0"
 source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "std-shims 0.1.1",
+ "monero-io",
+ "monero-primitives",
+ "std-shims",
  "zeroize",
 ]
 
@@ -2694,21 +2693,9 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "std-shims 0.1.1",
- "zeroize",
-]
-
-[[package]]
-name = "monero-borromean"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "std-shims 0.1.5",
+ "monero-io",
+ "monero-primitives",
+ "std-shims",
  "zeroize",
 ]
 
@@ -2719,39 +2706,11 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-io",
+ "monero-primitives",
  "rand_core 0.6.4",
- "std-shims 0.1.1",
+ "std-shims",
  "zeroize",
-]
-
-[[package]]
-name = "monero-bulletproofs"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "monero-bulletproofs-generators",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "rand_core 0.6.4",
- "std-shims 0.1.5",
- "thiserror 2.0.12",
- "zeroize",
-]
-
-[[package]]
-name = "monero-bulletproofs-generators"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "std-shims 0.1.5",
 ]
 
 [[package]]
@@ -2761,40 +2720,10 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-io",
+ "monero-primitives",
  "rand_core 0.6.4",
- "std-shims 0.1.1",
- "subtle",
- "zeroize",
-]
-
-[[package]]
-name = "monero-clsag"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "rand_core 0.6.4",
- "std-shims 0.1.5",
- "subtle",
- "thiserror 2.0.12",
- "zeroize",
-]
-
-[[package]]
-name = "monero-ed25519"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "crypto-bigint",
- "curve25519-dalek",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "rand_core 0.6.4",
- "sha3 0.10.8",
- "std-shims 0.1.5",
+ "std-shims",
  "subtle",
  "zeroize",
 ]
@@ -2807,9 +2736,9 @@ dependencies = [
  "curve25519-dalek",
  "dalek-ff-group",
  "group",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-io",
  "sha3 0.10.8",
- "std-shims 0.1.1",
+ "std-shims",
  "subtle",
 ]
 
@@ -2819,15 +2748,7 @@ version = "0.1.0"
 source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "curve25519-dalek",
- "std-shims 0.1.1",
-]
-
-[[package]]
-name = "monero-io"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "std-shims 0.1.5",
+ "std-shims",
 ]
 
 [[package]]
@@ -2837,40 +2758,9 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "std-shims 0.1.1",
- "zeroize",
-]
-
-[[package]]
-name = "monero-mlsag"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "std-shims 0.1.5",
- "thiserror 2.0.12",
- "zeroize",
-]
-
-[[package]]
-name = "monero-oxide"
-version = "0.1.4-alpha"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "curve25519-dalek",
- "hex-literal",
- "monero-borromean 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-bulletproofs 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-clsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-ed25519",
- "monero-io 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-mlsag 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "monero-primitives 0.1.0 (git+https://github.com/monero-oxide/monero-oxide)",
- "std-shims 0.1.5",
+ "monero-io",
+ "monero-primitives",
+ "std-shims",
  "zeroize",
 ]
 
@@ -2881,18 +2771,10 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-io",
  "sha3 0.10.8",
- "std-shims 0.1.1",
+ "std-shims",
  "zeroize",
-]
-
-[[package]]
-name = "monero-primitives"
-version = "0.1.0"
-source = "git+https://github.com/monero-oxide/monero-oxide#946ec5f00ff071b129758ee8cba5528539fccfe4"
-dependencies = [
- "sha3 0.10.8",
 ]
 
 [[package]]
@@ -2906,7 +2788,7 @@ dependencies = [
  "monero-serai",
  "serde",
  "serde_json",
- "std-shims 0.1.1",
+ "std-shims",
  "zeroize",
 ]
 
@@ -2917,14 +2799,14 @@ source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d46718
 dependencies = [
  "curve25519-dalek",
  "hex-literal",
- "monero-borromean 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-bulletproofs 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-clsag 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-borromean",
+ "monero-bulletproofs",
+ "monero-clsag",
  "monero-generators",
- "monero-io 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-mlsag 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "monero-primitives 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
- "std-shims 0.1.1",
+ "monero-io",
+ "monero-mlsag",
+ "monero-primitives",
+ "std-shims",
  "zeroize",
 ]
 
@@ -2936,14 +2818,14 @@ dependencies = [
  "curve25519-dalek",
  "hex",
  "monero-address",
- "monero-clsag 0.1.0 (git+https://github.com/KeystoneHQ/serai)",
+ "monero-clsag",
  "monero-rpc",
  "monero-serai",
  "rand",
  "rand_chacha",
  "rand_core 0.6.4",
  "rand_distr",
- "std-shims 0.1.1",
+ "std-shims",
  "zeroize",
 ]
 
@@ -4488,12 +4370,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spin"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
-
-[[package]]
 name = "spki"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4521,18 +4397,7 @@ version = "0.1.1"
 source = "git+https://github.com/KeystoneHQ/serai#c784e6c6fcd6cfd8ac88cdd0d467184aeefaf810"
 dependencies = [
  "hashbrown 0.14.5",
- "spin 0.9.8",
-]
-
-[[package]]
-name = "std-shims"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "227c4f8561598188d0df96dbe749824576174bba278b5b6bb2eacff1066067d0"
-dependencies = [
- "hashbrown 0.16.1",
- "rustversion",
- "spin 0.10.1",
+ "spin",
 ]
 
 [[package]]

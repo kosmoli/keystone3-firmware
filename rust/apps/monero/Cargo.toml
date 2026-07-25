@@ -20,6 +20,16 @@ rand_chacha = { workspace = true }
 thiserror = { workspace = true }
 keystore = { workspace = true, default-features = false }
 cuprate-cryptonight = { git = "https://github.com/KeystoneHQ/cuprate", default-features = false, features = ["no_std"] }
+# Plan v11 §4.12: monero-serai → monero-oxide migration.
+# monero-serai is the historical dep (KeystoneHQ/serai#c784e6c6); monero-oxide
+# is the upstream migration target (monero-oxide/monero-oxide monorepo,
+# top-level sub-crate paths under monero-oxide/). This commit adds
+# monero-oxide as an additional dependency WITHOUT removing
+# monero-serai — the use-site migration follows once we confirm
+# the build pulls monero-oxide cleanly. We keep monero-wallet in
+# place for the same reason; it's a separate crate name in the
+# old monorepo.
+monero-oxide = { git = "https://github.com/monero-oxide/monero-oxide", default-features = false }
 monero-serai = { git = "https://github.com/KeystoneHQ/serai", default-features = false }
 monero-wallet = { git = "https://github.com/KeystoneHQ/serai", default-features = false }
 

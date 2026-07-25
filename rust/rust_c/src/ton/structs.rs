@@ -13,18 +13,18 @@ use app_ton::structs::{TonMessage, TonProof, TonTransaction};
 
 #[repr(C)]
 pub struct DisplayTonMessage {
-    amount: PtrString,
-    action: PtrString,
-    to: PtrString,
-    comment: PtrString,
-    data_view: PtrString,
-    contract_data: PtrString,
+    pub(crate) amount: PtrString,
+    pub(crate) action: PtrString,
+    pub(crate) to: PtrString,
+    pub(crate) comment: PtrString,
+    pub(crate) data_view: PtrString,
+    pub(crate) contract_data: PtrString,
 }
 
 #[repr(C)]
 pub struct DisplayTonTransaction {
-    raw_data: PtrString,
-    messages: PtrT<VecFFI<DisplayTonMessage>>,
+    pub(crate) raw_data: PtrString,
+    pub(crate) messages: PtrT<VecFFI<DisplayTonMessage>>,
 }
 
 impl_c_ptr!(DisplayTonMessage);

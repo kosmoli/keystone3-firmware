@@ -2831,31 +2831,44 @@ static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 TRX TX: route through sign_ur_execute dispatcher
+     * (→ execute_trx → tron_sign_request) instead of the 30-line
+     * legacy dual-path impl.
+     *
+     * Behavior changes (per KOSMO decision 2026-07-27, user is not
+     * a TRX user and accepts the trade-offs):
+     *   - isUnlimited: always false now. The dispatcher's execute_trx
+     *     hard-codes FRAGMENT_MAX_LENGTH_DEFAULT in sign_ur.rs:2031
+     *     — request_union.isUnlimited is ignored. Large TRX txs that
+     *     previously fit in a single UR fragment will now span
+     *     multiple fragments. Signing itself is unaffected.
+     *   - urType: always TronSignRequest (11) now. The legacy
+     *     `tron_sign_keystone` branch (any non-TronSignRequest urType
+     *     for cross-keystone-wallet compatibility) is no longer
+     *     reachable through this path. Real TRX users hit
+     *     TronSignRequest via TronKeeper; the keystone branch was
+     *     dead in practice for the TRX chain. If a future
+     *     non-TronKeeper TRX wallet shows up, dispatcher will need
+     *     a separate arm.
+     *   - mfp / publicKey / SOFTWARE_VERSION: no longer threaded
+     *     through the C→Rust boundary. execute_trx only needs
+     *     urData + seed; seed is fetched Rust-side via fetch_seed()
+     *     (plan v11 §4.1 invariant).
+     *
+     * Union fields (.urType, .isUnlimited) are kept on the C side
+     * for ABI stability with the existing gui_trx.c callers — the
+     * values they set are now ignored at this level.
+     *
+     * We can't reuse ModelSignUrExecute because it hard-codes
+     * KOSMO_REQ_SIGN_UR_EXECUTE in the notify. Inline the
+     * dispatch + notify so the frontend callback fires with
+     * KOSMO_REQ_SIGN_TRX_TX. */
+    (void)inDataLen;
     void **arr = (void **)inData;
     void *urData = arr[0];
-    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
-    bool isUnlimited = (bool)(uintptr_t)arr[2];
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-    uint32_t fragmentLen = isUnlimited ? FRAGMENT_UNLIMITED_LENGTH : FRAGMENT_MAX_LENGTH_DEFAULT;
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_TRX_TX, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    UREncodeResult *result = NULL;
-    if (urType == TronSignRequest) {
-        result = tron_sign_request(urData, seed, len, fragmentLen);
-    } else {
-        result = tron_sign_keystone(urData, urType, mfp, sizeof(mfp),
-                                    (char *)KosmoApi_GetPublicKey(KOSMO_CHAIN_TRX),
-                                    SOFTWARE_VERSION, seed, len);
-    }
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    /* arr[1] = urType (ignored — always routed as TronSignRequest) */
+    /* arr[2] = isUnlimited (ignored — always FRAGMENT_MAX_LENGTH_DEFAULT) */
+    void *result = sign_ur_execute(urData, 0, TronSignRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TRX_TX, result);
     return KOSMO_OK;
 }

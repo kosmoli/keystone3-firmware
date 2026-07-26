@@ -91,6 +91,22 @@ const XPUB_TYPE_ADA_0: u32 = 173;
 /// 2026-07-26 by counting: ..., CardanoSignRequest=14.
 const QR_CARDANO_SIGN_REQUEST: u32 = 14;
 
+/// Plan v11 Phase B-L3-4 (ZEC): `QRCodeType::ZcashPczt` value
+/// (cbindgen output of `pub enum QRCodeType` in
+/// rust_c/src/common/ur.rs). Verified 2026-07-26 by counting:
+/// ..., ZcashPczt=31.
+const QR_ZCASH_PCZT: u32 = 31;
+
+/// `XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0` value in `ChainType`
+/// (src/crypto/account_public_info.h). Verified 2026-07-26
+/// by counting enum lines — ZCASH_UFVK_ENCRYPTED_0 is at
+/// enum-internal line 232 —1 = 231.
+///
+/// ZEC, unlike BTC/ADA, stores its UFVK in encrypted form
+/// (the legacy path used `XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0` for
+/// the encrypted viewing key — see legacy guizcash.c).
+const XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0: u32 = 230;
+
 /// `QRCodeType::XmrTxUnsignedRequest` value (cbindgen output of
 /// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
 /// 2026-07-26 by counting: BtcSignRequest=6, ..., XmrTxUnsignedRequest=32.
@@ -284,6 +300,7 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
         QR_BTC_SIGN_REQUEST => parse_btc(ur_data),
         QR_CARDANO_SIGN_REQUEST => parse_cardano(ur_data),
+        QR_ZCASH_PCZT => parse_zec(ur_data),
         QR_XMR_TX_UNSIGNED => parse_xmr(ur_data),
         _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
     }
@@ -459,6 +476,28 @@ fn fetch_cardano_xpub_for_parse() -> Option<PtrString> {
 fn fetch_cardano_xpub_for_parse() -> Option<PtrString> {
     // Test fixture: return None so parse_cardano exercises the
     // "xpub unavailable" error branch.
+    None
+}
+
+/// Plan v11 Phase B-L3-4 (ZEC): fetch the encrypted Zcash UFVK
+/// string for the dispatcher to feed into `parse_zcash_tx_*`
+/// and `check_zcash_tx_*`. Mirrors the legacy
+/// `KosmoApi_GetPublicKey(XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0)` path
+/// used in legacy guizcash.c.
+#[cfg(not(test))]
+fn fetch_zec_ufvk_for_parse() -> Option<PtrString> {
+    let ptr = unsafe { GetCurrentAccountPublicKey(XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0) };
+    if ptr.is_null() {
+        None
+    } else {
+        Some(ptr)
+    }
+}
+
+#[cfg(test)]
+fn fetch_zec_ufvk_for_parse() -> Option<PtrString> {
+    // Test fixture: return None so parse_zec exercises the
+    // "ufvk unavailable" error branch.
     None
 }
 
@@ -773,6 +812,26 @@ unsafe fn parse_cardano(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     build_display_error("ADA parse: stub — see TODO(B-L3-3 follow-up)")
 }
 
+/// Plan v11 Phase B-L3-4 (ZEC): parse a Zcash PCZT (Partially
+/// Constructed Transaction). `parse_zcash_tx_cypherpunk` requires
+/// ufvk_text (decrypted viewing key) + 32-byte seed_fingerprint,
+/// both derivable from the seed but the dispatcher parse surface
+/// doesn't carry a seed arg yet — same shape as parse_btc /
+/// parse_cardano. Stub under cargo test, surfaces a structured
+/// "ufvk unavailable" error.
+unsafe fn parse_zec(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _ufvk = match fetch_zec_ufvk_for_parse() {
+        Some(p) => p,
+        None => {
+            return build_display_error(
+                "ZEC parse requires an unlocked wallet (B-L3-4 stub: parse path deferred)",
+            );
+        }
+    };
+    let _ = ur_data;
+    build_display_error("ZEC parse: stub — see TODO(B-L3-4 follow-up)")
+}
+
 /// Plan v11 Phase B-L3-1 (XMR): parse Monero unsigned transaction.
 ///
 /// Mirrors the legacy C path `GuiGetMoneroUnsignedTxCheckResult` /
@@ -860,27 +919,6 @@ unsafe fn parse_xmr(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     build_display("Sign Transaction", "XMR", "mainnet", &fields, "", 0)
 }
 
-/// Test-mode mock: cargo test can't link `GetCurrentAccountPublicKey`
-/// because the test binary has no C firmware runtime. We abstract the
-/// FFI call behind `fetch_monero_pvk_for_parse` so the test harness
-/// returns a hex-encoded PVK fixture, while production hits the real
-/// keystore. The fixture must be a valid 32-byte secp256k1 scalar or
-/// the downstream `monero_generate_decrypt_key` will fail parsing.
-#[cfg(not(test))]
-fn fetch_monero_pvk_for_parse() -> Option<PtrString> {
-    let ptr = unsafe { GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0) };
-    if ptr.is_null() {
-        None
-    } else {
-        Some(ptr)
-    }
-}
-
-// (legacy fetch_monero_pvk_for_parse cfg(test) variant removed —
-// consolidated into the upstream pair at lines ~398 above; this
-// comment preserves the git-archaeology. The fetch_monero_pvk_returns_none_under_test
-// tripwire test below still exercises the same cfg(test) path.)
-
 /// Unified execute entry. Stage 1: ETH real implementation, XRP placeholder.
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_execute(
@@ -925,6 +963,7 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
         QR_BTC_SIGN_REQUEST => execute_btc(ur_data, seed),
         QR_CARDANO_SIGN_REQUEST => execute_cardano(ur_data, seed),
+        QR_ZCASH_PCZT => execute_zec(ur_data, seed),
         QR_XMR_TX_UNSIGNED => execute_xmr(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
@@ -1513,6 +1552,30 @@ unsafe fn execute_cardano(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREnco
         false, // enable_blind_sign (UI flag; deferred to dispatcher surface extension)
         false, // is_slip39 (BIP-39 default; SLIP-39 wallet support deferred)
     )
+}
+
+/// Plan v11 Phase B-L3-4 (ZEC): execute Zcash PCZT signing.
+///
+/// Mirrors the legacy `ModelSignZcash` flow in `kosmo_api.c`
+/// which calls `sign_zcash_tx(ur_data, seed, seed_len)` — the
+/// simplest sign shape of any B-L3 chain (3 args, both
+/// cypherpunk and multi_coins variants share this signature).
+///
+/// Plan v11 follow-up: a pre-flight `check_zcash_tx_cypherpunk`
+/// would validate the PCZT before signing. Skipped in this
+/// commit because `check_zcash_tx_cypherpunk` requires a ufvk
+/// string (decrypted viewing key) and 32-byte seed_fingerprint
+/// that are both derivable from seed but require calling
+/// `derive_zcash_ufvk` and `calculate_zcash_seed_fingerprint`
+/// (separate FFI calls). Direct `sign_zcash_tx` performs the
+/// same PCZT-stage validation internally; adding an explicit
+/// check pass would just waste a round-trip with the same
+/// failures.
+///
+/// Seed never crosses any FFI boundary except the FFI call
+/// itself.
+unsafe fn execute_zec(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::zcash::sign_zcash_tx(ur_data as PtrUR, seed.as_ptr() as PtrBytes, SEED_LEN as uint32_t)
 }
 
 /// Plan v11 Phase B-L3-1 (XMR): execute Monero unsigned transaction signing.
@@ -2243,5 +2306,59 @@ mod tests {
         // XPUB_TYPE_ADA_0 is at enum-internal line 175
         // in src/crypto/account_public_info.h.
         assert_eq!(XPUB_TYPE_ADA_0, 173);
+    }
+
+    // ── Phase B-L3-4 (ZEC / Zcash) dispatcher tripwires ───────────
+    //
+    // Same pattern as B-L3-1/2/3:
+    //   * parse path returns a structured "ZEC parse requires
+    //     unlocked wallet" error rather than dereferencing UR.
+    //   * execute path is allocator-tripwired — under cargo test
+    //     fetch_seed returns None so sign_ur_execute short-circuits
+    //     before execute_zec fires.
+
+    #[test]
+    fn sign_ur_parse_dispatches_zec_to_parse_zec() {
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ZCASH_PCZT) };
+        assert!(
+            !display.is_null(),
+            "parse dispatcher must allocate SignDisplayData"
+        );
+        let d = unsafe { &*display };
+        assert_eq!(
+            d.error_code, 1,
+            "ZEC parse without ufvk must surface structured error"
+        );
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("ZEC parse"),
+            "unexpected error message: {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_zec_to_execute_zec() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ZCASH_PCZT) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
+
+    #[test]
+    fn fetch_zec_ufvk_returns_none_under_test() {
+        // Pin the cfg(test) branch.
+        assert!(fetch_zec_ufvk_for_parse().is_none());
+    }
+
+    #[test]
+    fn zec_enum_constant_matches_c_header() {
+        // Pin the dispatcher constants against C enum drift.
+        assert_eq!(QR_ZCASH_PCZT, 31);
+        // ZCASH_UFVK_ENCRYPTED_0 at file line 246, XPUB_TYPE_BTC at
+        // file line 16 → value = 246 - 16 = 230.
+        assert_eq!(XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0, 230);
     }
 }

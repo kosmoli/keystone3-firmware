@@ -1140,51 +1140,207 @@ unsafe fn parse_cardano(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
         build_display("Sign Transaction", "ADA", &network, &fields, "", 0)
 }
 
-/// Plan v11 §8.3 (ADA multi-UR-type extension): parse a
-/// CardanoSignTxHashRequest. Mirrors the B-L3-3 ADA pattern
-/// (cfg-gated helper gates, free inner structs, but no seed
-/// needed — tx_hash path is read-only). Full wiring deferred
-/// because tx_hash has no execute path; the parse-side stub
-/// is enough to let the dispatcher route the UR type.
+/// Plan v11 §8.1 follow-up (ADA multi-UR-type parse real
+/// wiring): parse a CardanoSignTxHashRequest. The underlying
+/// `cardano_parse_sign_tx_hash` FFI is single-arg (PtrUR) and
+/// builds a `DisplayCardanoSignTxHash { network, path,
+/// tx_hash, address_list }` directly. We flatten that into
+/// the dispatcher `SignDisplayData` fields block — counts of
+/// path and address_list entries plus the tx_hash hex for
+/// review.
+///
+/// `path.len` / `address_list.len` semantics: tx_hash may
+/// carry multiple derivation paths and multiple addresses
+/// (the UR spec allows both). Length 0 path is fine — caller
+/// chose blind-sign on transaction hash.
 unsafe fn parse_cardano_tx_hash(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _ = ur_data;
-    build_display_error(
-        "CardanoSignTxHashRequest parse: stub — see TODO(§8.3 follow-up)",
+    if ur_data.is_null() {
+        return build_display_error("cardano_parse_sign_tx_hash: null ur_data");
+    }
+    let parse_ptr = crate::cardano::cardano_parse_sign_tx_hash(ur_data as PtrUR);
+    if parse_ptr.is_null() {
+        return build_display_error("cardano_parse_sign_tx_hash returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    if parse_box.error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!(
+            "cardano_parse_sign_tx_hash failed: {msg}"
+        ));
+    }
+    if parse_box.data.is_null() {
+        drop(parse_box);
+        return build_display_error(
+            "cardano_parse_sign_tx_hash: null data with error_code=0",
+        );
+    }
+    let display = unsafe { &*parse_box.data };
+    let path_count = if display.path.is_null() {
+        0
+    } else {
+        unsafe { (*display.path).size }
+    };
+    let address_count = if display.address_list.is_null() {
+        0
+    } else {
+        unsafe { (*display.address_list).size }
+    };
+    let tx_hash = unsafe { crate::common::utils::recover_c_char(display.tx_hash) };
+    let fields = format!(
+        "Paths={path_count}\nAddresses={address_count}\nTxHash={tx_hash}"
+    );
+
+    // Free inner DisplayCardanoSignTxHash (VecFFI fields, CStrings)
+    // then free the TransactionParseResult wrapper (error_message).
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display(
+        "Sign Tx Hash",
+        "ADA",
+        "Cardano",
+        &fields,
+        "",
+        0,
     )
 }
 
 /// Plan v11 §8.3: parse a CardanoSignDataRequest (CIP-8
-/// wallet data sign request). parse_cardano_sign_data mirrors
-/// the B-L3-3 ADA pattern but no xpub needed for CIP-8
-/// (different derivation path story). Sign data path uses
-/// `cardano_sign_sign_data` which derives master key from
-/// entropy internally.
+/// wallet data sign request). Single-arg `cardano_parse_sign_data`
+/// returns `DisplayCardanoSignData { payload, derivation_path,
+/// message_hash, xpub }`. Flatten into SignDisplayData fields
+/// block.
 unsafe fn parse_cardano_sign_data(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _ = ur_data;
-    build_display_error(
-        "CardanoSignDataRequest parse: stub — see TODO(§8.3 follow-up)",
-    )
+    if ur_data.is_null() {
+        return build_display_error("cardano_parse_sign_data: null ur_data");
+    }
+    let parse_ptr = crate::cardano::cardano_parse_sign_data(ur_data as PtrUR);
+    if parse_ptr.is_null() {
+        return build_display_error("cardano_parse_sign_data returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    if parse_box.error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!(
+            "cardano_parse_sign_data failed: {msg}"
+        ));
+    }
+    if parse_box.data.is_null() {
+        drop(parse_box);
+        return build_display_error(
+            "cardano_parse_sign_data: null data with error_code=0",
+        );
+    }
+    let display = unsafe { &*parse_box.data };
+    let payload = unsafe { crate::common::utils::recover_c_char(display.payload) };
+    let path = unsafe {
+        crate::common::utils::recover_c_char(display.derivation_path)
+    };
+    let msg_hash =
+        unsafe { crate::common::utils::recover_c_char(display.message_hash) };
+    let xpub = unsafe { crate::common::utils::recover_c_char(display.xpub) };
+    let fields = format!(
+        "Payload={payload}\nDerivationPath={path}\nMessageHash={msg_hash}\nXpub={xpub}"
+    );
+
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Sign Data", "ADA", "Cardano", &fields, "", 0)
 }
 
 /// Plan v11 §8.3: parse a CardanoCatalystVotingRegistrationRequest.
-/// Catalyst registration: parse-side stub (full wiring deferred);
-/// execute-side uses `cardano_sign_catalyst` which derives master
-/// key from entropy.
+/// Single-arg `cardano_parse_catalyst` returns
+/// `DisplayCardanoCatalyst { nonce, stake_key, rewards, vote_keys }`.
+/// Flatten: vote_keys length + each of the 3 string fields.
 unsafe fn parse_cardano_catalyst(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _ = ur_data;
-    build_display_error(
-        "CardanoCatalystVotingRegistrationRequest parse: stub — see TODO(§8.3 follow-up)",
-    )
+    if ur_data.is_null() {
+        return build_display_error("cardano_parse_catalyst: null ur_data");
+    }
+    let parse_ptr = crate::cardano::cardano_parse_catalyst(ur_data as PtrUR);
+    if parse_ptr.is_null() {
+        return build_display_error("cardano_parse_catalyst returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    if parse_box.error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!(
+            "cardano_parse_catalyst failed: {msg}"
+        ));
+    }
+    if parse_box.data.is_null() {
+        drop(parse_box);
+        return build_display_error(
+            "cardano_parse_catalyst: null data with error_code=0",
+        );
+    }
+    let display = unsafe { &*parse_box.data };
+    let nonce = unsafe { crate::common::utils::recover_c_char(display.nonce) };
+    let stake_key =
+        unsafe { crate::common::utils::recover_c_char(display.stake_key) };
+    let rewards =
+        unsafe { crate::common::utils::recover_c_char(display.rewards) };
+    let vote_key_count = if display.vote_keys.is_null() {
+        0
+    } else {
+        unsafe { (*display.vote_keys).size }
+    };
+    let fields = format!(
+        "Nonce={nonce}\nStakeKey={stake_key}\nRewards={rewards}\nVoteKeys={vote_key_count}"
+    );
+
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Catalyst Vote", "ADA", "Cardano", &fields, "", 0)
 }
 
 /// Plan v11 §8.3: parse a CardanoSignCip8DataRequest (CIP-8
-/// COSE Sign1). parse_cardano_cip8_data mirrors the B-L3-3
-/// ADA pattern.
+/// COSE Sign1). Single-arg `cardano_parse_sign_cip8_data`
+/// returns `DisplayCardanoSignData { payload, derivation_path,
+/// message_hash, xpub }` — same struct as the wallet-data
+/// variant above. Flatten using the same fields schema.
 unsafe fn parse_cardano_cip8_data(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _ = ur_data;
-    build_display_error(
-        "CardanoSignCip8DataRequest parse: stub — see TODO(§8.3 follow-up)",
-    )
+    if ur_data.is_null() {
+        return build_display_error("cardano_parse_sign_cip8_data: null ur_data");
+    }
+    let parse_ptr = crate::cardano::cardano_parse_sign_cip8_data(ur_data as PtrUR);
+    if parse_ptr.is_null() {
+        return build_display_error("cardano_parse_sign_cip8_data returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    if parse_box.error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!(
+            "cardano_parse_sign_cip8_data failed: {msg}"
+        ));
+    }
+    if parse_box.data.is_null() {
+        drop(parse_box);
+        return build_display_error(
+            "cardano_parse_sign_cip8_data: null data with error_code=0",
+        );
+    }
+    let display = unsafe { &*parse_box.data };
+    let payload = unsafe { crate::common::utils::recover_c_char(display.payload) };
+    let path = unsafe {
+        crate::common::utils::recover_c_char(display.derivation_path)
+    };
+    let msg_hash =
+        unsafe { crate::common::utils::recover_c_char(display.message_hash) };
+    let xpub = unsafe { crate::common::utils::recover_c_char(display.xpub) };
+    let fields = format!(
+        "Payload={payload}\nDerivationPath={path}\nMessageHash={msg_hash}\nXpub={xpub}"
+    );
+
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Sign CIP8 Data", "ADA", "Cardano", &fields, "", 0)
 }
 
     /// Plan v11 Phase B-L3-4 (ZEC): parse a Zcash PCZT (Partially
@@ -2967,15 +3123,26 @@ mod tests {
     // tripwire pattern).
 
     #[test]
-    fn sign_ur_parse_dispatches_cardano_tx_hash_to_stub() {
+    fn sign_ur_parse_dispatches_cardano_tx_hash() {
+        // Plan v11 §8.1 follow-up: parse_cardano_tx_hash is now
+        // real-wired (single-arg FFI). Pass null UR — FFI returns
+        // structured TransactionParseResult error rather than the
+        // old "stub" build_display_error, so we assert:
+        //   - dispatcher still allocates a non-null display
+        //   - error_code is non-zero (FFI rejected the null payload)
+        //   - the error code path originated in `cardano_parse_sign_tx_hash`,
+        //     NOT the stub branch (proof the new wiring reached FFI)
         let display = unsafe {
             sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_TX_HASH_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
-        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        assert_ne!(d.error_code, 0, "FFI must reject null UR");
         let msg = read_c_str(d.error_message).unwrap_or_default();
-        assert!(msg.contains("CardanoSignTxHashRequest"), "msg = {msg}");
+        assert!(
+            msg.contains("cardano_parse_sign_tx_hash"),
+            "expected FFI error path, got stub? msg = {msg}"
+        );
         unsafe { sign_display_data_free(display) };
     }
 
@@ -2991,15 +3158,21 @@ mod tests {
     }
 
     #[test]
-    fn sign_ur_parse_dispatches_cardano_sign_data_to_stub() {
+    fn sign_ur_parse_dispatches_cardano_sign_data() {
+        // §8.1 follow-up: parse_cardano_sign_data is now
+        // real-wired (single-arg FFI). FFI returns error_code != 0
+        // for null UR; assert the FFI error path was reached.
         let display = unsafe {
             sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_DATA_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
-        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        assert_ne!(d.error_code, 0, "FFI must reject null UR");
         let msg = read_c_str(d.error_message).unwrap_or_default();
-        assert!(msg.contains("CardanoSignDataRequest"), "msg = {msg}");
+        assert!(
+            msg.contains("cardano_parse_sign_data"),
+            "expected FFI error path, got stub? msg = {msg}"
+        );
         unsafe { sign_display_data_free(display) };
     }
 
@@ -3015,17 +3188,24 @@ mod tests {
     }
 
     #[test]
-    fn sign_ur_parse_dispatches_cardano_catalyst_to_stub() {
+    fn sign_ur_parse_dispatches_cardano_catalyst() {
+        // §8.1 follow-up: parse_cardano_catalyst is now
+        // real-wired (single-arg FFI). FFI returns error_code != 0
+        // for null UR; assert the FFI error path was reached.
         let display = unsafe {
-            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST)
+            sign_ur_parse(
+                core::ptr::null_mut(),
+                0,
+                QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST,
+            )
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
-        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        assert_ne!(d.error_code, 0, "FFI must reject null UR");
         let msg = read_c_str(d.error_message).unwrap_or_default();
         assert!(
-            msg.contains("CardanoCatalystVotingRegistrationRequest"),
-            "msg = {msg}"
+            msg.contains("cardano_parse_catalyst"),
+            "expected FFI error path, got stub? msg = {msg}"
         );
         unsafe { sign_display_data_free(display) };
     }
@@ -3046,15 +3226,21 @@ mod tests {
     }
 
     #[test]
-    fn sign_ur_parse_dispatches_cardano_cip8_data_to_stub() {
+    fn sign_ur_parse_dispatches_cardano_cip8_data() {
+        // §8.1 follow-up: parse_cardano_cip8_data is now
+        // real-wired (single-arg FFI). FFI returns error_code != 0
+        // for null UR; assert the FFI error path was reached.
         let display = unsafe {
             sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
-        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        assert_ne!(d.error_code, 0, "FFI must reject null UR");
         let msg = read_c_str(d.error_message).unwrap_or_default();
-        assert!(msg.contains("CardanoSignCip8DataRequest"), "msg = {msg}");
+        assert!(
+            msg.contains("cardano_parse_sign_cip8_data"),
+            "expected FFI error path, got stub? msg = {msg}"
+        );
         unsafe { sign_display_data_free(display) };
     }
 

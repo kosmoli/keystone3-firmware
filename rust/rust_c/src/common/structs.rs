@@ -78,8 +78,8 @@ make_free_method!(TransactionCheckResult);
 #[repr(C)]
 pub struct SimpleResponse<T> {
     pub data: *mut T,
-    error_code: u32,
-    error_message: PtrString,
+    pub(crate) error_code: u32,
+    pub(crate) error_message: PtrString,
 }
 
 impl<T> SimpleResponse<T> {

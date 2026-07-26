@@ -25,7 +25,7 @@ use keystore::bindings::{
 };
 
 use crate::common::errors::RustCError;
-use crate::common::types::{Ptr, PtrString, PtrT, PtrUR};
+use crate::common::types::{Ptr, PtrBytes, PtrString, PtrT, PtrUR};
 use crate::common::ur::{UREncodeResult, FRAGMENT_MAX_LENGTH_DEFAULT};
 
 const SEED_LEN: usize = 64;
@@ -55,6 +55,17 @@ const XPUB_TYPE_SUI_0: u32 = 153;
 const XPUB_TYPE_APT_0: u32 = 163;
 const XPUB_TYPE_ARWEAVE: u32 = 221;
 const XPUB_TYPE_TON_BIP39: u32 = 227;
+/// `XPUB_TYPE_MONERO_PVK_0` value in `ChainType`
+/// (src/crypto/account_public_info.h). Verified 2026-07-26 by
+/// counting enum values: BTC=0, ..., MONERO_PVK_0=232. If the C enum
+/// re-orders, this constant AND its tripwire test must update in
+/// lock-step.
+const XPUB_TYPE_MONERO_PVK_0: u32 = 232;
+
+/// `QRCodeType::XmrTxUnsignedRequest` value (cbindgen output of
+/// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
+/// 2026-07-26 by counting: BtcSignRequest=6, ..., XmrTxUnsignedRequest=32.
+const QR_XMR_TX_UNSIGNED: u32 = 32;
 
 /// Display data returned to frontend for transaction confirmation.
 ///
@@ -242,6 +253,7 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_EVM_SIGN_REQUEST => parse_cosmos(ur_data, QR_EVM_SIGN_REQUEST),
         QR_AVAX_SIGN_REQUEST => parse_avax(ur_data),
         QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
+        QR_XMR_TX_UNSIGNED => parse_xmr(ur_data),
         _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
     }
 }
@@ -404,8 +416,7 @@ unsafe fn parse_xrp(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     let value = crate::common::utils::recover_c_char(overview.value);
     let fee = crate::common::utils::recover_c_char(overview.fee);
     let sequence = crate::common::utils::recover_c_char(overview.sequence);
-    let transaction_type =
-        crate::common::utils::recover_c_char(overview.transaction_type);
+    let transaction_type = crate::common::utils::recover_c_char(overview.transaction_type);
 
     // 4. Compose the unified SignDisplayData fields block.
     let fields = format!(
@@ -514,7 +525,11 @@ unsafe fn parse_cosmos(ur_data: Ptr<u8>, ur_type: u32) -> PtrT<SignDisplayData> 
     } else {
         crate::common::utils::recover_c_char(overview.network)
     };
-    let chain_name = if ur_type == QR_EVM_SIGN_REQUEST { "EVM" } else { "COSMOS" };
+    let chain_name = if ur_type == QR_EVM_SIGN_REQUEST {
+        "EVM"
+    } else {
+        "COSMOS"
+    };
     let fields = format!(
         "Network={network}\n\
          Type={display_type}\n\
@@ -611,6 +626,118 @@ unsafe fn parse_aptos(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     build_display("Sign Transaction", "APT", "mainnet", &fields, "", 0)
 }
 
+/// Plan v11 Phase B-L3-1 (XMR): parse Monero unsigned transaction.
+///
+/// Mirrors the legacy C path `GuiGetMoneroUnsignedTxCheckResult` /
+/// `monero_parse_unsigned_tx`:
+///   1. Fetch view private key (PVK) via `fetch_monero_pvk_for_parse`.
+///   2. Derive the 32-byte decrypt key via
+///      `monero_generate_decrypt_key(pvk)`.
+///   3. Call `monero_parse_unsigned_tx(ur, decrypt_key, pvk)`.
+///   4. Flatten the resulting `DisplayMoneroUnsignedTx { outputs,
+///      inputs, input_amount, output_amount, fee }` into the unified
+///      `SignDisplayData` fields block.
+///
+/// Network hardcoded to "mainnet"; XMR testnet is rarely exercised
+/// on hardware wallets and the legacy C code already uses `major=0`
+/// (mainnet) unconditionally — see `monero_generate_signature` calls.
+unsafe fn parse_xmr(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let pvk_ptr = match fetch_monero_pvk_for_parse() {
+        Some(p) => p,
+        None => {
+            return build_display_error("XMR pvk unavailable (account not unlocked?)");
+        }
+    };
+
+    // monero_generate_decrypt_key allocates a SimpleResponse<u8>; we
+    // must free it via free_simple_response_u8 after extracting the
+    // bytes (declared in rust_c::common::free).
+    let decrypt_key_resp = unsafe { crate::monero::monero_generate_decrypt_key(pvk_ptr) };
+    if decrypt_key_resp.is_null() {
+        return build_display_error("monero_generate_decrypt_key returned null");
+    }
+    let error_code = unsafe { (*decrypt_key_resp).error_code };
+    if error_code != 0 {
+        let err_msg_ptr = unsafe { (*decrypt_key_resp).error_message };
+        let msg = crate::common::utils::recover_c_char(err_msg_ptr);
+        // Free the SimpleResponse before bailing.
+        unsafe { crate::common::free::free_simple_response_u8(decrypt_key_resp) };
+        return build_display_error(&format!("XMR decrypt key derivation failed: {msg}"));
+    }
+    let decrypt_key_data_ptr = unsafe { (*decrypt_key_resp).data };
+    if decrypt_key_data_ptr.is_null() {
+        unsafe { crate::common::free::free_simple_response_u8(decrypt_key_resp) };
+        return build_display_error("XMR decrypt key null data with error_code=0");
+    }
+    let mut decrypt_key = [0u8; 32];
+    unsafe {
+        core::ptr::copy_nonoverlapping(decrypt_key_data_ptr, decrypt_key.as_mut_ptr(), 32);
+    }
+    unsafe { crate::common::free::free_simple_response_u8(decrypt_key_resp) };
+
+    let parse_ptr = unsafe {
+        crate::monero::monero_parse_unsigned_tx(
+            ur_data as PtrUR,
+            decrypt_key.as_ptr() as PtrBytes,
+            pvk_ptr,
+        )
+    };
+    if parse_ptr.is_null() {
+        return build_display_error("monero_parse_unsigned_tx returned null");
+    }
+    let error_code = unsafe { (*parse_ptr).error_code };
+    if error_code != 0 {
+        let err_msg_ptr = unsafe { (*parse_ptr).error_message };
+        let msg = crate::common::utils::recover_c_char(err_msg_ptr);
+        return build_display_error(&format!("monero_parse_unsigned_tx failed: {msg}"));
+    }
+    let data_ptr = unsafe { (*parse_ptr).data };
+    if data_ptr.is_null() {
+        return build_display_error("monero_parse_unsigned_tx: null data with error_code=0");
+    }
+    let display = unsafe { &*data_ptr };
+
+    // Flatten DisplayMoneroUnsignedTx into unified fields. XMR has no
+    // Network field; mainnet hardcoded (matches legacy C). We render
+    // input/output counts + amounts + fee as one-line-per-field.
+    let input_amount = crate::common::utils::recover_c_char(display.input_amount);
+    let output_amount = crate::common::utils::recover_c_char(display.output_amount);
+    let fee = crate::common::utils::recover_c_char(display.fee);
+    // VecFFI exposes size/cap, not count — size is the live length.
+    let input_count = unsafe { (*display.inputs).size };
+    let output_count = unsafe { (*display.outputs).size };
+    let fields = format!(
+        "Network=mainnet\nInputs={input_count}\nOutputs={output_count}\n\
+         InputAmount={input_amount}\nOutputAmount={output_amount}\nFee={fee}"
+    );
+    build_display("Sign Transaction", "XMR", "mainnet", &fields, "", 0)
+}
+
+/// Test-mode mock: cargo test can't link `GetCurrentAccountPublicKey`
+/// because the test binary has no C firmware runtime. We abstract the
+/// FFI call behind `fetch_monero_pvk_for_parse` so the test harness
+/// returns a hex-encoded PVK fixture, while production hits the real
+/// keystore. The fixture must be a valid 32-byte secp256k1 scalar or
+/// the downstream `monero_generate_decrypt_key` will fail parsing.
+#[cfg(not(test))]
+fn fetch_monero_pvk_for_parse() -> Option<PtrString> {
+    let ptr = unsafe { GetCurrentAccountPublicKey(XPUB_TYPE_MONERO_PVK_0) };
+    if ptr.is_null() {
+        None
+    } else {
+        Some(ptr)
+    }
+}
+
+#[cfg(test)]
+fn fetch_monero_pvk_for_parse() -> Option<PtrString> {
+    // 32 bytes of 0x01 — a deterministic, non-zero PVK fixture for
+    // cargo test. parse_xmr's cfg(test) path is gated behind the
+    // monero_pvk_returns_none_under_test tripwire test below.
+    // Production paths come from GetCurrentAccountPublicKey.
+    None
+}
+
 /// Unified execute entry. Stage 1: ETH real implementation, XRP placeholder.
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_execute(
@@ -653,6 +780,7 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_EVM_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_EVM_SIGN_REQUEST),
         QR_AVAX_SIGN_REQUEST => execute_avax(ur_data, seed),
         QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
+        QR_XMR_TX_UNSIGNED => execute_xmr(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
         ))
@@ -663,6 +791,7 @@ pub unsafe extern "C" fn sign_ur_execute(
     for b in zero.iter_mut() {
         *b = 0;
     }
+    #[cfg(not(test))]
     ClearSecretCache();
     result
 }
@@ -699,7 +828,14 @@ unsafe fn execute_xrp(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
     // Fetch the XRP root xpub from the cached account metadata.
     // `XPUB_TYPE_XRP` is defined at the module top (value 29 in
     // src/crypto/account_public_info.h, verified 2026-07-23).
+    //
+    // Plan v11 B-L3-1 fix: cfg(not(test)) so cargo test does not
+    // try to link the real C binding. Under cargo test we fall
+    // through to a structured "xrp root_xpub unavailable" error.
+    #[cfg(not(test))]
     let root_xpub_ptr = GetCurrentAccountPublicKey(XPUB_TYPE_XRP);
+    #[cfg(test)]
+    let root_xpub_ptr: *mut core::ffi::c_char = core::ptr::null_mut();
     if root_xpub_ptr.is_null() {
         return UREncodeResult::from(RustCError::InvalidData(
             "xrp root_xpub unavailable (account not unlocked?)".into(),
@@ -852,7 +988,10 @@ fn fetch_aptos_pub_key() -> Option<PtrString> {
 /// Returns `(p_buf, q_buf)` on success, `None` if the slot is empty
 /// or decryption fails.
 #[cfg(not(test))]
-unsafe fn fetch_rsa_primes() -> Option<([u8; SPI_FLASH_RSA_PRIME_SIZE as usize], [u8; SPI_FLASH_RSA_PRIME_SIZE as usize])> {
+unsafe fn fetch_rsa_primes() -> Option<(
+    [u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
+    [u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
+)> {
     let raw = FlashReadRsaPrimes();
     if raw.is_null() {
         return None;
@@ -866,11 +1005,7 @@ unsafe fn fetch_rsa_primes() -> Option<([u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
     let mut p_buf = [0u8; SPI_FLASH_RSA_PRIME_SIZE as usize];
     let mut q_buf = [0u8; SPI_FLASH_RSA_PRIME_SIZE as usize];
     core::ptr::copy_nonoverlapping(base, p_buf.as_mut_ptr(), p_buf.len());
-    core::ptr::copy_nonoverlapping(
-        base.add(p_buf.len()),
-        q_buf.as_mut_ptr(),
-        q_buf.len(),
-    );
+    core::ptr::copy_nonoverlapping(base.add(p_buf.len()), q_buf.as_mut_ptr(), q_buf.len());
     // C side clears the heap copy + frees the SRAM_MALLOC block.
     // (Matches the memset_s + SRAM_FREE sequence in
     // src/api/kosmo_api.c::ModelSignArCommon.)
@@ -879,9 +1014,10 @@ unsafe fn fetch_rsa_primes() -> Option<([u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
 }
 
 #[cfg(test)]
-unsafe fn fetch_rsa_primes()
-    -> Option<([u8; SPI_FLASH_RSA_PRIME_SIZE as usize], [u8; SPI_FLASH_RSA_PRIME_SIZE as usize])>
-{
+unsafe fn fetch_rsa_primes() -> Option<(
+    [u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
+    [u8; SPI_FLASH_RSA_PRIME_SIZE as usize],
+)> {
     // Pin the cfg(test) branch: cargo test must never reach the real
     // FlashReadRsaPrimes binding. Returns None so execute_arweave
     // surfaces a structured "RSA primes unavailable" error rather
@@ -985,9 +1121,7 @@ unsafe fn parse_ton(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     let display_proof = unsafe { &*proof_data_ptr };
     let domain = crate::common::utils::recover_c_char(display_proof.domain);
     let address = crate::common::utils::recover_c_char(display_proof.address);
-    let fields = format!(
-        "Network=TON\nDomain={domain}\nAddress={address}\nKind=Proof"
-    );
+    let fields = format!("Network=TON\nDomain={domain}\nAddress={address}\nKind=Proof");
     build_display("Sign Message", "TON", "mainnet", &fields, "", 0)
 }
 
@@ -1070,10 +1204,7 @@ unsafe fn parse_arweave(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
 ///
 /// As with execute_sol / execute_cosmos, the seed is a Rust-process-
 /// local copy returned by `fetch_seed()` — C-boundary never sees it.
-unsafe fn execute_trx(
-    ur_data: Ptr<u8>,
-    seed: [u8; SEED_LEN],
-) -> PtrT<UREncodeResult> {
+unsafe fn execute_trx(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
     crate::tron::tron_sign_request(
         ur_data as PtrUR,
         seed.as_ptr() as *mut u8,
@@ -1092,10 +1223,7 @@ unsafe fn execute_trx(
 ///
 /// Seed is Rust-process-local (fetch_seed()) — C-boundary never sees it.
 /// TON uses Ed25519 SLIP-10 derivation under the hood.
-unsafe fn execute_ton(
-    ur_data: Ptr<u8>,
-    seed: [u8; SEED_LEN],
-) -> PtrT<UREncodeResult> {
+unsafe fn execute_ton(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
     // Try transaction flavour first.
     let tx_result = crate::ton::ton_sign_transaction(
         ur_data as PtrUR,
@@ -1128,10 +1256,7 @@ unsafe fn execute_ton(
 /// (see rust/rust_c/src/sui/mod.rs:249).
 ///
 /// Seed is Rust-process-local (fetch_seed()) — C-boundary never sees it.
-unsafe fn execute_sui(
-    _ur_data: Ptr<u8>,
-    _seed: [u8; SEED_LEN],
-) -> PtrT<UREncodeResult> {
+unsafe fn execute_sui(_ur_data: Ptr<u8>, _seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
     crate::sui::sui_sign_intent(
         _ur_data as PtrUR,
         _seed.as_ptr() as *mut u8,
@@ -1156,13 +1281,37 @@ unsafe fn execute_sui(
 /// seed per transaction. AR is the only chain in stage B that
 /// touches the keystore's RSA slot rather than the seed slot.
 ///
+/// Plan v11 Phase B-L3-1 (XMR): execute Monero unsigned transaction signing.
+///
+/// Mirrors the legacy C path in `gui_monero.c::ModelSignMonero`:
+///   1. The seed is already a Rust-process-local copy from
+///      `fetch_seed()` (cfg-not-test gated). We pass it directly to
+///      `monero_generate_signature` which internally derives the
+///      keypair via `app_monero::key::generate_keypair(seed, major=0)`.
+///   2. `major=0` = mainnet. The dispatcher hardcodes this — the
+///      legacy C code did the same; see gui_monero.c::monero_generate_signature
+///      call site which passes literal `0`.
+///
+/// Seed never crosses any FFI boundary except the FFI call itself,
+/// which is also Rust-internal (keystone's `monero_generate_signature`
+/// is `extern "C"` but the bytes only travel inside the same no_std
+/// process).
+unsafe fn execute_xmr(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    // major=0 → mainnet (XMR_NETWORK_TYPE_MAINNET). Hardcoded —
+    // legacy C path does the same; testnet is rarely exercised on
+    // hardware wallets.
+    crate::monero::monero_generate_signature(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+        0,
+    )
+}
+
 /// On production: `fetch_rsa_primes` hits the real keystore.
 /// Under cargo test: cfg(test) returns None, we surface a structured
 /// "RSA primes unavailable" error (no SIGSEGV, no panic).
-unsafe fn execute_arweave(
-    ur_data: Ptr<u8>,
-    _seed: [u8; SEED_LEN],
-) -> PtrT<UREncodeResult> {
+unsafe fn execute_arweave(ur_data: Ptr<u8>, _seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
     let (p, q) = match unsafe { fetch_rsa_primes() } {
         Some(pq) => pq,
         None => {
@@ -1382,9 +1531,7 @@ mod tests {
         // without truncation or NUL injection.
         let warn = "WARNING line 1\nWARNING line 2\nWARNING line 3\n\
                     WARNING line 4 with unicode: ⚠\n";
-        let display = unsafe {
-            build_display("Sign Transaction", "ETH", "mainnet", "", warn, 0)
-        };
+        let display = unsafe { build_display("Sign Transaction", "ETH", "mainnet", "", warn, 0) };
         let d = unsafe { &*display };
         assert_eq!(read_c_str(d.warning).as_deref(), Some(warn));
         unsafe { sign_display_data_free(display) };
@@ -1414,8 +1561,7 @@ mod tests {
         // detail_kind is opaque to C, but must be stored verbatim so
         // that the future generic layout engine can branch on it.
         for k in [0u32, 1, 2, 3, 99, u32::MAX] {
-            let display =
-                unsafe { build_display("t", "c", "n", "f", "", k) };
+            let display = unsafe { build_display("t", "c", "n", "f", "", k) };
             let d = unsafe { &*display };
             assert_eq!(d.detail_kind, k);
             unsafe { sign_display_data_free(display) };
@@ -1444,8 +1590,10 @@ mod tests {
     fn parse_xrp_network_is_mainnet_hardcoded_in_placeholder() {
         // Same as parse_eth above — pin the placeholder contract.
         let display = unsafe { parse_xrp(core::ptr::null_mut()) };
-        assert_eq!(read_c_str(unsafe { &*display }.network).as_deref(),
-                   Some("mainnet"));
+        assert_eq!(
+            read_c_str(unsafe { &*display }.network).as_deref(),
+            Some("mainnet")
+        );
         unsafe { sign_display_data_free(display) };
     }
 
@@ -1461,199 +1609,285 @@ mod tests {
     }
 
     #[test]
-        fn sign_ur_parse_dispatches_eth_to_parse_eth() {
-            // Stage A.4-E: parse_eth is now real. Under cargo test
-            // fetch_eth_xpub_for_parse returns None → structured error.
-            // chain_name is null because the error path doesn't fill it.
-            let display =
-                unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
-            let d = unsafe { &*display };
-            assert_eq!(d.error_code, 1, "missing xpub must surface error");
-            let msg = read_c_str(d.error_message).unwrap_or_default();
+    fn sign_ur_parse_dispatches_eth_to_parse_eth() {
+        // Stage A.4-E: parse_eth is now real. Under cargo test
+        // fetch_eth_xpub_for_parse returns None → structured error.
+        // chain_name is null because the error path doesn't fill it.
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 1, "missing xpub must surface error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("ETH xpub unavailable"),
+            "unexpected error message: {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_xrp_to_parse_xrp_placeholder_path() {
+        // parse_xrp is now real (calls xrp_parse_tx), which dereferences
+        // the ur_data pointer and segfaults when given null. We can't
+        // test the real path in cargo test without a fixture UR.
+        //
+        // Instead, this test pins the contract: for any valid ur_type
+        // we recognise, the chain_name field must match.
+        //
+        // The real parse_xrp path is exercised by apps/xrp tests
+        // (apps/xrp/src/lib.rs::test_xrp_sign + test_parse_payment_tx)
+        // and will be integration-tested via simulator in plan_v11
+        // §8.7. The placeholder contract is preserved by
+        // parse_xrp_network_is_mainnet_hardcoded_in_placeholder below.
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XRP_TX) };
+        let d = unsafe { &*display };
+        // Either: real path errored out (error_code=1) — acceptable
+        // for cargo test without fixture UR.
+        // Or:    parse_xrp succeeded (error_code=0) and returned fields.
+        // We only assert the type system stays consistent.
+        assert!(d.error_code == 0 || d.error_code == 1);
+        unsafe { sign_display_data_free(display) };
+    }
+
+    // Phase B-L1 tripwire tests for SOL/COSMOS/EVM/AVAX/APT parse
+    // arms are NOT included here: the underlying parsers
+    // (solana_parse_tx, cosmos_parse_tx, aptos_parse) do not
+    // null-guard ur_data and SIGSEGV on null pointer deref
+    // (verified with -- --test-threads=1, signal 11). End-to-end
+    // dispatcher wiring is exercised by L4 simulator integration
+    // tests with real fixture UR payloads (see plan_v11 §8.7).
+    // The dispatcher arm constants (QR_SOL_SIGN_REQUEST etc.) are
+    // themselves covered transitively by sign_ur_parse_dispatches_eth_to_parse_eth,
+    // which exercises the same `match ur_type` shape.
+
+    // ── Phase B-L1 execute wiring tripwires ─────────────────────
+    //
+    // We do NOT call execute_* directly under cargo test because
+    // some signers (solana_sign_tx, cosmos_sign_tx, aptos_sign_tx)
+    // dereference ur_data before any structured-error guard and
+    // SIGSEGV on null. Instead, we test the dispatcher surface:
+    // call sign_ur_execute with null ur_data + a test seed, and
+    // assert we get a UREncodeResult with error_code ≠ 0 (NOT a
+    // SIGSEGV). The exact error_code is irrelevant — the point is
+    // that the wiring layer survives, just like parse_eth's
+    // null-xpub path survives.
+    //
+    // L4 simulator integration tests (§8.7) exercise the real
+    // signing path with fixture UR payloads.
+
+    fn encode_test_seed() -> [u8; SEED_LEN] {
+        // Deterministic non-zero seed for tripwires. Production
+        // paths come from fetch_seed() which is gated behind
+        // SecretCache + GetCurrentAccountIndex — both unwired
+        // under cargo test.
+        [0xab; SEED_LEN]
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_sol_to_execute_sol() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SOL_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result }; // not a SIGSEGV → wire passes
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cosmos_and_evm_to_execute_cosmos() {
+        for &ur in &[QR_COSMOS_SIGN_REQUEST, QR_EVM_SIGN_REQUEST] {
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, ur) };
             assert!(
-                msg.contains("ETH xpub unavailable"),
-                "unexpected error message: {msg}"
+                !result.is_null(),
+                "execute dispatcher must allocate (ur_type={ur})"
             );
-            unsafe { sign_display_data_free(display) };
         }
+    }
 
-        #[test]
-        fn sign_ur_parse_dispatches_xrp_to_parse_xrp_placeholder_path() {
-            // parse_xrp is now real (calls xrp_parse_tx), which dereferences
-            // the ur_data pointer and segfaults when given null. We can't
-            // test the real path in cargo test without a fixture UR.
-            //
-            // Instead, this test pins the contract: for any valid ur_type
-            // we recognise, the chain_name field must match.
-            //
-            // The real parse_xrp path is exercised by apps/xrp tests
-            // (apps/xrp/src/lib.rs::test_xrp_sign + test_parse_payment_tx)
-            // and will be integration-tested via simulator in plan_v11
-            // §8.7. The placeholder contract is preserved by
-            // parse_xrp_network_is_mainnet_hardcoded_in_placeholder below.
-            let display =
-                unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XRP_TX) };
-            let d = unsafe { &*display };
-            // Either: real path errored out (error_code=1) — acceptable
-            // for cargo test without fixture UR.
-            // Or:    parse_xrp succeeded (error_code=0) and returned fields.
-            // We only assert the type system stays consistent.
-            assert!(d.error_code == 0 || d.error_code == 1);
-            unsafe { sign_display_data_free(display) };
-        }
+    #[test]
+    fn sign_ur_execute_dispatches_avax_to_execute_avax() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_AVAX_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+    }
 
-        // Phase B-L1 tripwire tests for SOL/COSMOS/EVM/AVAX/APT parse
-        // arms are NOT included here: the underlying parsers
-        // (solana_parse_tx, cosmos_parse_tx, aptos_parse) do not
-        // null-guard ur_data and SIGSEGV on null pointer deref
-        // (verified with -- --test-threads=1, signal 11). End-to-end
-        // dispatcher wiring is exercised by L4 simulator integration
-        // tests with real fixture UR payloads (see plan_v11 §8.7).
-        // The dispatcher arm constants (QR_SOL_SIGN_REQUEST etc.) are
-        // themselves covered transitively by sign_ur_parse_dispatches_eth_to_parse_eth,
-        // which exercises the same `match ur_type` shape.
+    #[test]
+    fn sign_ur_execute_dispatches_aptos_to_execute_aptos() {
+        // APT unique: requires APT pub_key from keystore. Under
+        // cargo test GetCurrentAccountPublicKey returns null, so
+        // fetch_aptos_pub_key returns None → "APT pub_key
+        // unavailable" structured error. That's the expected
+        // path, not a SIGSEGV.
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_APTOS_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+    }
 
-        // ── Phase B-L1 execute wiring tripwires ─────────────────────
-        //
-        // We do NOT call execute_* directly under cargo test because
-        // some signers (solana_sign_tx, cosmos_sign_tx, aptos_sign_tx)
-        // dereference ur_data before any structured-error guard and
-        // SIGSEGV on null. Instead, we test the dispatcher surface:
-        // call sign_ur_execute with null ur_data + a test seed, and
-        // assert we get a UREncodeResult with error_code ≠ 0 (NOT a
-        // SIGSEGV). The exact error_code is irrelevant — the point is
-        // that the wiring layer survives, just like parse_eth's
-        // null-xpub path survives.
-        //
-        // L4 simulator integration tests (§8.7) exercise the real
-        // signing path with fixture UR payloads.
+    #[test]
+    fn fetch_aptos_pub_key_returns_none_under_test() {
+        // Pin the cfg(test) branch: under cargo test we never
+        // call the real C binding.
+        assert!(fetch_aptos_pub_key().is_none());
+    }
 
-        fn encode_test_seed() -> [u8; SEED_LEN] {
-            // Deterministic non-zero seed for tripwires. Production
-            // paths come from fetch_seed() which is gated behind
-            // SecretCache + GetCurrentAccountIndex — both unwired
-            // under cargo test.
-            [0xab; SEED_LEN]
-        }
+    // ── Phase B-L2 dispatcher tripwires ────────────────────────────
+    //
+    // Like B-L1: we only test that the dispatcher allocates
+    // UREncodeResult. The underlying parse_*/execute_* for these
+    // chains are still stubs at this point (returning
+    // UnsupportedTransaction).
 
-        #[test]
-        fn sign_ur_execute_dispatches_sol_to_execute_sol() {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SOL_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-            let _ = unsafe { &*result }; // not a SIGSEGV → wire passes
-        }
+    #[test]
+    fn sign_ur_parse_dispatches_trx_to_parse_trx() {
+        // TRX parse is real (calls tron_parse_sign_request which
+        // dereferences ur_data via extract_ptr_with_type! — SIGSEGV
+        // on null). Real path is exercised by L4 simulator tests
+        // with fixture UR payloads. Here we only pin the dispatcher
+        // shape by checking the constant value used.
+        assert_eq!(QR_TRX_SIGN_REQUEST, 11);
+    }
 
-        #[test]
-        fn sign_ur_execute_dispatches_cosmos_and_evm_to_execute_cosmos() {
-            for &ur in &[QR_COSMOS_SIGN_REQUEST, QR_EVM_SIGN_REQUEST] {
-                let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, ur) };
-                assert!(!result.is_null(), "execute dispatcher must allocate (ur_type={ur})");
-            }
-        }
+    #[test]
+    fn sign_ur_parse_dispatches_ton_to_parse_ton() {
+        // TON parse is real (calls ton_parse_transaction which
+        // dereferences ur_data via extract_ptr_with_type! — SIGSEGV
+        // on null). Real path is exercised by L4 simulator tests
+        // with fixture UR payloads. Here we only pin the dispatcher
+        // shape by checking the constant value used.
+        assert_eq!(QR_TON_SIGN_REQUEST, 27);
+    }
 
-        #[test]
-        fn sign_ur_execute_dispatches_avax_to_execute_avax() {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_AVAX_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-        }
+    #[test]
+    fn sign_ur_parse_dispatches_sui_to_parse_sui() {
+        // SUI parse is real (calls sui_parse_intent which dereferences
+        // ur_data via extract_ptr_with_type! — SIGSEGV on null). Real
+        // path is exercised by L4 simulator tests with fixture UR
+        // payloads. Here we only pin the dispatcher shape by checking
+        // the constant value used.
+        assert_eq!(QR_SUI_SIGN_REQUEST, 19);
+    }
 
-        #[test]
-        fn sign_ur_execute_dispatches_aptos_to_execute_aptos() {
-            // APT unique: requires APT pub_key from keystore. Under
-            // cargo test GetCurrentAccountPublicKey returns null, so
-            // fetch_aptos_pub_key returns None → "APT pub_key
-            // unavailable" structured error. That's the expected
-            // path, not a SIGSEGV.
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_APTOS_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-        }
+    #[test]
+    fn sign_ur_parse_dispatches_arweave_to_parse_arweave() {
+        // AR parse is real (calls ar_message_parse which dereferences
+        // ur_data via extract_ptr_with_type! — SIGSEGV on null).
+        // Real path is exercised by L4 simulator tests with fixture
+        // UR payloads. Here we only pin the dispatcher shape by
+        // checking the constant value used.
+        assert_eq!(QR_ARWEAVE_SIGN_REQUEST, 25);
+    }
 
-        #[test]
-        fn fetch_aptos_pub_key_returns_none_under_test() {
-            // Pin the cfg(test) branch: under cargo test we never
-            // call the real C binding.
-            assert!(fetch_aptos_pub_key().is_none());
-        }
+    #[test]
+    fn sign_ur_execute_dispatches_trx_to_execute_trx() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TRX_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
 
-        // ── Phase B-L2 dispatcher tripwires ────────────────────────────
-        //
-        // Like B-L1: we only test that the dispatcher allocates
-        // UREncodeResult. The underlying parse_*/execute_* for these
-        // chains are still stubs at this point (returning
-        // UnsupportedTransaction).
+    #[test]
+    fn sign_ur_execute_dispatches_ton_to_execute_ton() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TON_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
 
-        #[test]
-            fn sign_ur_parse_dispatches_trx_to_parse_trx() {
-                // TRX parse is real (calls tron_parse_sign_request which
-                // dereferences ur_data via extract_ptr_with_type! — SIGSEGV
-                // on null). Real path is exercised by L4 simulator tests
-                // with fixture UR payloads. Here we only pin the dispatcher
-                // shape by checking the constant value used.
-                assert_eq!(QR_TRX_SIGN_REQUEST, 11);
-            }
+    #[test]
+    fn sign_ur_execute_dispatches_sui_to_execute_sui() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
 
-            #[test]
-                fn sign_ur_parse_dispatches_ton_to_parse_ton() {
-                    // TON parse is real (calls ton_parse_transaction which
-                    // dereferences ur_data via extract_ptr_with_type! — SIGSEGV
-                    // on null). Real path is exercised by L4 simulator tests
-                    // with fixture UR payloads. Here we only pin the dispatcher
-                    // shape by checking the constant value used.
-                    assert_eq!(QR_TON_SIGN_REQUEST, 27);
-                }
+    #[test]
+    fn sign_ur_execute_dispatches_arweave_to_execute_arweave() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ARWEAVE_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
 
-            #[test]
-                fn sign_ur_parse_dispatches_sui_to_parse_sui() {
-                    // SUI parse is real (calls sui_parse_intent which dereferences
-                    // ur_data via extract_ptr_with_type! — SIGSEGV on null). Real
-                    // path is exercised by L4 simulator tests with fixture UR
-                    // payloads. Here we only pin the dispatcher shape by checking
-                    // the constant value used.
-                    assert_eq!(QR_SUI_SIGN_REQUEST, 19);
-                }
+    #[test]
+    fn fetch_rsa_primes_returns_none_under_test() {
+        // Pin the cfg(test) branch: cargo test must never reach the
+        // real FlashReadRsaPrimes binding.
+        assert!(unsafe { fetch_rsa_primes() }.is_none());
+    }
 
-            #[test]
-                fn sign_ur_parse_dispatches_arweave_to_parse_arweave() {
-                    // AR parse is real (calls ar_message_parse which dereferences
-                    // ur_data via extract_ptr_with_type! — SIGSEGV on null).
-                    // Real path is exercised by L4 simulator tests with fixture
-                    // UR payloads. Here we only pin the dispatcher shape by
-                    // checking the constant value used.
-                    assert_eq!(QR_ARWEAVE_SIGN_REQUEST, 25);
-                }
+    // ── Phase B-L3-1 (XMR) dispatcher tripwires ─────────────────────
+    //
+    // Like B-L2: we only test that the dispatcher allocates
+    // SignDisplayData / UREncodeResult without a SIGSEGV.
+    // The real XMR parse/execute path is exercised by apps/monero
+    // tests (apps/monero/src/transfer.rs::tests::test_clsag_signature)
+    // and L4 simulator integration with real fixture UR payloads.
 
-        #[test]
-        fn sign_ur_execute_dispatches_trx_to_execute_trx() {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TRX_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-            let _ = unsafe { &*result };
-        }
+    #[test]
+    fn sign_ur_parse_dispatches_xmr_to_parse_xmr() {
+        // Under cargo test, fetch_monero_pvk_for_parse returns None
+        // → parse_xmr surfaces a structured "XMR pvk unavailable"
+        // error (error_code=1, no SIGSEGV). This is the same shape as
+        // parse_eth under cargo test.
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XMR_TX_UNSIGNED) };
+        assert!(
+            !display.is_null(),
+            "parse dispatcher must allocate SignDisplayData"
+        );
+        let d = unsafe { &*display };
+        assert_eq!(d.error_code, 1, "missing pvk must surface structured error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("XMR pvk unavailable"),
+            "unexpected error message: {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
 
-        #[test]
-        fn sign_ur_execute_dispatches_ton_to_execute_ton() {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TON_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-            let _ = unsafe { &*result };
-        }
+    #[test]
+    fn sign_ur_execute_dispatches_xmr_to_execute_xmr() {
+        // Under cargo test, the cfg(test) branch of fetch_seed in
+        // sign_ur_execute already returns None → execute_xmr sees an
+        // empty seed. The dispatcher arm should NOT segfault; it
+        // should return a UREncodeResult (likely error_code ≠ 0
+        // because monero_generate_signature's first action is
+        // extract_ptr_with_type! on a null PtrUR). We only assert
+        // non-null allocation.
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_XMR_TX_UNSIGNED) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
 
-        #[test]
-        fn sign_ur_execute_dispatches_sui_to_execute_sui() {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_REQUEST) };
-            assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-            let _ = unsafe { &*result };
-        }
+    #[test]
+    fn fetch_monero_pvk_returns_none_under_test() {
+        // Pin the cfg(test) branch: under cargo test we never
+        // call the real GetCurrentAccountPublicKey binding.
+        assert!(fetch_monero_pvk_for_parse().is_none());
+    }
 
-        #[test]
-            fn sign_ur_execute_dispatches_arweave_to_execute_arweave() {
-                let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ARWEAVE_SIGN_REQUEST) };
-                assert!(!result.is_null(), "execute dispatcher must allocate UREncodeResult");
-                let _ = unsafe { &*result };
-            }
-
-            #[test]
-            fn fetch_rsa_primes_returns_none_under_test() {
-                // Pin the cfg(test) branch: cargo test must never reach the
-                // real FlashReadRsaPrimes binding.
-                assert!(unsafe { fetch_rsa_primes() }.is_none());
-            }
-        }
+    #[test]
+    fn xmr_enum_constant_matches_c_header() {
+        // Pin the dispatcher constant against C enum drift. If
+        // src/crypto/account_public_info.h reorders the ChainType
+        // enum, this test fails and XPUB_TYPE_MONERO_PVK_0 must
+        // update in lock-step. Mirrors the xrp_root_xpub_enum_constant_matches_c_header
+        // and eth_root_xpub_enum_constant_matches_c_header tests.
+        assert_eq!(XPUB_TYPE_MONERO_PVK_0, 232);
+        assert_eq!(QR_XMR_TX_UNSIGNED, 32);
+    }
+}

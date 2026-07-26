@@ -2705,8 +2705,13 @@ static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1.5 STELLAR: route through sign_ur_execute dispatcher
+     * (→ execute_stellar → stellar_sign) instead of direct FFI. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_STELLAR_TX, urData, stellar_sign);
+    void *result = sign_ur_execute(urData, 0, StellarSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_STELLAR_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen)
@@ -2759,20 +2764,35 @@ static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1.5 SUI HASH: route through dispatcher
+     * (→ execute_sui_hash → sui_sign_hash). */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_SUI_HASH, urData, sui_sign_hash);
+    void *result = sign_ur_execute(urData, 0, SuiSignHashRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SUI_HASH, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1.5 IOTA: route through dispatcher
+     * (→ execute_iota → iota_sign_intent). */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_IOTA_TX, urData, iota_sign_intent);
+    void *result = sign_ur_execute(urData, 0, IotaSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_IOTA_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1.5 IOTA HASH: route through dispatcher
+     * (→ execute_iota_hash → iota_sign_hash). */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_IOTA_HASH, urData, iota_sign_hash);
+    void *result = sign_ur_execute(urData, 0, IotaSignHashRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_IOTA_HASH, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)

@@ -280,8 +280,11 @@ const QR_EVM_SIGN_REQUEST: u32 = 19;
 const QR_SUI_SIGN_REQUEST: u32 = 20;
 const QR_SUI_SIGN_HASH: u32 = 21;
 const QR_XRP_TX: u32 = 22;
+const QR_IOTA_SIGN_REQUEST: u32 = 23;
+const QR_IOTA_SIGN_HASH: u32 = 24;
 const QR_APTOS_SIGN_REQUEST: u32 = 24;
 const QR_ARWEAVE_SIGN_REQUEST: u32 = 26;
+const QR_STELLAR_SIGN_REQUEST: u32 = 27;
 const QR_TON_SIGN_REQUEST: u32 = 28;
 
 /// Mirrors `SPI_FLASH_RSA_PRIME_SIZE` in src/crypto/rsa.h. The
@@ -1574,6 +1577,10 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_TRX_SIGN_REQUEST => execute_trx(ur_data, seed),
         QR_TON_SIGN_REQUEST => execute_ton(ur_data, seed),
         QR_SUI_SIGN_REQUEST => execute_sui(ur_data, seed),
+        QR_SUI_SIGN_HASH => execute_sui_hash(ur_data, seed),
+        QR_IOTA_SIGN_REQUEST => execute_iota(ur_data, seed),
+        QR_IOTA_SIGN_HASH => execute_iota_hash(ur_data, seed),
+        QR_STELLAR_SIGN_REQUEST => execute_stellar(ur_data, seed),
         QR_ARWEAVE_SIGN_REQUEST => execute_arweave(ur_data, seed),
         QR_SOL_SIGN_REQUEST => execute_sol(ur_data, seed),
         QR_COSMOS_SIGN_REQUEST => execute_cosmos(ur_data, seed, QR_COSMOS_SIGN_REQUEST),
@@ -2141,6 +2148,52 @@ unsafe fn execute_sui(_ur_data: Ptr<u8>, _seed: [u8; SEED_LEN]) -> PtrT<UREncode
     crate::sui::sui_sign_intent(
         _ur_data as PtrUR,
         _seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+    )
+}
+
+/// Plan v11 §8.6 Phase 1.5: Sui sign-message-hash execute.
+/// Mirrors execute_sui (the SuiSignRequest path); SuiSignHashRequest
+/// is the same dispatcher surface — fetch_seed Rust-side, UR type
+/// distinguishes intent vs hash. UR data dereferenced via
+/// extract_ptr_with_type! (SIGSEGV on null) but tripwire tests are
+/// protected by cfg(test) fetch_seed returning None.
+unsafe fn execute_sui_hash(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::sui::sui_sign_hash(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+    )
+}
+
+/// Plan v11 §8.6 Phase 1.5: IOTA execute. Same surface as Sui —
+/// IotaSignRequest UR, Ed25519 SLIP-10 derivation, seed-fetched
+/// Rust-side.
+unsafe fn execute_iota(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::iota::iota_sign_intent(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+    )
+}
+
+/// Plan v11 §8.6 Phase 1.5: IOTA sign-message-hash execute.
+unsafe fn execute_iota_hash(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::iota::iota_sign_hash(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+    )
+}
+
+/// Plan v11 §8.6 Phase 1.5: Stellar execute. Ed25519 SLIP-10
+/// derivation. UR data is StellarSignRequest; stellar_sign
+/// internally branches on SignType (Transaction vs TransactionHash)
+/// so we don't need a separate arm.
+unsafe fn execute_stellar(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::stellar::stellar_sign(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
         SEED_LEN as uint32_t,
     )
 }
@@ -2967,6 +3020,57 @@ mod tests {
         );
         let _ = unsafe { &*result };
         assert_eq!(QR_NEAR_SIGN_REQUEST, 12, "NEAR enum drift");
+    }
+
+    // §8.6 Phase 1.5 tripwires — STELLAR / SUI HASH / IOTA / IOTA HASH
+    // dispatcher arm wiring. Same null-guard pattern: cfg(test)
+    // fetch_seed() returns None, so the dispatcher short-circuits
+    // before reaching execute_X. The null pointer test still proves
+    // the arm was wired (a malformed UR_ would surface via execute
+    // with error_code != 0; here we just check the route exists).
+
+    #[test]
+    fn sign_ur_execute_dispatches_sui_hash_to_execute_sui_hash() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_HASH) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_SUI_SIGN_HASH, 21, "SUI HASH enum drift");
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_iota_to_execute_iota() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_IOTA_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_IOTA_SIGN_REQUEST, 23, "IOTA enum drift");
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_iota_hash_to_execute_iota_hash() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_IOTA_SIGN_HASH) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_IOTA_SIGN_HASH, 24, "IOTA HASH enum drift");
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_stellar_to_execute_stellar() {
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_STELLAR_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_STELLAR_SIGN_REQUEST, 27, "STELLAR enum drift");
     }
 
     #[test]

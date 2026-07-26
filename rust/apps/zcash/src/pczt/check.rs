@@ -4,7 +4,6 @@ use alloc::{string::ToString, vec};
 
 use super::*;
 
-#[cfg(feature = "cypherpunk")]
 use orchard::{keys::FullViewingKey, value::ValueSum, Address};
 
 use zcash_vendor::{
@@ -41,7 +40,6 @@ fn validate_sapling_bundle_consistency(pczt: &Pczt) -> Result<(), ZcashError> {
     Ok(())
 }
 
-#[cfg(feature = "cypherpunk")]
 pub fn check_pczt_orchard<P: consensus::Parameters>(
     params: &P,
     seed_fingerprint: &[u8; 32],
@@ -296,7 +294,6 @@ fn check_transparent_output<P: consensus::Parameters>(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 // check orchard bundle
 fn check_orchard<P: consensus::Parameters>(
     params: &P,
@@ -328,7 +325,6 @@ fn check_orchard<P: consensus::Parameters>(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 // check orchard action
 fn check_action<P: consensus::Parameters>(
     params: &P,
@@ -350,7 +346,6 @@ fn check_action<P: consensus::Parameters>(
     check_action_output(ufvk, action)
 }
 
-#[cfg(feature = "cypherpunk")]
 // check spend nullifier
 fn check_action_spend<P: consensus::Parameters>(
     params: &P,
@@ -392,7 +387,6 @@ fn check_action_spend<P: consensus::Parameters>(
     Ok(())
 }
 
-#[cfg(feature = "cypherpunk")]
 fn is_wallet_orchard_address(fvk: &FullViewingKey, address: &Address) -> bool {
     let external_ivk = fvk.to_ivk(zcash_vendor::zip32::Scope::External);
     let internal_ivk = fvk.to_ivk(zcash_vendor::zip32::Scope::Internal);
@@ -401,7 +395,6 @@ fn is_wallet_orchard_address(fvk: &FullViewingKey, address: &Address) -> bool {
         || internal_ivk.diversifier_index(address).is_some()
 }
 
-#[cfg(feature = "cypherpunk")]
 // check output cmx and internal-ovk output ownership constraints
 fn check_action_output(
     ufvk: &UnifiedFullViewingKey,
@@ -443,7 +436,6 @@ fn check_action_output(
     Ok(())
 }
 
-#[cfg(feature = "cypherpunk")]
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,10 +1,7 @@
 use alloc::string::String;
 use thiserror;
 use thiserror::Error;
-use zcash_vendor::transparent;
-
-#[cfg(feature = "cypherpunk")]
-use zcash_vendor::orchard;
+use zcash_vendor::{orchard, transparent};
 
 pub type Result<T> = core::result::Result<T, ZcashError>;
 
@@ -22,7 +19,6 @@ pub enum ZcashError {
     PcztNoMyInputs,
 }
 
-#[cfg(feature = "cypherpunk")]
 impl From<orchard::pczt::ParseError> for ZcashError {
     fn from(e: orchard::pczt::ParseError) -> Self {
         Self::InvalidPczt(alloc::format!("Invalid Orchard bundle: {e:?}"))

@@ -20,9 +20,7 @@ use zcash_vendor::{
     },
 };
 
-#[cfg(feature = "cypherpunk")]
 use zcash_note_encryption::Domain;
-#[cfg(feature = "cypherpunk")]
 use zcash_vendor::orchard::{
     self, keys::OutgoingViewingKey, note::Note, note_encryption::OrchardDomain, Address,
 };
@@ -49,7 +47,6 @@ fn format_zec_value(value: f64) -> String {
 /// - `Ok(None)` if the output cannot be decrypted.
 /// - `Err(_)` if `ovk` is `None` and the PCZT is missing fields needed to directly
 ///   decrypt the output.
-#[cfg(feature = "cypherpunk")]
 pub fn decode_output_enc_ciphertext(
     action: &orchard::pczt::Action,
     ovk: Option<&OutgoingViewingKey>,
@@ -116,7 +113,6 @@ pub fn decode_output_enc_ciphertext(
 /// 3. Handles Sapling pool interactions (though full Sapling decoding is not supported)
 /// 4. Computes transfer values and fees
 /// 5. Returns a structured representation of the transaction
-#[cfg(feature = "cypherpunk")]
 pub fn parse_pczt_cypherpunk<P: consensus::Parameters>(
     params: &P,
     seed_fingerprint: &[u8; 32],
@@ -211,7 +207,6 @@ pub fn parse_pczt_cypherpunk<P: consensus::Parameters>(
         has_sapling,
     ))
 }
-#[cfg(feature = "multi_coins")]
 pub fn parse_pczt_multi_coins<P: consensus::Parameters>(
     params: &P,
     seed_fingerprint: &[u8; 32],
@@ -403,7 +398,6 @@ fn parse_transparent_output(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 fn parse_orchard<P: consensus::Parameters>(
     params: &P,
     seed_fingerprint: &[u8; 32],
@@ -436,7 +430,6 @@ fn parse_orchard<P: consensus::Parameters>(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 fn parse_orchard_spend(
     seed_fingerprint: &[u8; 32],
     spend: &orchard::pczt::Spend,
@@ -457,7 +450,6 @@ fn parse_orchard_spend(
     Ok(ParsedFrom::new(None, zec_value, value, is_mine))
 }
 
-#[cfg(feature = "cypherpunk")]
 fn is_wallet_orchard_address(
     ufvk: &UnifiedFullViewingKey,
     address: &Address,
@@ -472,7 +464,6 @@ fn is_wallet_orchard_address(
         || internal_ivk.diversifier_index(address).is_some())
 }
 
-#[cfg(feature = "cypherpunk")]
 fn is_internal_orchard_address(
     ufvk: &UnifiedFullViewingKey,
     address: &Address,
@@ -485,7 +476,6 @@ fn is_internal_orchard_address(
     Ok(internal_ivk.diversifier_index(address).is_some())
 }
 
-#[cfg(feature = "cypherpunk")]
 fn parse_orchard_output<P: consensus::Parameters>(
     params: &P,
     ufvk: &UnifiedFullViewingKey,
@@ -674,7 +664,6 @@ fn decode_memo(memo_bytes: [u8; 512]) -> Option<String> {
     Some(hex::encode(memo_bytes))
 }
 
-#[cfg(feature = "cypherpunk")]
 #[cfg(test)]
 mod tests {
     use alloc::collections::BTreeMap;

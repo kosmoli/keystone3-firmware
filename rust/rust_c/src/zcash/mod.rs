@@ -70,7 +70,6 @@ pub unsafe extern "C" fn generate_zcash_default_address(
 }
 
 #[no_mangle]
-#[cfg(feature = "cypherpunk")]
 pub unsafe extern "C" fn check_zcash_tx_cypherpunk(
     tx: PtrUR,
     ufvk: PtrString,
@@ -100,7 +99,6 @@ pub unsafe extern "C" fn check_zcash_tx_cypherpunk(
     }
 }
 
-#[cfg(feature = "multi-coins")]
 #[no_mangle]
 pub unsafe extern "C" fn check_zcash_tx_multi_coins(
     tx: PtrUR,
@@ -131,7 +129,6 @@ pub unsafe extern "C" fn check_zcash_tx_multi_coins(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 #[no_mangle]
 pub unsafe extern "C" fn parse_zcash_tx_cypherpunk(
     tx: PtrUR,
@@ -153,7 +150,6 @@ pub unsafe extern "C" fn parse_zcash_tx_cypherpunk(
     }
 }
 
-#[cfg(feature = "multi-coins")]
 #[no_mangle]
 pub unsafe extern "C" fn parse_zcash_tx_multi_coins(
     tx: PtrUR,

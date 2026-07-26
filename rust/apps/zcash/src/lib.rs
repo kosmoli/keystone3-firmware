@@ -56,7 +56,6 @@ pub fn get_address<P: consensus::Parameters>(params: &P, ufvk_text: &str) -> Res
 /// * `ZcashError::InvalidDataError` - If the UFVK cannot be decoded or the account index is invalid
 /// * `ZcashError::InvalidPczt` - If the PCZT data is malformed or cannot be parsed
 /// * Other errors from the underlying validation process
-#[cfg(feature = "cypherpunk")]
 pub fn check_pczt_cypherpunk<P: consensus::Parameters>(
     params: &P,
     pczt: &[u8],
@@ -77,7 +76,6 @@ pub fn check_pczt_cypherpunk<P: consensus::Parameters>(
     pczt::check::check_pczt_transparent(params, seed_fingerprint, account_index, xpub, &pczt, false)
 }
 
-#[cfg(feature = "multi_coins")]
 pub fn check_pczt_multi_coins<P: consensus::Parameters>(
     params: &P,
     pczt: &[u8],
@@ -137,7 +135,6 @@ pub fn check_pczt_multi_coins<P: consensus::Parameters>(
 /// * `ZcashError::InvalidDataError` - If the UFVK cannot be decoded
 /// * `ZcashError::InvalidPczt` - If the PCZT data is malformed or cannot be parsed
 /// * Other errors from the underlying parsing process
-#[cfg(feature = "cypherpunk")]
 pub fn parse_pczt_cypherpunk<P: consensus::Parameters>(
     params: &P,
     pczt: &[u8],
@@ -174,7 +171,6 @@ mod additional_tests {
     }
 }
 
-#[cfg(feature = "multi_coins")]
 pub fn parse_pczt_multi_coins<P: consensus::Parameters>(
     params: &P,
     pczt: &[u8],
@@ -207,7 +203,6 @@ pub fn sign_pczt(pczt: &[u8], seed: &[u8]) -> Result<Vec<u8>> {
     pczt::sign::sign_pczt(pczt, seed)
 }
 
-#[cfg(feature = "cypherpunk")]
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;

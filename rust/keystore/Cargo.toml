@@ -24,11 +24,16 @@ zcash_vendor = { workspace = true }
 zeroize = { workspace = true }
 
 [features]
-default = ["std", "multi_coins"]
+default = ["std", "cypherpunk"]
+# KOSMO uses cypherpunk (which includes orchard). The
+# multi_coins feature stays for upstream compatibility but
+# the C-side zcash_signing path was deleted in d312ec1de so
+# KOSMO doesn't need explicit multi_coins activation here.
 std = []
 rsa = []
 multi_coins = ["zcash_vendor/multi_coins"]
 cypherpunk = ["zcash_vendor/cypherpunk"]
+kosmo = ["cypherpunk"]  # KOSMO uses cypherpunk (orchard on)
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }

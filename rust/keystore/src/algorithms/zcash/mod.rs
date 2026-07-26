@@ -11,7 +11,6 @@ use zcash_vendor::{
 
 use crate::algorithms::utils::is_all_zero_or_ff;
 
-#[cfg(feature = "cypherpunk")]
 use zcash_vendor::orchard::{
     self,
     keys::{SpendAuthorizingKey, SpendingKey},
@@ -70,7 +69,6 @@ pub fn calculate_seed_fingerprint(seed: &[u8]) -> Result<[u8; 32]> {
     Ok(sfp.to_bytes())
 }
 
-#[cfg(feature = "cypherpunk")]
 pub fn sign_message_orchard<R: RngCore + CryptoRng>(
     action: &mut orchard::pczt::Action,
     seed: &[u8],
@@ -103,7 +101,6 @@ pub fn sign_message_orchard<R: RngCore + CryptoRng>(
     }
 }
 
-#[cfg(feature = "cypherpunk")]
 #[cfg(test)]
 mod orchard_tests {
     use super::*;

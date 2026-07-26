@@ -80,6 +80,17 @@ const XPUB_TYPE_BTC_TAPROOT: u32 = 3;
 /// 2026-07-26 by counting: CryptoPSBT=2, ..., BtcSignRequest=7.
 const QR_BTC_SIGN_REQUEST: u32 = 7;
 
+/// Plan v11 Phase B-L3-3 (ADA): XPUB_TYPE value for the Cardano
+/// account (m/1852'/1815'/0'). Verified 2026-07-26 by counting
+/// enum lines in src/crypto/account_public_info.h:
+///   XPUB_TYPE_ADA_0 is at enum-internal line 175 → value 173.
+const XPUB_TYPE_ADA_0: u32 = 173;
+
+/// `QRCodeType::CardanoSignRequest` value (cbindgen output of
+/// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
+/// 2026-07-26 by counting: ..., CardanoSignRequest=14.
+const QR_CARDANO_SIGN_REQUEST: u32 = 14;
+
 /// `QRCodeType::XmrTxUnsignedRequest` value (cbindgen output of
 /// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
 /// 2026-07-26 by counting: BtcSignRequest=6, ..., XmrTxUnsignedRequest=32.
@@ -272,6 +283,7 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_AVAX_SIGN_REQUEST => parse_avax(ur_data),
         QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
         QR_BTC_SIGN_REQUEST => parse_btc(ur_data),
+        QR_CARDANO_SIGN_REQUEST => parse_cardano(ur_data),
         QR_XMR_TX_UNSIGNED => parse_xmr(ur_data),
         _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
     }
@@ -426,6 +438,27 @@ fn fetch_btc_mfp_for_parse(seed: &[u8; SEED_LEN]) -> Option<[u8; 4]> {
 fn fetch_btc_mfp_for_parse(_seed: &[u8; SEED_LEN]) -> Option<[u8; 4]> {
     // Test fixture: return None so parse_btc exercises the
     // "mfp unavailable" error branch.
+    None
+}
+
+/// Plan v11 Phase B-L3-3 (ADA): fetch the Cardano account root
+/// xpub for the dispatcher to feed into `cardano_parse_tx` and
+/// `cardano_sign_tx`. Mirrors the legacy `KosmoApi_GetPublicKey`
+/// path used by legacy gui_cardano.c with XPUB_TYPE_ADA_0.
+#[cfg(not(test))]
+fn fetch_cardano_xpub_for_parse() -> Option<PtrString> {
+    let ptr = unsafe { GetCurrentAccountPublicKey(XPUB_TYPE_ADA_0) };
+    if ptr.is_null() {
+        None
+    } else {
+        Some(ptr)
+    }
+}
+
+#[cfg(test)]
+fn fetch_cardano_xpub_for_parse() -> Option<PtrString> {
+    // Test fixture: return None so parse_cardano exercises the
+    // "xpub unavailable" error branch.
     None
 }
 
@@ -717,6 +750,29 @@ unsafe fn parse_btc(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
     build_display_error("BTC parse requires an unlocked wallet (B-L3-2 single-sig: caller must pre-fetch mfp)")
 }
 
+/// Plan v11 Phase B-L3-3 (ADA): parse a Cardano SignRequest
+/// (single-sig Tx). `cardano_parse_tx` requires mfp + xpub; both
+/// are derived from the wallet context, not from the UR alone.
+/// Same shape as parse_btc: stub under cargo test, surfaces a
+/// structured "xpub unavailable" error.
+unsafe fn parse_cardano(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _xpub = match fetch_cardano_xpub_for_parse() {
+        Some(p) => p,
+        None => {
+            return build_display_error(
+                "ADA parse requires an unlocked wallet (B-L3-3 stub: parse path deferred)",
+            );
+        }
+    };
+    let _ = ur_data;
+    // TODO(B-L3-3 follow-up): real parse_cardano should call
+    //   cardano_parse_tx(ptr, mfp_ptr, xpub_ptr)
+    // and flatten the resulting DisplayCardanoTx (10+ fields)
+    // into SignDisplayData fields block. Deferred because the
+    // dispatcher parse surface has no mfp arg yet.
+    build_display_error("ADA parse: stub — see TODO(B-L3-3 follow-up)")
+}
+
 /// Plan v11 Phase B-L3-1 (XMR): parse Monero unsigned transaction.
 ///
 /// Mirrors the legacy C path `GuiGetMoneroUnsignedTxCheckResult` /
@@ -868,6 +924,7 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_AVAX_SIGN_REQUEST => execute_avax(ur_data, seed),
         QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
         QR_BTC_SIGN_REQUEST => execute_btc(ur_data, seed),
+        QR_CARDANO_SIGN_REQUEST => execute_cardano(ur_data, seed),
         QR_XMR_TX_UNSIGNED => execute_xmr(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
@@ -1393,6 +1450,68 @@ unsafe fn execute_btc(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
         SEED_LEN as uint32_t,
         mfp.as_ptr() as PtrBytes,
         4,
+    )
+}
+
+/// Plan v11 Phase B-L3-3 (ADA): execute Cardano SignRequest
+/// (single-sig Tx). Mirrors the legacy `ModelSignCardano` flow
+/// in `kosmo_api.c` which:
+///   1. Derives mfp from seed (same path as BTC).
+///   2. Fetches cardano_xpub via `GetCurrentAccountPublicKey(XPUB_TYPE_ADA_0)`.
+///   3. Calls `cardano_sign_tx(ur_data, mfp, xpub, entropy,
+///       entropy_len, passphrase, blind_sign=false,
+///       is_slip39=false)`.
+///
+/// On Cardano the dispatcher surface `(_ur_data, _seed)` maps
+/// to the legacy pattern via `ModelSignGeneric`: C side already
+/// decides whether the `seed` is a BIP-39 seed or raw SLIP-39
+/// entropy via `KosmoApi_GetMnemonicType()`, so dispatcher's
+/// `seed` IS the right thing to pass here.
+///
+/// Passphrase is hardcoded to empty `""` and is_slip39=false —
+/// the legacy C side `enable_blind_sign` flag is UI-driven and
+/// does not flow through the unified dispatcher surface (yet).
+/// A follow-up commit can extend the dispatcher surface to
+/// accept a `user_context` struct if multi-flag chains become
+/// important.
+unsafe fn execute_cardano(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    let mfp = match get_master_fingerprint_by_seed(&seed) {
+        Ok(m) => m.to_bytes(),
+        Err(e) => {
+            return UREncodeResult::from(RustCError::InvalidData(format!(
+                "ada mfp derivation failed: {e:?}"
+            )))
+            .c_ptr();
+        }
+    };
+    let xpub_ptr = match fetch_cardano_xpub_for_parse() {
+        Some(p) => p,
+        None => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "ADA xpub unavailable (account not unlocked?)".into(),
+            ))
+            .c_ptr();
+        }
+    };
+    // Passphrase = empty string. cardano_sign_tx will recover_c_char() it.
+    let passphrase = match alloc::ffi::CString::new("") {
+        Ok(c) => c.into_raw(),
+        Err(_) => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "ADA passphrase CString allocation failed".into(),
+            ))
+            .c_ptr();
+        }
+    };
+    crate::cardano::cardano_sign_tx(
+        ur_data as PtrUR,
+        mfp.as_ptr() as PtrBytes,
+        xpub_ptr,
+        seed.as_ptr() as PtrBytes,
+        SEED_LEN as u32,
+        passphrase,
+        false, // enable_blind_sign (UI flag; deferred to dispatcher surface extension)
+        false, // is_slip39 (BIP-39 default; SLIP-39 wallet support deferred)
     )
 }
 
@@ -2067,5 +2186,62 @@ mod tests {
         assert_eq!(XPUB_TYPE_BTC_LEGACY, 1);
         assert_eq!(XPUB_TYPE_BTC_NATIVE_SEGWIT, 2);
         assert_eq!(XPUB_TYPE_BTC_TAPROOT, 3);
+    }
+
+    // ── Phase B-L3-3 (ADA / Cardano) dispatcher tripwires ─────────
+    //
+    // Same pattern as B-L3-1 (XMR) / B-L3-2 (BTC):
+    //   * parse path returns a structured "ADA parse requires
+    //     unlocked wallet" error rather than dereferencing UR.
+    //   * execute path is allocator-tripwired — under cargo test
+    //     fetch_seed returns None so sign_ur_execute short-circuits
+    //     before execute_cardano fires.
+
+    #[test]
+    fn sign_ur_parse_dispatches_cardano_to_parse_cardano() {
+        let display =
+            unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_REQUEST) };
+        assert!(
+            !display.is_null(),
+            "parse dispatcher must allocate SignDisplayData"
+        );
+        let d = unsafe { &*display };
+        assert_eq!(
+            d.error_code, 1,
+            "ADA parse without xpub must surface structured error"
+        );
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("ADA parse"),
+            "unexpected error message: {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cardano_to_execute_cardano() {
+        let result =
+            unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+    }
+
+    #[test]
+    fn fetch_cardano_xpub_returns_none_under_test() {
+        // Pin the cfg(test) branch: cargo test must never call
+        // the real GetCurrentAccountPublicKey binding.
+        assert!(fetch_cardano_xpub_for_parse().is_none());
+    }
+
+    #[test]
+    fn ada_enum_constant_matches_c_header() {
+        // Pin the dispatcher constant against C enum drift.
+        assert_eq!(QR_CARDANO_SIGN_REQUEST, 14);
+        // XPUB_TYPE_ADA_0 is at enum-internal line 175
+        // in src/crypto/account_public_info.h.
+        assert_eq!(XPUB_TYPE_ADA_0, 173);
     }
 }

@@ -905,26 +905,126 @@ unsafe fn parse_aptos(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
 ///
 /// Multisig support is out of scope for this commit (will require
 /// a separate `parse_btc_multisig` arm with `verify_code` +
-/// `multisig_wallet_config` populated from C-side state).
+/// Plan v11 Phase B-L3-2 (BTC): parse a Bitcoin PSBT sign
+/// request. `btc_parse_psbt` takes mfp + 4 xpubs; we derive both
+/// from the wallet context using the §8.1 helper pattern (seed
+/// never crosses an FFI boundary other than the FFI call itself).
 unsafe fn parse_btc(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    // The dispatcher contract is: parse_btc receives only `ur_data`
-    // and must derive everything else (mfp, xpubs) from the seed.
-    // But parse happens BEFORE the seed is fetched; the wallet
-    // UI layer typically has not yet unlocked the wallet at parse
-    // time on hardware wallets. We therefore return a structured
-    // "BTC parse requires an unlocked wallet" error and let C
-    // surface it to the GUI, just like parse_eth returns the
-    // "ETH xpub unavailable" error under cfg(test).
-    //
-    // (Plan v11 path forward: when fully wire-up, parse_btc will
-    // take a second `seed` arg from the dispatcher surface, OR
-    // a C-side `get_current_mfp` binding will be added so parse
-    // can derive mfp without the seed. This is a follow-up.)
-    let _ = ur_data;
-    build_display_error("BTC parse requires an unlocked wallet (B-L3-2 single-sig: caller must pre-fetch mfp)")
-}
+    // Helper gates: each helper returns None under cfg(test), so
+    // cargo test exercises the "unlocked wallet required" path.
+    let xpubs_ptr = match fetch_btc_4xpubs_for_parse() {
+        Some(p) => p,
+        None => {
+            return build_display_error(
+                "BTC parse requires unlocked wallet (4 xpubs unavailable)",
+            );
+        }
+    };
+    let seed = match fetch_seed() {
+        Some(s) => s,
+        None => {
+            return build_display_error(
+                "BTC parse requires unlocked wallet (seed unavailable)",
+            );
+        }
+    };
+    let mfp = match get_master_fingerprint_by_seed(&seed) {
+        Ok(f) => f.to_bytes(),
+        Err(_) => {
+            return build_display_error("BTC parse: mfp derivation failed");
+        }
+    };
 
-/// Plan v11 Phase B-L3-3 (ADA): parse a Cardano SignRequest
+    // Real wiring: btc_parse_psbt(ptr, mfp_ptr, 4, xpubs_slice_ptr,
+    // multisig_config=null) -> TransactionParseResult<DisplayTx>.
+    // We pass null for multisig_wallet_config because the single-sig
+    // branch (length=4) does not require it (multi-sig is a follow-up
+    // per plan_v11 §8.2).
+    let parse_ptr = crate::bitcoin::psbt::btc_parse_psbt(
+        ur_data as PtrUR,
+        mfp.as_ptr() as PtrBytes,
+        4,
+        xpubs_ptr,
+        core::ptr::null_mut(),
+    );
+    if parse_ptr.is_null() {
+        return build_display_error("btc_parse_psbt returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    let error_code = parse_box.error_code;
+    if error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!("btc_parse_psbt failed: {msg}"));
+    }
+    let data_ptr = parse_box.data;
+    if data_ptr.is_null() {
+        drop(parse_box);
+        return build_display_error("btc_parse_psbt: null data with error_code=0");
+    }
+    let display = unsafe { &*data_ptr };
+
+    // Flatten DisplayTx.overview + DisplayTx.detail into the
+    // unified fields block. DisplayTx is the richest struct
+    // across all 12 chains (overview 17 fields, detail 12
+    // fields, plus nested VecFFI<DisplayTxOverviewInput/Output>
+    // and VecFFI<DisplayTxDetailInput/Output> trees). For the
+    // initial wiring we surface the totals, fee, network,
+    // input/output counts and the multi-sig flag — sufficient
+    // for the unified `BuildDisplayData` contract.
+    let overview = unsafe { &*display.overview };
+    let detail = unsafe { &*display.detail };
+
+    let total_output = crate::common::utils::recover_c_char(overview.total_output_amount);
+    let total_output_sat = crate::common::utils::recover_c_char(overview.total_output_sat);
+    let fee = crate::common::utils::recover_c_char(overview.fee_amount);
+    let fee_sat = crate::common::utils::recover_c_char(overview.fee_sat);
+    let network = crate::common::utils::recover_c_char(overview.network);
+    let total_input = crate::common::utils::recover_c_char(detail.total_input_amount);
+    let total_input_sat = crate::common::utils::recover_c_char(detail.total_input_sat);
+
+    let overview_from_count = if overview.from.is_null() {
+        0
+    } else {
+        unsafe { (*overview.from).size }
+    };
+    let overview_to_count = if overview.to.is_null() {
+        0
+    } else {
+        unsafe { (*overview.to).size }
+    };
+    let detail_from_count = if detail.from.is_null() {
+        0
+    } else {
+        unsafe { (*detail.from).size }
+    };
+    let detail_to_count = if detail.to.is_null() {
+        0
+    } else {
+        unsafe { (*detail.to).size }
+    };
+    let sighash = crate::common::utils::recover_c_char(overview.sighash_type);
+
+    let fields = format!(
+        "Network={network}\n\
+         Inputs={detail_from_count}\nOutputs={detail_to_count}\n\
+         OverviewInputs={overview_from_count}\nOverviewOutputs={overview_to_count}\n\
+         TotalInput={total_input}\n({total_input_sat} sat)\n\
+         TotalOutput={total_output}\n({total_output_sat} sat)\n\
+         Fee={fee}\n({fee_sat} sat)\n\
+         Sighash={sighash}\n\
+         IsMultisig={}",
+        overview.is_multisig
+    );
+
+    // Free inner DisplayTx tree (overview + detail + nested
+    // VecFFI<DisplayTxOverviewInput> / VecFFI<DisplayTxDetailInput>)
+    // then drop the TransactionParseResult wrapper.
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Sign Transaction", "BTC", &network, &fields, "", 0)
+}
 /// (single-sig Tx). `cardano_parse_tx` requires mfp + xpub; both
 /// are derived from the wallet context, not from the UR alone.
 /// Same shape as parse_btc: stub under cargo test, surfaces a

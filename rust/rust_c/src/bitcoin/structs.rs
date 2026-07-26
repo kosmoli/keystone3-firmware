@@ -45,47 +45,47 @@ make_free_method!(Response<PsbtSignResult>);
 
 #[repr(C)]
 pub struct DisplayTx {
-    overview: *mut DisplayTxOverview,
-    detail: *mut DisplayTxDetail,
+    pub(crate) overview: *mut DisplayTxOverview,
+    pub(crate) detail: *mut DisplayTxDetail,
 }
 
 #[repr(C)]
 pub struct DisplayTxOverview {
-    total_output_amount: PtrString,
-    fee_amount: PtrString,
-    total_output_sat: PtrString,
-    fee_sat: PtrString,
-    from: PtrT<VecFFI<DisplayTxOverviewInput>>,
-    to: PtrT<VecFFI<DisplayTxOverviewOutput>>,
-    network: PtrString,
-    is_multisig: bool,
-    fee_larger_than_amount: bool,
-    sign_status: PtrString,
-    need_sign: bool,
-    has_witness_only_inputs: bool,
-    fee_is_lower_bound: bool,
-    fee_is_unknown: bool,
-    sighash_type: PtrString,
-    is_sighash_single: bool,
-    is_sighash_none: bool,
+    pub(crate) total_output_amount: PtrString,
+    pub(crate) fee_amount: PtrString,
+    pub(crate) total_output_sat: PtrString,
+    pub(crate) fee_sat: PtrString,
+    pub(crate) from: PtrT<VecFFI<DisplayTxOverviewInput>>,
+    pub(crate) to: PtrT<VecFFI<DisplayTxOverviewOutput>>,
+    pub(crate) network: PtrString,
+    pub(crate) is_multisig: bool,
+    pub(crate) fee_larger_than_amount: bool,
+    pub(crate) sign_status: PtrString,
+    pub(crate) need_sign: bool,
+    pub(crate) has_witness_only_inputs: bool,
+    pub(crate) fee_is_lower_bound: bool,
+    pub(crate) fee_is_unknown: bool,
+    pub(crate) sighash_type: PtrString,
+    pub(crate) is_sighash_single: bool,
+    pub(crate) is_sighash_none: bool,
 }
 
 impl_c_ptr!(DisplayTxOverview);
 
 #[repr(C)]
 pub struct DisplayTxDetail {
-    total_input_amount: PtrString,
-    total_output_amount: PtrString,
-    fee_amount: PtrString,
-    from: PtrT<VecFFI<DisplayTxDetailInput>>,
-    to: PtrT<VecFFI<DisplayTxDetailOutput>>,
-    network: PtrString,
-    total_input_sat: PtrString,
-    total_output_sat: PtrString,
-    fee_sat: PtrString,
-    fee_is_lower_bound: bool,
-    fee_is_unknown: bool,
-    sign_status: PtrString,
+    pub(crate) total_input_amount: PtrString,
+    pub(crate) total_output_amount: PtrString,
+    pub(crate) fee_amount: PtrString,
+    pub(crate) from: PtrT<VecFFI<DisplayTxDetailInput>>,
+    pub(crate) to: PtrT<VecFFI<DisplayTxDetailOutput>>,
+    pub(crate) network: PtrString,
+    pub(crate) total_input_sat: PtrString,
+    pub(crate) total_output_sat: PtrString,
+    pub(crate) fee_sat: PtrString,
+    pub(crate) fee_is_lower_bound: bool,
+    pub(crate) fee_is_unknown: bool,
+    pub(crate) sign_status: PtrString,
 }
 
 impl_c_ptr!(DisplayTxDetail);

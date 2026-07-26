@@ -8,7 +8,7 @@ members = [
     "apps/cardano",
     "apps/cosmos",
     "apps/ethereum",
-    # "apps/near",  # Temporarily disabled
+    "apps/near",  # KOSMO fork: enable NEAR (upstream keystones has it disabled per commit 1799e0a5)
     "apps/solana",
     "apps/stellar",
     "apps/sui",
@@ -40,7 +40,7 @@ app_cardano = { path = "apps/cardano" }
 app_cosmos = { path = "apps/cosmos", default-features = false }
 app_ethereum = { path = "apps/ethereum" }
 app_avalanche = { path = "apps/avalanche" }
-app_near = { path = "apps/near" }  # Dependency kept, but member disabled
+app_near = { path = "apps/near" }
 app_solana = { path = "apps/solana" }
 app_stellar = { path = "apps/stellar" }
 app_sui = { path = "apps/sui" }

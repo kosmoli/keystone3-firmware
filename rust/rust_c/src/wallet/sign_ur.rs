@@ -96,20 +96,20 @@ const XPUB_TYPE_ADA_0: u32 = 173;
 
 /// Plan v11 Phase B-L3-3 (ADA): `QRCodeType::CardanoSignRequest`
 /// value (cbindgen output, first ADA entry).
-const QR_CARDANO_SIGN_REQUEST: u32 = 12;
+const QR_CARDANO_SIGN_REQUEST: u32 = 13;
 
 // Plan v11 §8.3 (ADA multi-UR-type extension): four additional
 // Cardano UR types beyond the B-L3-3 base. Verified 2026-07-26
 // by enumerating cbindgen output in
 // rust_c/bindings/production-kosmo/librust_c.h:
-const QR_CARDANO_SIGN_TX_HASH_REQUEST: u32 = 13;
-const QR_CARDANO_SIGN_DATA_REQUEST: u32 = 14;
-const QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST: u32 = 15;
-const QR_CARDANO_SIGN_CIP8_DATA_REQUEST: u32 = 16;
+const QR_CARDANO_SIGN_TX_HASH_REQUEST: u32 = 14;
+const QR_CARDANO_SIGN_DATA_REQUEST: u32 = 15;
+const QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST: u32 = 16;
+const QR_CARDANO_SIGN_CIP8_DATA_REQUEST: u32 = 17;
 
 /// Plan v11 Phase B-L3-4 (ZEC): `QRCodeType::ZcashPczt` value
 /// (cbindgen output).
-const QR_ZCASH_PCZT: u32 = 29;
+const QR_ZCASH_PCZT: u32 = 30;
 
 /// `XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0` value in `ChainType`
 /// (src/crypto/account_public_info.h). Verified 2026-07-26
@@ -123,7 +123,7 @@ const XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0: u32 = 230;
 
 /// Plan v11 Phase B-L3-1 (XMR): `QRCodeType::XmrTxUnsignedRequest`
 /// value (cbindgen output, second-to-last entry).
-const QR_XMR_TX_UNSIGNED: u32 = 31;
+const QR_XMR_TX_UNSIGNED: u32 = 32;
 
 /// Display data returned to frontend for transaction confirmation.
 ///
@@ -269,14 +269,20 @@ fn fetch_seed() -> Option<[u8; SEED_LEN]> {
 const QR_ETH_SIGN_REQUEST: u32 = 8;
 const QR_SOL_SIGN_REQUEST: u32 = 10;
 const QR_TRX_SIGN_REQUEST: u32 = 11;
-const QR_COSMOS_SIGN_REQUEST: u32 = 17;
-const QR_EVM_SIGN_REQUEST: u32 = 18;
-const QR_SUI_SIGN_REQUEST: u32 = 19;
-const QR_SUI_SIGN_HASH: u32 = 20;
-const QR_XRP_TX: u32 = 21;
-const QR_APTOS_SIGN_REQUEST: u32 = 23;
-const QR_ARWEAVE_SIGN_REQUEST: u32 = 25;
-const QR_TON_SIGN_REQUEST: u32 = 27;
+
+/// Plan v11 §8.4 (NEAR enable): KOSMO fork re-enabled NEAR
+/// (upstream keystones disabled it in commit 1799e0a5 with no
+/// explanation). NearSignRequest sits between Tron and Cardano
+/// in the QRCodeType enum (cbindgen output).
+const QR_NEAR_SIGN_REQUEST: u32 = 12;
+const QR_COSMOS_SIGN_REQUEST: u32 = 18;
+const QR_EVM_SIGN_REQUEST: u32 = 19;
+const QR_SUI_SIGN_REQUEST: u32 = 20;
+const QR_SUI_SIGN_HASH: u32 = 21;
+const QR_XRP_TX: u32 = 22;
+const QR_APTOS_SIGN_REQUEST: u32 = 24;
+const QR_ARWEAVE_SIGN_REQUEST: u32 = 26;
+const QR_TON_SIGN_REQUEST: u32 = 28;
 
 /// Mirrors `SPI_FLASH_RSA_PRIME_SIZE` in src/crypto/rsa.h. The
 /// upstream C definition is:
@@ -290,7 +296,7 @@ const QR_TON_SIGN_REQUEST: u32 = 27;
 /// src/crypto/rsa.h if either value changes (an RSA-4096 upgrade
 /// would push this to 512).
 const SPI_FLASH_RSA_PRIME_SIZE: u32 = 256;
-const QR_AVAX_SIGN_REQUEST: u32 = 28;
+const QR_AVAX_SIGN_REQUEST: u32 = 29;
 
 /// Unified parse entry. Stage 1: ETH + XRP placeholders only.
 #[no_mangle]
@@ -312,6 +318,7 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_AVAX_SIGN_REQUEST => parse_avax(ur_data),
         QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
         QR_BTC_SIGN_REQUEST => parse_btc(ur_data),
+        QR_NEAR_SIGN_REQUEST => parse_near(ur_data),
         QR_CARDANO_SIGN_REQUEST => parse_cardano(ur_data),
         QR_CARDANO_SIGN_TX_HASH_REQUEST => parse_cardano_tx_hash(ur_data),
         QR_CARDANO_SIGN_DATA_REQUEST => parse_cardano_sign_data(ur_data),
@@ -518,6 +525,7 @@ fn fetch_btc_4xpubs_for_parse(
     use crate::common::ffi::CSliceFFI;
     use crate::common::structs::ExtendedPublicKey;
     use alloc::ffi::CString;
+    use alloc::vec::Vec;
 
     let types = [
         (XPUB_TYPE_BTC, "m/49'/0'/0'"),
@@ -1546,12 +1554,12 @@ pub unsafe extern "C" fn sign_ur_execute(
     //   AvaxSignRequest = 28
     //   AptosSignRequest = 23
     const QR_ETH_SIGN_REQUEST: u32 = 8;
-    const QR_XRP_TX: u32 = 21;
+    const QR_XRP_TX: u32 = 22;
     const QR_SOL_SIGN_REQUEST: u32 = 10;
-    const QR_COSMOS_SIGN_REQUEST: u32 = 17;
-    const QR_EVM_SIGN_REQUEST: u32 = 18;
-    const QR_AVAX_SIGN_REQUEST: u32 = 28;
-    const QR_APTOS_SIGN_REQUEST: u32 = 23;
+    const QR_COSMOS_SIGN_REQUEST: u32 = 18;
+    const QR_EVM_SIGN_REQUEST: u32 = 19;
+    const QR_AVAX_SIGN_REQUEST: u32 = 29;
+    const QR_APTOS_SIGN_REQUEST: u32 = 24;
 
     let seed = match fetch_seed() {
         Some(s) => s,
@@ -1573,6 +1581,7 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_AVAX_SIGN_REQUEST => execute_avax(ur_data, seed),
         QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
         QR_BTC_SIGN_REQUEST => execute_btc(ur_data, seed),
+        QR_NEAR_SIGN_REQUEST => execute_near(ur_data, seed),
         QR_CARDANO_SIGN_REQUEST => execute_cardano(ur_data, seed),
         QR_CARDANO_SIGN_TX_HASH_REQUEST => {
             return UREncodeResult::from(RustCError::InvalidData(
@@ -2018,6 +2027,70 @@ unsafe fn execute_trx(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
         seed.as_ptr() as *mut u8,
         SEED_LEN as uint32_t,
         FRAGMENT_MAX_LENGTH_DEFAULT,
+    )
+}
+
+/// Plan v11 §8.4 (NEAR enable): parse a NearSignRequest into
+/// SignDisplayData. The underlying `near_parse_tx` FFI is single-arg
+/// (PtrUR) and returns a DisplayNearTx with overview + detail fields.
+///
+/// cfg(not(test)) exec: near_parse_tx(ptr) → flat overview fields
+/// into the SignDisplayData fields block.
+///
+/// cfg(test): stub — FFI path still runs (extract_ptr_with_type
+/// dereferences null), but a null guard surfaces a structured
+/// error so the tripwire test passes (mirrors parse_cardano_cip8_data).
+unsafe fn parse_near(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    if ur_data.is_null() {
+        return build_display_error("near_parse_tx: null ur_data");
+    }
+    let parse_ptr = crate::near::near_parse_tx(ur_data as PtrUR);
+    if parse_ptr.is_null() {
+        return build_display_error("near_parse_tx returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    if parse_box.error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!("near_parse_tx failed: {msg}"));
+    }
+    if parse_box.data.is_null() {
+        drop(parse_box);
+        return build_display_error("near_parse_tx: null data with error_code=0");
+    }
+    let display = unsafe { &*parse_box.data };
+    let network = unsafe { crate::common::utils::recover_c_char(display.network) };
+    let detail = unsafe { crate::common::utils::recover_c_char(display.detail) };
+    let overview = unsafe { &*display.overview };
+    let display_type = unsafe { crate::common::utils::recover_c_char(overview.display_type) };
+    let main_action = unsafe { crate::common::utils::recover_c_char(overview.main_action) };
+    let transfer_value = unsafe { crate::common::utils::recover_c_char(overview.transfer_value) };
+    let transfer_from = unsafe { crate::common::utils::recover_c_char(overview.transfer_from) };
+    let transfer_to = unsafe { crate::common::utils::recover_c_char(overview.transfer_to) };
+    let action_count = if overview.action_list.is_null() {
+        0
+    } else {
+        unsafe { (*overview.action_list).size }
+    };
+    let fields = format!(
+        "Network={network}\nType={display_type}\nMainAction={main_action}\nTransferValue={transfer_value}\nTransferFrom={transfer_from}\nTransferTo={transfer_to}\nActions={action_count}"
+    );
+
+    // Free inner DisplayNearTx (VecFFI fields, CStrings) then free
+    // TransactionParseResult wrapper (error_message).
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Sign Near Tx", "NEAR", "Near Protocol", &fields, &detail, 0)
+}
+
+/// Plan v11 §8.4 (NEAR execute): Near is Ed25519 — seed never crosses
+/// any FFI boundary except the FFI call itself (per §4.1 invariant).
+unsafe fn execute_near(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeResult> {
+    crate::near::near_sign_tx(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
     )
 }
 
@@ -2488,7 +2561,7 @@ mod tests {
 
     // QRCodeType enum values verified against librust_c.h (zero-indexed):
     const QR_ETH_SIGN_REQUEST: u32 = 8;
-    const QR_XRP_TX: u32 = 21;
+    const QR_XRP_TX: u32 = 22;
 
     #[test]
     fn build_display_roundtrip() {
@@ -2623,7 +2696,7 @@ mod tests {
         // is the 9th entry (index 8) and XRPTx is the 22nd entry
         // (index 21).
         assert_eq!(QR_ETH_SIGN_REQUEST, 8, "EthSignRequest enum drift");
-        assert_eq!(QR_XRP_TX, 21, "XRPTx enum drift");
+        assert_eq!(QR_XRP_TX, 22, "XRPTx enum drift");
     }
 
     #[test]
@@ -2863,13 +2936,47 @@ mod tests {
     }
 
     #[test]
+    fn sign_ur_parse_dispatches_near_to_parse_near() {
+        // NEAR parse has a null ur_data guard (extract_ptr_with_type!
+        // would SIGSEGV otherwise). Test reaches the dispatcher null-guard
+        // error path; the FFI itself is exercised by L4 simulator
+        // integration tests with real NearSignRequest payloads.
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_NEAR_SIGN_REQUEST) };
+        assert!(!display.is_null(), "parse dispatcher must allocate");
+        let d = unsafe { &*display };
+        assert_ne!(d.error_code, 0, "NEAR parse must reject null UR");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("near"),
+            "unexpected error message: {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_near_to_execute_near() {
+        // NEAR execute calls `near_sign_tx(ptr, seed, len)` which
+        // does internally `extract_ptr_with_type!(ptr, NearSignRequest)`
+        // — SIGSEGV on null. Test asserts the UREncodeResult is
+        // non-null (dispatcher routed to FFI which returned an error
+        // result). The seed path is exercised by L4 simulator tests.
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_NEAR_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_NEAR_SIGN_REQUEST, 12, "NEAR enum drift");
+    }
+
+    #[test]
     fn sign_ur_parse_dispatches_ton_to_parse_ton() {
         // TON parse is real (calls ton_parse_transaction which
         // dereferences ur_data via extract_ptr_with_type! — SIGSEGV
         // on null). Real path is exercised by L4 simulator tests
         // with fixture UR payloads. Here we only pin the dispatcher
         // shape by checking the constant value used.
-        assert_eq!(QR_TON_SIGN_REQUEST, 27);
+        assert_eq!(QR_TON_SIGN_REQUEST, 28);
     }
 
     #[test]
@@ -2879,7 +2986,7 @@ mod tests {
         // path is exercised by L4 simulator tests with fixture UR
         // payloads. Here we only pin the dispatcher shape by checking
         // the constant value used.
-        assert_eq!(QR_SUI_SIGN_REQUEST, 19);
+        assert_eq!(QR_SUI_SIGN_REQUEST, 20);
     }
 
     #[test]
@@ -2889,7 +2996,7 @@ mod tests {
         // Real path is exercised by L4 simulator tests with fixture
         // UR payloads. Here we only pin the dispatcher shape by
         // checking the constant value used.
-        assert_eq!(QR_ARWEAVE_SIGN_REQUEST, 25);
+        assert_eq!(QR_ARWEAVE_SIGN_REQUEST, 26);
     }
 
     #[test]
@@ -3000,7 +3107,7 @@ mod tests {
         // update in lock-step. Mirrors the xrp_root_xpub_enum_constant_matches_c_header
         // and eth_root_xpub_enum_constant_matches_c_header tests.
         assert_eq!(XPUB_TYPE_MONERO_PVK_0, 232);
-        assert_eq!(QR_XMR_TX_UNSIGNED, 31);
+        assert_eq!(QR_XMR_TX_UNSIGNED, 32);
     }
 
     // ── Phase B-L3-2 (BTC) dispatcher tripwires ────────────────────
@@ -3258,7 +3365,7 @@ mod tests {
     #[test]
     fn ada_enum_constant_matches_c_header() {
         // Pin the dispatcher constant against C enum drift.
-        assert_eq!(QR_CARDANO_SIGN_REQUEST, 12);
+        assert_eq!(QR_CARDANO_SIGN_REQUEST, 13);
         // XPUB_TYPE_ADA_0 is at enum-internal line 175
         // in src/crypto/account_public_info.h.
         assert_eq!(XPUB_TYPE_ADA_0, 173);
@@ -3266,10 +3373,10 @@ mod tests {
         // enumerated in cbindgen header. Pin all five together
         // so any reordering of the C enum trips one of these
         // assertions immediately.
-        assert_eq!(QR_CARDANO_SIGN_TX_HASH_REQUEST, 13);
-        assert_eq!(QR_CARDANO_SIGN_DATA_REQUEST, 14);
-        assert_eq!(QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST, 15);
-        assert_eq!(QR_CARDANO_SIGN_CIP8_DATA_REQUEST, 16);
+        assert_eq!(QR_CARDANO_SIGN_TX_HASH_REQUEST, 14);
+        assert_eq!(QR_CARDANO_SIGN_DATA_REQUEST, 15);
+        assert_eq!(QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST, 16);
+        assert_eq!(QR_CARDANO_SIGN_CIP8_DATA_REQUEST, 17);
     }
 
     // ── Phase B-L3-4 (ZEC / Zcash) dispatcher tripwires ───────────
@@ -3320,7 +3427,7 @@ mod tests {
     #[test]
     fn zec_enum_constant_matches_c_header() {
         // Pin the dispatcher constants against C enum drift.
-        assert_eq!(QR_ZCASH_PCZT, 29);
+        assert_eq!(QR_ZCASH_PCZT, 30);
         // ZCASH_UFVK_ENCRYPTED_0 at file line 246, XPUB_TYPE_BTC at
         // file line 16 → value = 246 - 16 - 1 + 0 = 229. Wait,
         // double-check: BTC is entry 1 (value 0) at file line 16.

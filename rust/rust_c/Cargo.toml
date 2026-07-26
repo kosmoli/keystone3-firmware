@@ -104,7 +104,7 @@ multi-coins = [
     "ethereum",
     "ltc",
     "doge",
-    # "near",  # Temporarily disabled
+    "near",  # KOSMO fork: enable NEAR (upstream keystones has it disabled per commit 1799e0a5)
     "solana",
     "stellar",
     "sui",
@@ -140,8 +140,8 @@ kosmo = ["multi-coins", "cypherpunk"]
 debug-kosmo = ["test_cmd", "use-allocator", "kosmo"]
 production-kosmo = ["use-allocator", "kosmo"]
 simulator-kosmo = ["simulator", "kosmo"]
-# make IDE happy
-default = ["simulator-multi-coins"]
+# make IDE happy — default to simulator-kosmo (NEAR enabled per fork decision)
+default = ["simulator-kosmo"]  # KOSMO fork: NEAR enabled (upstream keystones has it disabled)
 
 [dev-dependencies]
 keystore = { path = "../keystore" }

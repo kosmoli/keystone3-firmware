@@ -2648,15 +2648,26 @@ static int32_t ModelSignGeneric(KosmoRequestType reqType, void *urData,
 
 static int32_t ModelSignSolTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 SOL TX: route through sign_ur_execute dispatcher
+     * (→ execute_sol → solana_sign_tx) instead of direct FFI. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_SOL_TX, urData, solana_sign_tx);
+    void *result = sign_ur_execute(urData, 0, SolSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SOL_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 SOL MESSAGE: shares execute_sol with TX — the
+     * Rust dispatcher calls solana_sign_tx which handles both
+     * tx and message UR shapes (same auto-sniff pattern as TON
+     * tx/proof). */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    /* solana_sign_tx handles both tx and message in the current Rust API */
-    return ModelSignGeneric(KOSMO_REQ_SIGN_SOL_MESSAGE, urData, solana_sign_tx);
+    void *result = sign_ur_execute(urData, 0, SolSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SOL_MESSAGE, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen)
@@ -2719,14 +2730,31 @@ static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignAvaxTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 AVAX: route through sign_ur_execute dispatcher
+     * (→ execute_avax) instead of direct avax_sign FFI. Same pattern
+     * as TON: dispatcher takes (urData, 0, AvaxSignRequest), seed
+     * fetched Rust-side via fetch_seed(), notify uses the original
+     * KOSMO_REQ_SIGN_AVAX_TX so the frontend callback fires with
+     * the expected requestType. Inline (not ModelSignUrExecute)
+     * because ModelSignUrExecute hard-codes KOSMO_REQ_SIGN_UR_EXECUTE
+     * in its notify. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_AVAX_TX, urData, avax_sign);
+    void *result = sign_ur_execute(urData, 0, AvaxSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AVAX_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 SUI: route through sign_ur_execute dispatcher
+     * (→ execute_sui) instead of direct sui_sign_intent FFI.
+     * Same pattern as TON/AVAX. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_SUI_TX, urData, sui_sign_intent);
+    void *result = sign_ur_execute(urData, 0, SuiSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SUI_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen)
@@ -2749,8 +2777,14 @@ static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 ZCASH: route through sign_ur_execute dispatcher
+     * (→ execute_zec) instead of direct sign_zcash_tx FFI.
+     * Same pattern as TON/AVAX/SUI. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_ZCASH_TX, urData, sign_zcash_tx);
+    void *result = sign_ur_execute(urData, 0, ZcashPczt);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ZCASH_TX, result);
+    return KOSMO_OK;
 }
 
 /* ── Phase 6b: COSMOS, TRX, XRP, ETH Signing ────────── */

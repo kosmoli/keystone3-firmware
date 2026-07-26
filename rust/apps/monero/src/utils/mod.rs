@@ -211,8 +211,8 @@ pub fn generate_random_scalar<R: RngCore + CryptoRng>(rng: &mut R) -> Scalar {
 pub fn get_key_image_from_input(input: Input) -> Result<Keyimage> {
     match input {
         // Plan v11 §4.12: monero-oxide's CompressedPoint is a newtype with
-        // `to_bytes()` (returns [u8; 32]); serai's required `.compress()` →
-        // `.to_bytes()`. Adapt.
+        // a `to_bytes()` method (returns [u8; 32]) — no `.compress()`
+        // indirection needed.
         Input::ToKey { key_image, .. } => Ok(Keyimage::new(key_image.to_bytes())),
         _ => Err(MoneroError::UnsupportedInputType),
     }

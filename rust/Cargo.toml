@@ -121,14 +121,20 @@ minicbor = { version = "0.19", features = ["alloc"] }
 zeroize = { version = "1.8.2", default-features = false }
 # third party dependencies end
 
-# Plan v11 Stage B: monero-serai (KeystoneHQ/serai fork) sets
-# `[profile.release] panic = "unwind"` in its own workspace root, which
-# collides with rust_c's no_std panic_handler under use-allocator.
-# Per Cargo doc: "Profile settings defined in dependencies will be
-# ignored" — workspace root profiles override dep profiles. Forcing
-# panic = "abort" here eliminates the unwinding panic error in
-# debug-kosmo / production-kosmo builds that include cypherpunk/monero.
-# (See plan_v11 §4 / §8.5 for context.)
+# Plan v11 §3.4: panic = "abort" is required because rust_c links into a
+# no_std MH1903 firmware image (keystone3-firmware uses -C panic=abort
+# via CMake). Workspace `[profile.release/dev] panic = "abort"` ensures
+# all transitive deps (incl. monero-oxide / cuprate / curve25519-dalek
+# etc.) are compiled with abort on panic, matching the no_std runtime
+# which has no unwinder.
+#
+# Historical note: this was originally added in stage B to override
+# monero-serai's release workspace panic = "unwind". After the
+# monero-serai → monero-oxide migration (plan v11 §4.12, completed
+# 2026-07-26) the override is no longer strictly needed — monero-oxide
+# inherits abort from the workspace root — but we keep it explicit for
+# clarity and to defend against future transitive deps silently
+# re-introducing unwinding.
 [profile.release]
 panic = "abort"
 

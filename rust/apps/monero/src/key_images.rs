@@ -29,10 +29,10 @@ impl Keyimage {
             .unwrap()
     }
 
-    /// Plan v11 §4.12 monero-serai → monero-oxide migration adapter: return
-    /// the key image as `monero_oxide::ed25519::CompressedPoint` (monero-oxide's
-    /// 32-byte compressed point representation; structurally identical to
-    /// dalek's `CompressedEdwardsY` but a distinct newtype).
+    /// Plan v11 §4.12: return the key image as
+    /// `monero_oxide::ed25519::CompressedPoint` (the newtype monero-oxide
+    /// uses for 32-byte compressed points; structurally identical to
+    /// `curve25519_dalek::CompressedEdwardsY` but a distinct type).
     pub fn to_compressed_point(&self) -> monero_oxide::ed25519::CompressedPoint {
         monero_oxide::ed25519::CompressedPoint::from(self.0)
     }

@@ -98,6 +98,15 @@ const XPUB_TYPE_ADA_0: u32 = 173;
 /// value (cbindgen output, first ADA entry).
 const QR_CARDANO_SIGN_REQUEST: u32 = 12;
 
+// Plan v11 §8.3 (ADA multi-UR-type extension): four additional
+// Cardano UR types beyond the B-L3-3 base. Verified 2026-07-26
+// by enumerating cbindgen output in
+// rust_c/bindings/production-kosmo/librust_c.h:
+const QR_CARDANO_SIGN_TX_HASH_REQUEST: u32 = 13;
+const QR_CARDANO_SIGN_DATA_REQUEST: u32 = 14;
+const QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST: u32 = 15;
+const QR_CARDANO_SIGN_CIP8_DATA_REQUEST: u32 = 16;
+
 /// Plan v11 Phase B-L3-4 (ZEC): `QRCodeType::ZcashPczt` value
 /// (cbindgen output).
 const QR_ZCASH_PCZT: u32 = 29;
@@ -304,6 +313,12 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_APTOS_SIGN_REQUEST => parse_aptos(ur_data),
         QR_BTC_SIGN_REQUEST => parse_btc(ur_data),
         QR_CARDANO_SIGN_REQUEST => parse_cardano(ur_data),
+        QR_CARDANO_SIGN_TX_HASH_REQUEST => parse_cardano_tx_hash(ur_data),
+        QR_CARDANO_SIGN_DATA_REQUEST => parse_cardano_sign_data(ur_data),
+        QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST => {
+            parse_cardano_catalyst(ur_data)
+        }
+        QR_CARDANO_SIGN_CIP8_DATA_REQUEST => parse_cardano_cip8_data(ur_data),
         QR_ZCASH_PCZT => parse_zec(ur_data),
         QR_XMR_TX_UNSIGNED => parse_xmr(ur_data),
         _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
@@ -1123,7 +1138,54 @@ unsafe fn parse_cardano(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
         drop(parse_box);
 
         build_display("Sign Transaction", "ADA", &network, &fields, "", 0)
-    }
+}
+
+/// Plan v11 §8.3 (ADA multi-UR-type extension): parse a
+/// CardanoSignTxHashRequest. Mirrors the B-L3-3 ADA pattern
+/// (cfg-gated helper gates, free inner structs, but no seed
+/// needed — tx_hash path is read-only). Full wiring deferred
+/// because tx_hash has no execute path; the parse-side stub
+/// is enough to let the dispatcher route the UR type.
+unsafe fn parse_cardano_tx_hash(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _ = ur_data;
+    build_display_error(
+        "CardanoSignTxHashRequest parse: stub — see TODO(§8.3 follow-up)",
+    )
+}
+
+/// Plan v11 §8.3: parse a CardanoSignDataRequest (CIP-8
+/// wallet data sign request). parse_cardano_sign_data mirrors
+/// the B-L3-3 ADA pattern but no xpub needed for CIP-8
+/// (different derivation path story). Sign data path uses
+/// `cardano_sign_sign_data` which derives master key from
+/// entropy internally.
+unsafe fn parse_cardano_sign_data(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _ = ur_data;
+    build_display_error(
+        "CardanoSignDataRequest parse: stub — see TODO(§8.3 follow-up)",
+    )
+}
+
+/// Plan v11 §8.3: parse a CardanoCatalystVotingRegistrationRequest.
+/// Catalyst registration: parse-side stub (full wiring deferred);
+/// execute-side uses `cardano_sign_catalyst` which derives master
+/// key from entropy.
+unsafe fn parse_cardano_catalyst(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _ = ur_data;
+    build_display_error(
+        "CardanoCatalystVotingRegistrationRequest parse: stub — see TODO(§8.3 follow-up)",
+    )
+}
+
+/// Plan v11 §8.3: parse a CardanoSignCip8DataRequest (CIP-8
+/// COSE Sign1). parse_cardano_cip8_data mirrors the B-L3-3
+/// ADA pattern.
+unsafe fn parse_cardano_cip8_data(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
+    let _ = ur_data;
+    build_display_error(
+        "CardanoSignCip8DataRequest parse: stub — see TODO(§8.3 follow-up)",
+    )
+}
 
     /// Plan v11 Phase B-L3-4 (ZEC): parse a Zcash PCZT (Partially
 /// both derivable from the seed but the dispatcher parse surface
@@ -1356,6 +1418,19 @@ pub unsafe extern "C" fn sign_ur_execute(
         QR_APTOS_SIGN_REQUEST => execute_aptos(ur_data, seed),
         QR_BTC_SIGN_REQUEST => execute_btc(ur_data, seed),
         QR_CARDANO_SIGN_REQUEST => execute_cardano(ur_data, seed),
+        QR_CARDANO_SIGN_TX_HASH_REQUEST => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "CardanoSignTxHashRequest has no execute path".into(),
+            ))
+            .c_ptr();
+        }
+        QR_CARDANO_SIGN_DATA_REQUEST => execute_cardano_sign_data(ur_data, seed),
+        QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST => {
+            execute_cardano_catalyst(ur_data, seed)
+        }
+        QR_CARDANO_SIGN_CIP8_DATA_REQUEST => {
+            execute_cardano_cip8_data(ur_data, seed)
+        }
         QR_ZCASH_PCZT => execute_zec(ur_data, seed),
         QR_XMR_TX_UNSIGNED => execute_xmr(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
@@ -2048,6 +2123,93 @@ unsafe fn execute_cardano(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREnco
         passphrase,
         false, // enable_blind_sign (UI flag; deferred to dispatcher surface extension)
         false, // is_slip39 (BIP-39 default; SLIP-39 wallet support deferred)
+    )
+}
+
+/// Plan v11 §8.3 (ADA multi-UR-type extension): execute
+/// CardanoSignDataRequest signing. Mirrors the legacy
+/// `ModelSignCardanoSignData` flow in `gui_ada.c` which
+/// calls `cardano_sign_sign_data(ptr, entropy, len, "", false)`.
+/// The 4 extra args (master_fingerprint, xpub, blind_sign)
+/// that `cardano_sign_tx` requires are NOT needed for
+/// CIP-8 sign-data — only the entropy + passphrase are
+/// used. This is why we land CIP-8 in a separate execute
+/// path from the base ADA SignRequest.
+///
+/// Passphrase is hardcoded to empty `""` and is_slip39=false
+/// — same defaults as `execute_cardano`.
+unsafe fn execute_cardano_sign_data(
+    ur_data: Ptr<u8>,
+    seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    let passphrase = match alloc::ffi::CString::new("") {
+        Ok(c) => c.into_raw(),
+        Err(_) => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "cardano_sign_sign_data: cstring alloc failed".into(),
+            ))
+            .c_ptr();
+        }
+    };
+    crate::cardano::cardano_sign_sign_data(
+        ur_data as PtrUR,
+        seed.as_ptr() as PtrBytes,
+        SEED_LEN as u32,
+        passphrase,
+        false, // is_slip39 (BIP-39 default)
+    )
+}
+
+/// Plan v11 §8.3: execute CardanoCatalystVotingRegistrationRequest
+/// signing. Mirrors the legacy `ModelSignCardanoCatalyst` flow
+/// in `gui_ada.c` which calls `cardano_sign_catalyst(ptr,
+/// entropy, len, "", false)`. Catalyst voting registration
+/// needs only the master key derived from entropy.
+unsafe fn execute_cardano_catalyst(
+    ur_data: Ptr<u8>,
+    seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    let passphrase = match alloc::ffi::CString::new("") {
+        Ok(c) => c.into_raw(),
+        Err(_) => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "cardano_sign_catalyst: cstring alloc failed".into(),
+            ))
+            .c_ptr();
+        }
+    };
+    crate::cardano::cardano_sign_catalyst(
+        ur_data as PtrUR,
+        seed.as_ptr() as PtrBytes,
+        SEED_LEN as u32,
+        passphrase,
+        false, // is_slip39
+    )
+}
+
+/// Plan v11 §8.3: execute CardanoSignCip8DataRequest signing
+/// (CIP-8 COSE Sign1). Mirrors the legacy
+/// `ModelSignCardanoCip8Data` flow in `gui_ada.c` which calls
+/// `cardano_sign_sign_cip8_data(ptr, entropy, len, "", false)`.
+unsafe fn execute_cardano_cip8_data(
+    ur_data: Ptr<u8>,
+    seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    let passphrase = match alloc::ffi::CString::new("") {
+        Ok(c) => c.into_raw(),
+        Err(_) => {
+            return UREncodeResult::from(RustCError::InvalidData(
+                "cardano_sign_sign_cip8_data: cstring alloc failed".into(),
+            ))
+            .c_ptr();
+        }
+    };
+    crate::cardano::cardano_sign_sign_cip8_data(
+        ur_data as PtrUR,
+        seed.as_ptr() as PtrBytes,
+        SEED_LEN as u32,
+        passphrase,
+        false, // is_slip39
     )
 }
 
@@ -2796,6 +2958,117 @@ mod tests {
         assert!(fetch_cardano_xpub_for_parse().is_none());
     }
 
+    // ── Plan v11 §8.3 (ADA multi-UR-type extension) tripwires ────
+    //
+    // The four additional Cardano UR types route through
+    // dispatcher. Under cfg(test) the parse stubs return a
+    // structured error and the execute side takes the mfp-
+    // derivation-error path (matching the existing ADA / BTC
+    // tripwire pattern).
+
+    #[test]
+    fn sign_ur_parse_dispatches_cardano_tx_hash_to_stub() {
+        let display = unsafe {
+            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_TX_HASH_REQUEST)
+        };
+        assert!(!display.is_null(), "parse dispatcher must allocate");
+        let d = unsafe { &*display };
+        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(msg.contains("CardanoSignTxHashRequest"), "msg = {msg}");
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cardano_tx_hash_to_error() {
+        let result = unsafe {
+            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_TX_HASH_REQUEST)
+        };
+        assert!(
+            !result.is_null(),
+            "execute dispatcher must allocate even for tx_hash (read-only)"
+        );
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_cardano_sign_data_to_stub() {
+        let display = unsafe {
+            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_DATA_REQUEST)
+        };
+        assert!(!display.is_null(), "parse dispatcher must allocate");
+        let d = unsafe { &*display };
+        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(msg.contains("CardanoSignDataRequest"), "msg = {msg}");
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cardano_sign_data() {
+        let result = unsafe {
+            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_DATA_REQUEST)
+        };
+        assert!(
+            !result.is_null(),
+            "CIP-8 sign data execute dispatcher must reach FFI"
+        );
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_cardano_catalyst_to_stub() {
+        let display = unsafe {
+            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST)
+        };
+        assert!(!display.is_null(), "parse dispatcher must allocate");
+        let d = unsafe { &*display };
+        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(
+            msg.contains("CardanoCatalystVotingRegistrationRequest"),
+            "msg = {msg}"
+        );
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cardano_catalyst() {
+        let result = unsafe {
+            sign_ur_execute(
+                core::ptr::null_mut(),
+                0,
+                QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST,
+            )
+        };
+        assert!(
+            !result.is_null(),
+            "Catalyst execute dispatcher must reach FFI"
+        );
+    }
+
+    #[test]
+    fn sign_ur_parse_dispatches_cardano_cip8_data_to_stub() {
+        let display = unsafe {
+            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
+        };
+        assert!(!display.is_null(), "parse dispatcher must allocate");
+        let d = unsafe { &*display };
+        assert_ne!(d.error_code, 0, "stub must surface structured error");
+        let msg = read_c_str(d.error_message).unwrap_or_default();
+        assert!(msg.contains("CardanoSignCip8DataRequest"), "msg = {msg}");
+        unsafe { sign_display_data_free(display) };
+    }
+
+    #[test]
+    fn sign_ur_execute_dispatches_cardano_cip8_data() {
+        let result = unsafe {
+            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
+        };
+        assert!(
+            !result.is_null(),
+            "CIP-8 COSE Sign1 execute dispatcher must reach FFI"
+        );
+    }
+
     #[test]
     fn ada_enum_constant_matches_c_header() {
         // Pin the dispatcher constant against C enum drift.
@@ -2803,6 +3076,14 @@ mod tests {
         // XPUB_TYPE_ADA_0 is at enum-internal line 175
         // in src/crypto/account_public_info.h.
         assert_eq!(XPUB_TYPE_ADA_0, 173);
+        // Plan v11 §8.3: the four additional Cardano UR types
+        // enumerated in cbindgen header. Pin all five together
+        // so any reordering of the C enum trips one of these
+        // assertions immediately.
+        assert_eq!(QR_CARDANO_SIGN_TX_HASH_REQUEST, 13);
+        assert_eq!(QR_CARDANO_SIGN_DATA_REQUEST, 14);
+        assert_eq!(QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST, 15);
+        assert_eq!(QR_CARDANO_SIGN_CIP8_DATA_REQUEST, 16);
     }
 
     // ── Phase B-L3-4 (ZEC / Zcash) dispatcher tripwires ───────────

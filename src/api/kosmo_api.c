@@ -2661,14 +2661,35 @@ static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 TON: route through the unified dispatcher
+     * (sign_ur_execute → execute_ton) instead of the direct
+     * ton_sign_transaction FFI. The dispatcher's execute_ton
+     * auto-sniffs tx vs proof via the same tx→proof fallback
+     * the keystone upstream uses, so a single entry point
+     * covers both UR flavours. urDataLen is unused by the
+     * Rust dispatcher surface (see sign_ur.rs:1543) so we
+     * pass 0. Seed never crosses the FFI boundary — fetched
+     * Rust-side via fetch_seed() (plan v11 §4.1 invariant).
+     *
+     * We can't reuse ModelSignUrExecute because it hard-codes
+     * KOSMO_REQ_SIGN_UR_EXECUTE in the notify. Inline the
+     * dispatch + notify here so the frontend still receives
+     * KOSMO_REQ_SIGN_TON_TX / KOSMO_REQ_SIGN_TON_PROOF. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_TON_TX, urData, ton_sign_transaction);
+    void *result = sign_ur_execute(urData, 0, TonSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TON_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 1 TON proof: same dispatcher path as TX. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-    return ModelSignGeneric(KOSMO_REQ_SIGN_TON_PROOF, urData, ton_sign_proof);
+    void *result = sign_ur_execute(urData, 0, TonSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TON_PROOF, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen)

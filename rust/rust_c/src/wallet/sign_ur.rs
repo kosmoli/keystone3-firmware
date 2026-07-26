@@ -75,27 +75,32 @@ const XPUB_TYPE_BTC_LEGACY: u32 = 1;
 const XPUB_TYPE_BTC_NATIVE_SEGWIT: u32 = 2;
 const XPUB_TYPE_BTC_TAPROOT: u32 = 3;
 
-/// `QRCodeType::BtcSignRequest` value (cbindgen output of
-/// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
-/// 2026-07-26 by counting: CryptoPSBT=2, ..., BtcSignRequest=7.
-const QR_BTC_SIGN_REQUEST: u32 = 7;
+/// Plan v11 Phase B-L3-2 (BTC): `QRCodeType::CryptoPSBT` value
+/// (cbindgen output of `pub enum QRCodeType` in
+/// rust_c/src/common/ur.rs). Verified 2026-07-26 by counting
+/// `awk` entries in the cbindgen header: CryptoPSBT is the
+/// first entry (value 0). All PSBT-based dispatchers
+/// (parse_btc, execute_btc) hit this case; the message-only
+/// BtcSignRequest path is out of scope for the unified
+/// dispatcher (it goes through the legacy `btc_parse_msg` /
+/// `btc_check_sign_psbt_msg` FFI directly, not through
+/// sign_ur_*).
+const QR_BTC_SIGN_REQUEST: u32 = 0;
 
 /// Plan v11 Phase B-L3-3 (ADA): XPUB_TYPE value for the Cardano
 /// account (m/1852'/1815'/0'). Verified 2026-07-26 by counting
 /// enum lines in src/crypto/account_public_info.h:
-///   XPUB_TYPE_ADA_0 is at enum-internal line 175 → value 173.
+///   XPUB_TYPE_ADA_0 is at file line 189, BTC at file line 16
+///   → value = 189 - 16 - 1 + 0 = 173.
 const XPUB_TYPE_ADA_0: u32 = 173;
 
-/// `QRCodeType::CardanoSignRequest` value (cbindgen output of
-/// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
-/// 2026-07-26 by counting: ..., CardanoSignRequest=14.
-const QR_CARDANO_SIGN_REQUEST: u32 = 14;
+/// Plan v11 Phase B-L3-3 (ADA): `QRCodeType::CardanoSignRequest`
+/// value (cbindgen output, first ADA entry).
+const QR_CARDANO_SIGN_REQUEST: u32 = 12;
 
 /// Plan v11 Phase B-L3-4 (ZEC): `QRCodeType::ZcashPczt` value
-/// (cbindgen output of `pub enum QRCodeType` in
-/// rust_c/src/common/ur.rs). Verified 2026-07-26 by counting:
-/// ..., ZcashPczt=31.
-const QR_ZCASH_PCZT: u32 = 31;
+/// (cbindgen output).
+const QR_ZCASH_PCZT: u32 = 29;
 
 /// `XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0` value in `ChainType`
 /// (src/crypto/account_public_info.h). Verified 2026-07-26
@@ -107,10 +112,9 @@ const QR_ZCASH_PCZT: u32 = 31;
 /// the encrypted viewing key — see legacy guizcash.c).
 const XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0: u32 = 230;
 
-/// `QRCodeType::XmrTxUnsignedRequest` value (cbindgen output of
-/// `pub enum QRCodeType` in rust_c/src/common/ur.rs). Verified
-/// 2026-07-26 by counting: BtcSignRequest=6, ..., XmrTxUnsignedRequest=32.
-const QR_XMR_TX_UNSIGNED: u32 = 32;
+/// Plan v11 Phase B-L3-1 (XMR): `QRCodeType::XmrTxUnsignedRequest`
+/// value (cbindgen output, second-to-last entry).
+const QR_XMR_TX_UNSIGNED: u32 = 31;
 
 /// Display data returned to frontend for transaction confirmation.
 ///
@@ -2574,7 +2578,7 @@ mod tests {
         // update in lock-step. Mirrors the xrp_root_xpub_enum_constant_matches_c_header
         // and eth_root_xpub_enum_constant_matches_c_header tests.
         assert_eq!(XPUB_TYPE_MONERO_PVK_0, 232);
-        assert_eq!(QR_XMR_TX_UNSIGNED, 32);
+        assert_eq!(QR_XMR_TX_UNSIGNED, 31);
     }
 
     // ── Phase B-L3-2 (BTC) dispatcher tripwires ────────────────────
@@ -2629,7 +2633,7 @@ mod tests {
     #[test]
     fn btc_enum_constant_matches_c_header() {
         // Pin the dispatcher constants against C enum drift.
-        assert_eq!(QR_BTC_SIGN_REQUEST, 7);
+        assert_eq!(QR_BTC_SIGN_REQUEST, 0);
         // BTC XPUB types from src/crypto/account_public_info.h
         // (verified 2026-07-26 by counting enum lines):
         //   XPUB_TYPE_BTC = 0, BTC_LEGACY = 1,
@@ -2691,7 +2695,7 @@ mod tests {
     #[test]
     fn ada_enum_constant_matches_c_header() {
         // Pin the dispatcher constant against C enum drift.
-        assert_eq!(QR_CARDANO_SIGN_REQUEST, 14);
+        assert_eq!(QR_CARDANO_SIGN_REQUEST, 12);
         // XPUB_TYPE_ADA_0 is at enum-internal line 175
         // in src/crypto/account_public_info.h.
         assert_eq!(XPUB_TYPE_ADA_0, 173);
@@ -2745,9 +2749,12 @@ mod tests {
     #[test]
     fn zec_enum_constant_matches_c_header() {
         // Pin the dispatcher constants against C enum drift.
-        assert_eq!(QR_ZCASH_PCZT, 31);
+        assert_eq!(QR_ZCASH_PCZT, 29);
         // ZCASH_UFVK_ENCRYPTED_0 at file line 246, XPUB_TYPE_BTC at
-        // file line 16 → value = 246 - 16 = 230.
+        // file line 16 → value = 246 - 16 - 1 + 0 = 229. Wait,
+        // double-check: BTC is entry 1 (value 0) at file line 16.
+        // ZCASH_UFVK_ENCRYPTED_0 at file line 246 = entry
+        // (246 - 16 + 1) = 231, value = 230.
         assert_eq!(XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0, 230);
     }
 

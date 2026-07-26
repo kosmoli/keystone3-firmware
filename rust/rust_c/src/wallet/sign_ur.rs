@@ -479,6 +479,75 @@ fn fetch_cardano_xpub_for_parse() -> Option<PtrString> {
     None
 }
 
+/// Plan v11 Phase B-L3-2 follow-up (parse path): fetch the four
+/// BTC derivation-path xpubs that `btc_check_psbt` expects as
+/// the `public_keys` argument (size = 4, for legacy / nested
+/// segwit / native segwit / taproot).
+///
+/// Each xpub is returned as a `PtrString` (heap-allocated CString
+/// from C side). We bundle them into a heap-allocated
+/// `CSliceFFI<ExtendedPublicKey>` (path + xpub pairs) which the
+/// C-side FFI takes ownership of — the slice, its inner pointers
+/// and their backing CStrings all leak out of the Rust heap into
+/// the FFI.
+///
+/// Return: `Some(slice_ptr)` when all four xpub fetches succeed;
+/// `None` on any failure (caller treats this as "xpub unavailable").
+#[cfg(not(test))]
+fn fetch_btc_4xpubs_for_parse(
+) -> Option<*mut crate::common::ffi::CSliceFFI<crate::common::structs::ExtendedPublicKey>> {
+    use crate::common::ffi::CSliceFFI;
+    use crate::common::structs::ExtendedPublicKey;
+    use alloc::ffi::CString;
+
+    let types = [
+        (XPUB_TYPE_BTC, "m/49'/0'/0'"),
+        (XPUB_TYPE_BTC_LEGACY, "m/44'/0'/0'"),
+        (XPUB_TYPE_BTC_NATIVE_SEGWIT, "m/84'/0'/0'"),
+        (XPUB_TYPE_BTC_TAPROOT, "m/86'/0'/0'"),
+    ];
+
+    let mut entries: Vec<ExtendedPublicKey> = Vec::with_capacity(4);
+    for (xpub_type, path) in types.iter() {
+        let xpub_ptr = unsafe { GetCurrentAccountPublicKey(*xpub_type) };
+        if xpub_ptr.is_null() {
+            return None;
+        }
+        let xpub_cstr = unsafe { crate::common::utils::recover_c_char(xpub_ptr) };
+        // Leak: the FFI takes ownership of these CStrings.
+        let xpub_owned = match CString::new(xpub_cstr) {
+            Ok(c) => c.into_raw(),
+            Err(_) => return None,
+        };
+        let path_owned = match CString::new(*path) {
+            Ok(c) => c.into_raw(),
+            Err(_) => return None,
+        };
+        entries.push(ExtendedPublicKey {
+            path: path_owned,
+            xpub: xpub_owned,
+        });
+    }
+
+    let data_ptr = if entries.is_empty() {
+        core::ptr::null_mut()
+    } else {
+        entries.as_mut_ptr()
+    };
+    // Leak: the FFI takes ownership of this slice.
+    let slice_box = Box::new(CSliceFFI {
+        data: data_ptr,
+        size: entries.len(),
+    });
+    Some(Box::into_raw(slice_box))
+}
+
+#[cfg(test)]
+fn fetch_btc_4xpubs_for_parse(
+) -> Option<*mut crate::common::ffi::CSliceFFI<crate::common::structs::ExtendedPublicKey>> {
+    None
+}
+
 /// Plan v11 Phase B-L3-4 (ZEC): fetch the encrypted Zcash UFVK
 /// string for the dispatcher to feed into `parse_zcash_tx_*`
 /// and `check_zcash_tx_*`. Mirrors the legacy
@@ -498,6 +567,72 @@ fn fetch_zec_ufvk_for_parse() -> Option<PtrString> {
 fn fetch_zec_ufvk_for_parse() -> Option<PtrString> {
     // Test fixture: return None so parse_zec exercises the
     // "ufvk unavailable" error branch.
+    None
+}
+
+/// Plan v11 §8.1 follow-up (parse path): derive the 32-byte
+/// Zcash seed fingerprint from the wallet seed, to feed into
+/// `parse_zcash_tx_*` / `check_zcash_tx_*`. Mirrors the legacy
+/// `ModelSignZcash` flow which called
+/// `calculate_zcash_seed_fingerprint(seed, 64)`.
+///
+/// The function takes a borrow of the seed (instead of self-
+/// fetching it) so the dispatcher-side seed lifetime stays
+/// identical to the `fetch_seed` pattern in §4.1 — seed never
+/// crosses an FFI boundary other than the FFI call itself.
+///
+/// Return: `Some([u8; 32])` when fingerprint derivation
+/// succeeds, `None` otherwise (caller treats this as "fingerprint
+/// unavailable").
+#[cfg(not(test))]
+fn fetch_zec_seed_fingerprint_for_parse(seed: &[u8; SEED_LEN]) -> Option<[u8; 32]> {
+    use crate::common::free::free_simple_response_u8;
+    let resp = unsafe {
+        crate::zcash::calculate_zcash_seed_fingerprint(
+            seed.as_ptr() as PtrBytes,
+            SEED_LEN as uint32_t,
+        )
+    };
+    if resp.is_null() {
+        return None;
+    }
+    // SimpleResponse<u8>: data = *mut u8, error_code, error_message.
+    // If error_code != 0, the data pointer may be null or stale —
+    // bail out as "unavailable" so the parse stage surfaces a
+    // structured error.
+    let error_code = unsafe { (*resp).error_code };
+    if error_code != 0 {
+        unsafe { free_simple_response_u8(resp) };
+        return None;
+    }
+    let data_ptr = unsafe { (*resp).data };
+    if data_ptr.is_null() {
+        unsafe { free_simple_response_u8(resp) };
+        return None;
+    }
+    // The fingerprint is exactly 32 bytes per the FFI contract.
+    // The FFI declaration is `*mut SimpleResponse<u8>` but the
+    // C-side `calculate_zcash_seed_fingerprint` actually returns a
+    // Box<[u8; 32]> cast to *mut u8 — the data pointer points at
+    // an inline 32-byte array. We re-interpret the pointer to
+    // read it back as the original array shape.
+    let fp_array_ptr = data_ptr as *mut [u8; 32];
+    let fp_bytes: [u8; 32] = unsafe { core::ptr::read(fp_array_ptr) };
+    // Free the SimpleResponse wrapper (without freeing the inner
+    // u8 box, which we've consumed via ptr::read — the underlying
+    // allocation is leaked because the C side cast a Box<[u8;32]>
+    // to *mut u8, leaving the dispatcher responsible for the
+    // pointer's actual size).
+    let resp_box = unsafe { Box::from_raw(resp) };
+    // Drop the wrapper without dropping `data` (already read).
+    let _ = resp_box;
+    Some(fp_bytes)
+}
+
+#[cfg(test)]
+fn fetch_zec_seed_fingerprint_for_parse(_seed: &[u8; SEED_LEN]) -> Option<[u8; 32]> {
+    // Test fixture: return None so parse_zec exercises the
+    // "seed-fingerprint unavailable" error branch.
     None
 }
 
@@ -795,41 +930,195 @@ unsafe fn parse_btc(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
 /// Same shape as parse_btc: stub under cargo test, surfaces a
 /// structured "xpub unavailable" error.
 unsafe fn parse_cardano(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _xpub = match fetch_cardano_xpub_for_parse() {
+    // Helper gates: each helper returns None under cfg(test), so
+    // cargo test exercises the "unlocked wallet required" path
+    // (matches the existing tripwire contract).
+    let xpub_ptr = match fetch_cardano_xpub_for_parse() {
         Some(p) => p,
         None => {
             return build_display_error(
-                "ADA parse requires an unlocked wallet (B-L3-3 stub: parse path deferred)",
+                "ADA parse requires unlocked wallet (xpub unavailable)",
             );
         }
     };
-    let _ = ur_data;
-    // TODO(B-L3-3 follow-up): real parse_cardano should call
-    //   cardano_parse_tx(ptr, mfp_ptr, xpub_ptr)
-    // and flatten the resulting DisplayCardanoTx (10+ fields)
-    // into SignDisplayData fields block. Deferred because the
-    // dispatcher parse surface has no mfp arg yet.
-    build_display_error("ADA parse: stub — see TODO(B-L3-3 follow-up)")
-}
+    let seed = match fetch_seed() {
+        Some(s) => s,
+        None => {
+            return build_display_error(
+                "ADA parse requires unlocked wallet (seed unavailable)",
+            );
+        }
+    };
+    let mfp = match get_master_fingerprint_by_seed(&seed) {
+        Ok(f) => f.to_bytes(),
+        Err(_) => {
+            return build_display_error("ADA parse: mfp derivation failed");
+        }
+    };
 
-/// Plan v11 Phase B-L3-4 (ZEC): parse a Zcash PCZT (Partially
-/// Constructed Transaction). `parse_zcash_tx_cypherpunk` requires
-/// ufvk_text (decrypted viewing key) + 32-byte seed_fingerprint,
+    // Real wiring: cardano_parse_tx(ptr, mfp_ptr, xpub_ptr) ->
+    // TransactionParseResult<DisplayCardanoTx>. The parse result
+    // has a cbindgen-exported free function generated by
+    // `make_free_method!(TransactionParseResult<DisplayCardanoTx>)`
+    // in rust_c/src/cardano/structs.rs — call it once we're done
+    // reading fields to release both the wrapper and the inner
+    // DisplayCardanoTx tree.
+    let parse_ptr = crate::cardano::cardano_parse_tx(
+        ur_data as PtrUR,
+        mfp.as_ptr() as PtrBytes,
+        xpub_ptr,
+    );
+    if parse_ptr.is_null() {
+        return build_display_error("cardano_parse_tx returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    let error_code = parse_box.error_code;
+    if error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        // Drop the parse result (releases error_message + box).
+        drop(parse_box);
+        return build_display_error(&format!("cardano_parse_tx failed: {msg}"));
+    }
+    let data_ptr = parse_box.data;
+    if data_ptr.is_null() {
+        drop(parse_box);
+        return build_display_error("cardano_parse_tx: null data with error_code=0");
+    }
+    let display = unsafe { &*data_ptr };
+
+    // Flatten DisplayCardanoTx into unified fields block.
+    let network = crate::common::utils::recover_c_char(display.network);
+    let fee = crate::common::utils::recover_c_char(display.fee);
+    let total_input = crate::common::utils::recover_c_char(display.total_input);
+    let total_output = crate::common::utils::recover_c_char(display.total_output);
+    let from_count = if display.from.is_null() {
+        0
+    } else {
+        unsafe { (*display.from).size }
+    };
+    let to_count = if display.to.is_null() {
+        0
+    } else {
+        unsafe { (*display.to).size }
+    };
+    let has_auxiliary = !display.auxiliary_data.is_null();
+    let has_certificates = !display.certificates.is_null()
+        && unsafe { (*display.certificates).size } > 0;
+    let has_withdrawals = !display.withdrawals.is_null()
+        && unsafe { (*display.withdrawals).size } > 0;
+    let fields = format!(
+        "Network={network}\n\
+         From={from_count}\nTo={to_count}\n\
+         Input={total_input}\nOutput={total_output}\nFee={fee}\n\
+         HasAuxiliary={has_auxiliary}\nHasCertificates={has_certificates}\nHasWithdrawals={has_withdrawals}"
+    );
+
+    // Free inner DisplayCardanoTx (VecFFI fields, CStrings) then
+        // free the TransactionParseResult wrapper (error_message).
+        unsafe { crate::common::free::Free::free(&*display) };
+        drop(parse_box);
+
+        build_display("Sign Transaction", "ADA", &network, &fields, "", 0)
+    }
+
+    /// Plan v11 Phase B-L3-4 (ZEC): parse a Zcash PCZT (Partially
 /// both derivable from the seed but the dispatcher parse surface
 /// doesn't carry a seed arg yet — same shape as parse_btc /
 /// parse_cardano. Stub under cargo test, surfaces a structured
 /// "ufvk unavailable" error.
 unsafe fn parse_zec(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
-    let _ufvk = match fetch_zec_ufvk_for_parse() {
+    // Helper gates: each helper returns None under cfg(test), so
+    // cargo test exercises the "unlocked wallet required" path
+    // (matches the existing tripwire contract).
+    let ufvk_ptr = match fetch_zec_ufvk_for_parse() {
         Some(p) => p,
         None => {
             return build_display_error(
-                "ZEC parse requires an unlocked wallet (B-L3-4 stub: parse path deferred)",
+                "ZEC parse requires unlocked wallet (ufvk unavailable)",
             );
         }
     };
-    let _ = ur_data;
-    build_display_error("ZEC parse: stub — see TODO(B-L3-4 follow-up)")
+    let seed = match fetch_seed() {
+        Some(s) => s,
+        None => {
+            return build_display_error(
+                "ZEC parse requires unlocked wallet (seed unavailable)",
+            );
+        }
+    };
+    let fingerprint = match fetch_zec_seed_fingerprint_for_parse(&seed) {
+        Some(fp) => fp,
+        None => {
+            return build_display_error(
+                "ZEC parse: seed-fingerprint derivation failed",
+            );
+        }
+    };
+
+    // Real wiring: parse_zcash_tx_cypherpunk(tx, ufvk, seed_fp)
+    // -> TransactionParseResult<DisplayPczt>. The PCZT has
+    // transparent + orchard bundles plus total/fee + has_sapling.
+    let parse_ptr = crate::zcash::parse_zcash_tx_cypherpunk(
+        ur_data as PtrUR,
+        ufvk_ptr,
+        fingerprint.as_ptr() as PtrBytes,
+    );
+    if parse_ptr.is_null() {
+        return build_display_error("parse_zcash_tx_cypherpunk returned null");
+    }
+    let parse_box = unsafe { Box::from_raw(parse_ptr) };
+    let error_code = parse_box.error_code;
+    if error_code != 0 {
+        let msg = crate::common::utils::recover_c_char(parse_box.error_message);
+        drop(parse_box);
+        return build_display_error(&format!(
+            "parse_zcash_tx_cypherpunk failed: {msg}"
+        ));
+    }
+    let data_ptr = parse_box.data;
+    if data_ptr.is_null() {
+        drop(parse_box);
+        return build_display_error(
+            "parse_zcash_tx_cypherpunk: null data with error_code=0",
+        );
+    }
+    let display = unsafe { &*data_ptr };
+
+    // Flatten DisplayPczt into unified fields block. PCZT has
+    // transparent + orchard bundles (VecFFI<DisplayFrom/To>),
+    // total + fee strings, and has_sapling flag.
+    let total = crate::common::utils::recover_c_char(display.total_transfer_value);
+    let fee = crate::common::utils::recover_c_char(display.fee_value);
+    let has_sapling = display.has_sapling;
+    let transparent_count = if display.transparent.is_null() {
+        0
+    } else {
+        unsafe { (*(*display.transparent).from).size }
+    };
+    let transparent_to_count = if display.transparent.is_null() {
+        0
+    } else {
+        unsafe { (*(*display.transparent).to).size }
+    };
+    let orchard_count = if display.orchard.is_null() {
+        0
+    } else {
+        unsafe { (*(*display.orchard).from).size }
+    };
+    let fields = format!(
+        "Network=mainnet\n\
+         TotalTransfer={total}\nFee={fee}\n\
+         HasSapling={has_sapling}\n\
+         TransparentInputs={transparent_count}\nTransparentOutputs={transparent_to_count}\n\
+         OrchardInputs={orchard_count}"
+    );
+
+    // Free inner DisplayPczt tree (transparent + orchard bundles)
+    // then free the TransactionParseResult wrapper.
+    unsafe { crate::common::free::Free::free(&*display) };
+    drop(parse_box);
+
+    build_display("Sign Transaction", "ZEC", "mainnet", &fields, "", 0)
 }
 
 /// Plan v11 Phase B-L3-1 (XMR): parse Monero unsigned transaction.
@@ -2360,5 +2649,25 @@ mod tests {
         // ZCASH_UFVK_ENCRYPTED_0 at file line 246, XPUB_TYPE_BTC at
         // file line 16 → value = 246 - 16 = 230.
         assert_eq!(XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0, 230);
+    }
+
+    // ── Plan v11 §8.1 (B-L3 parse path follow-up) tripwires ────
+    //
+    // Validates that the two new helpers added in this commit
+    // behave correctly under cfg(test). Both must return None so
+    // parse_btc / parse_cardano / parse_zec exercise the
+    // "unlocked wallet required" error branch.
+
+    #[test]
+    fn fetch_btc_4xpubs_returns_none_under_test() {
+        assert!(fetch_btc_4xpubs_for_parse().is_none());
+    }
+
+    #[test]
+    fn fetch_zec_seed_fingerprint_returns_none_under_test() {
+        // cfg(test) returns None unconditionally; passing a zero
+        // seed is fine since the helper never reads it.
+        let zero_seed = [0u8; SEED_LEN];
+        assert!(fetch_zec_seed_fingerprint_for_parse(&zero_seed).is_none());
     }
 }

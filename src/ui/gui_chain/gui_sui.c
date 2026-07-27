@@ -265,9 +265,11 @@ void GetSuiDetail(void *indata, void *param, uint32_t maxLen)
 UREncodeResult *GuiGetSuiSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: SUI Tx + Hash use different urTypes (SuiSignRequest vs
+     * SuiSignHashRequest) — dispatcher routes by ur_type. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_SUI_TX,
-        .sign_sui_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = SuiSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -277,8 +279,8 @@ UREncodeResult *GuiGetSuiSignHashQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_SUI_HASH,
-        .sign_sui_hash = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = SuiSignHashRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

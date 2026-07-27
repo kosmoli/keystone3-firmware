@@ -630,9 +630,10 @@ UREncodeResult *GuiGetCosmosSignQrCodeData(void)
 {
     void *data = GetCosmosUrData();
     QRCodeType urType = GetCosmosUrType();
+    /* §8.6 Phase 3: dispatcher routes Cosmos/Evm via ur_type. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_COSMOS_TX,
-        .sign_cosmos_tx = { .urData = data, .urType = (uint32_t)urType },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = (uint32_t)urType },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

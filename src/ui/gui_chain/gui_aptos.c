@@ -83,8 +83,8 @@ UREncodeResult *GuiGetAptosSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_APTOS_TX,
-        .sign_aptos_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = AptosSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

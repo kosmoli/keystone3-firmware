@@ -131,8 +131,8 @@ UREncodeResult *GuiGetMoneroKeyimagesQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_XMR_KEYIMAGE,
-        .sign_xmr_keyimage = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = XmrOutputSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -142,8 +142,8 @@ UREncodeResult *GuiGetMoneroSignedTransactionQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_XMR_TX,
-        .sign_xmr_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = XmrTxUnsignedRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

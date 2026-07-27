@@ -45,9 +45,15 @@ void GuiSetTonUrData(URParseResult *urResult, URParseMultiResult *urMultiResult,
 UREncodeResult *GuiGetTonSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: route through KOSMO_REQ_SIGN_UR_EXECUTE.
+     * Ton dispatcher (sign_ur_execute → execute_ton) auto-sniffs
+     * Tx vs Proof by trying ton_sign_transaction first, falling back
+     * to ton_sign_proof on parse failure. Frontend no longer needs
+     * to branch on g_viewType — the union collapses to
+     * { urData, urDataLen, urType } and the Rust side decides. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_TON_TX,
-        .sign_ton_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = TonSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -56,9 +62,10 @@ UREncodeResult *GuiGetTonSignQrCodeData(void)
 UREncodeResult *GuiGetTonProofSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: same UR_EXECUTE path — execute_ton auto-sniffs. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_TON_PROOF,
-        .sign_ton_proof = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = TonSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

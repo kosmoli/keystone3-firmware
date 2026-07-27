@@ -34,8 +34,8 @@ UREncodeResult *GuiGetAvaxSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_AVAX_TX,
-        .sign_avax_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = AvaxSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -46,8 +46,8 @@ UREncodeResult *GuiGetAvaxSignUrDataUnlimited(void)
     /* Unlimited variant uses same backend path — avax_sign handles both */
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_AVAX_TX,
-        .sign_avax_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = AvaxSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

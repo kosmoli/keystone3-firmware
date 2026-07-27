@@ -49,9 +49,10 @@ void GuiSetSolUrData(URParseResult *urResult, URParseMultiResult *urMultiResult,
 UREncodeResult *GuiGetSolSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: SOL Tx + Message share dispatcher arm SolSignRequest. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_SOL_TX,
-        .sign_sol_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = SolSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

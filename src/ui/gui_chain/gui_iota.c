@@ -86,8 +86,8 @@ UREncodeResult *GuiGetIotaSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_IOTA_TX,
-        .sign_iota_tx = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = IotaSignRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -192,8 +192,8 @@ UREncodeResult *GuiGetIotaSignHashQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_IOTA_HASH,
-        .sign_iota_hash = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = IotaSignHashRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

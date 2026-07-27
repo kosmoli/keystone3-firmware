@@ -643,9 +643,10 @@ void *GetAdaWithdrawalsData(uint8_t *row, uint8_t *col, void *param)
 UREncodeResult *GuiGetAdaSignCatalystVotingRegistrationQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: ADA Catalyst uses CardanoCatalystVotingRegistrationRequest. */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_ADA_CATALYST,
-        .sign_ada_catalyst = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = CardanoCatalystVotingRegistrationRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -654,9 +655,12 @@ UREncodeResult *GuiGetAdaSignCatalystVotingRegistrationQrCodeData(void)
 UREncodeResult *GuiGetAdaSignSignDataQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* §8.6 Phase 3: ADA SignData / CIP-8 share CardanoSignDataRequest
+     * (dispatcher auto-routes CIP-8 vs CIP-30 by parsing UR payload
+     * internally). */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_ADA_SIGN_DATA,
-        .sign_ada_sign_data = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = CardanoSignDataRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;
@@ -665,9 +669,11 @@ UREncodeResult *GuiGetAdaSignSignDataQrCodeData(void)
 UREncodeResult *GuiGetAdaSignSignCip8DataQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
+    /* CIP-8 routes through CardanoSignCip8DataRequest (separate arm
+     * from CardanoSignDataRequest). */
     KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_ADA_SIGN_DATA,
-        .sign_ada_sign_data = { .urData = data },
+        .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+        .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = CardanoSignCip8DataRequest },
     };
     KosmoApi_Request(&req, NULL);
     return NULL;

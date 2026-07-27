@@ -238,23 +238,6 @@ pub unsafe extern "C" fn derive_bip32_ed25519_extended_pubkey(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn k1_sign_message_hash_by_private_key(
-    private_key: PtrBytes,
-    message_hash: PtrBytes,
-) -> *mut SimpleResponse<c_char> {
-    let private_key_bytes = extract_array!(private_key, u8, 32);
-    let message_hash_bytes = extract_array!(message_hash, u8, 32);
-    let signature = keystore::algorithms::secp256k1::sign_message_hash_by_private_key(
-        message_hash_bytes,
-        private_key_bytes,
-    );
-    match signature {
-        Ok(result) => SimpleResponse::success(convert_c_char(hex::encode(result))).simple_c_ptr(),
-        Err(e) => SimpleResponse::from(e).simple_c_ptr(),
-    }
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn k1_verify_signature(
     signature: PtrBytes,
     message_hash: PtrBytes,

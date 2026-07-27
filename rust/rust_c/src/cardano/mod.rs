@@ -504,26 +504,6 @@ pub unsafe extern "C" fn cardano_parse_tx(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn cardano_sign_catalyst_with_ledger_bitbox02(
-    ptr: PtrUR,
-    mnemonic: PtrString,
-    passphrase: PtrString,
-) -> PtrT<UREncodeResult> {
-    let mnemonic = recover_c_char(mnemonic);
-    let passphrase = recover_c_char(passphrase);
-    let master_key =
-        keystore::algorithms::ed25519::bip32_ed25519::get_ledger_bitbox02_master_key_by_mnemonic(
-            passphrase.as_bytes(),
-            mnemonic,
-        );
-
-    match master_key {
-        Ok(master_key) => cardano_sign_catalyst_by_icarus(ptr, master_key),
-        Err(e) => UREncodeResult::from(e).c_ptr(),
-    }
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn cardano_sign_catalyst(
     ptr: PtrUR,
     entropy: PtrBytes,
@@ -587,46 +567,6 @@ unsafe fn cardano_sign_catalyst_by_icarus(
             )
         },
     )
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn cardano_sign_sign_data_with_ledger_bitbox02(
-    ptr: PtrUR,
-    mnemonic: PtrString,
-    passphrase: PtrString,
-) -> PtrT<UREncodeResult> {
-    let mnemonic = recover_c_char(mnemonic);
-    let passphrase = recover_c_char(passphrase);
-    let master_key =
-        keystore::algorithms::ed25519::bip32_ed25519::get_ledger_bitbox02_master_key_by_mnemonic(
-            passphrase.as_bytes(),
-            mnemonic,
-        );
-
-    match master_key {
-        Ok(master_key) => cardano_sign_sign_data_by_icarus(ptr, master_key),
-        Err(e) => UREncodeResult::from(e).c_ptr(),
-    }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn cardano_sign_sign_cip8_data_with_ledger_bitbox02(
-    ptr: PtrUR,
-    mnemonic: PtrString,
-    passphrase: PtrString,
-) -> PtrT<UREncodeResult> {
-    let mnemonic = recover_c_char(mnemonic);
-    let passphrase = recover_c_char(passphrase);
-    let master_key =
-        keystore::algorithms::ed25519::bip32_ed25519::get_ledger_bitbox02_master_key_by_mnemonic(
-            passphrase.as_bytes(),
-            mnemonic,
-        );
-
-    match master_key {
-        Ok(master_key) => cardano_sign_sign_cip8_data_by_icarus(ptr, master_key),
-        Err(e) => UREncodeResult::from(e).c_ptr(),
-    }
 }
 
 #[no_mangle]

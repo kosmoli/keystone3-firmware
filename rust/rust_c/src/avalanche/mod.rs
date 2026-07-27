@@ -11,7 +11,7 @@ use crate::common::{
     ffi::CSliceFFI,
     structs::{ExtendedPublicKey, TransactionCheckResult, TransactionParseResult},
     types::{PtrBytes, PtrT, PtrUR},
-    ur::{UREncodeResult, FRAGMENT_MAX_LENGTH_DEFAULT, FRAGMENT_UNLIMITED_LENGTH},
+    ur::UREncodeResult,
     utils::{recover_c_array, recover_c_char},
 };
 use crate::{extract_array, extract_ptr_with_type};
@@ -211,6 +211,15 @@ unsafe fn avax_sign_dynamic(
     seed_len: u32,
     fragment_length: usize,
 ) -> PtrT<UREncodeResult> {
+    // §8.6 Phase 3 cleanup: removed pub extern "C" wrappers
+    // `avax_sign` and `avax_sign_unlimited` — both were 1-line
+    // delegates to avax_sign_dynamic that just hardcoded the
+    // fragment length. The dispatcher (`execute_avax` in
+    // sign_ur.rs) calls avax_sign_dynamic directly. Frontend
+    // routing through KOSMO_REQ_SIGN_UR_EXECUTE means no C
+    // caller exists for the old FFI wrappers.
+    //
+    // (line numbers shifted by -15 after wrapper removal)
     let seed = extract_array!(seed, u8, seed_len as usize);
     build_sign_result(ptr, seed)
         .map(|v: AvaxSignature| v.try_into())
@@ -251,24 +260,6 @@ unsafe fn build_sign_result(ptr: PtrUR, seed: &[u8]) -> Result<AvaxSignature, Av
         let signatures: Vec<Vec<u8>> = signature.into_iter().map(|arr| arr.to_vec()).collect();
         AvaxSignature::new(sign_request.get_request_id(), signatures)
     })
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn avax_sign(
-    ptr: PtrUR,
-    seed: PtrBytes,
-    seed_len: u32,
-) -> PtrT<UREncodeResult> {
-    avax_sign_dynamic(ptr, seed, seed_len, FRAGMENT_MAX_LENGTH_DEFAULT)
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn avax_sign_unlimited(
-    ptr: PtrUR,
-    seed: PtrBytes,
-    seed_len: u32,
-) -> PtrT<UREncodeResult> {
-    avax_sign_dynamic(ptr, seed, seed_len, FRAGMENT_UNLIMITED_LENGTH)
 }
 
 #[no_mangle]

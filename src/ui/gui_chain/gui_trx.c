@@ -287,11 +287,30 @@ UREncodeResult *GuiGetTrxSignQrCodeData(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
-    KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_TRX_TX,
-        .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = false },
-    };
-    KosmoApi_Request(&req, NULL);
+    /* §8.6 Phase 2 batch 3: TronSignRequest path (KOSMO-standard UR) goes
+     * through the unified dispatcher (sign_ur_execute → execute_trx).
+     * Non-TronSignRequest types (e.g. Bytes, KeystoneSignRequest) keep
+     * the legacy 8-arg tron_sign_keystone path which dispatcher
+     * does not support — multi-chain wallets like Trust/imToken/
+     * mathwallet may still emit these.
+     *
+     * Trade-off (degradation, committed as such): dispatcher
+     * hardcodes FRAGMENT_MAX_LENGTH_DEFAULT so isUnlimited=true loses
+     * the FRAGMENT_UNLIMITED_LENGTH optimization; only affects QR
+     * frame slicing, not signature correctness. */
+    if (urType == TronSignRequest) {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+            .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = (uint32_t)urType },
+        };
+        KosmoApi_Request(&req, NULL);
+    } else {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_TRX_TX,
+            .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = false },
+        };
+        KosmoApi_Request(&req, NULL);
+    }
     return NULL;
 }
 
@@ -299,11 +318,22 @@ UREncodeResult *GuiGetTrxSignUrDataUnlimited(void)
 {
     void *data = g_isMulti ? g_urMultiResult->data : g_urResult->data;
     QRCodeType urType = g_isMulti ? g_urMultiResult->ur_type : g_urResult->ur_type;
-    KosmoRequest req = {
-        .type = KOSMO_REQ_SIGN_TRX_TX,
-        .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = true },
-    };
-    KosmoApi_Request(&req, NULL);
+    /* Same TronSignRequest dispatch as above; keystone path keeps
+     * isUnlimited=true to preserve FRAGMENT_UNLIMITED_LENGTH on the
+     * legacy tron_sign_keystone path. */
+    if (urType == TronSignRequest) {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_UR_EXECUTE,
+            .sign_ur_execute = { .urData = data, .urDataLen = 0, .urType = (uint32_t)urType },
+        };
+        KosmoApi_Request(&req, NULL);
+    } else {
+        KosmoRequest req = {
+            .type = KOSMO_REQ_SIGN_TRX_TX,
+            .sign_trx_tx = { .urData = data, .urType = (uint32_t)urType, .isUnlimited = true },
+        };
+        KosmoApi_Request(&req, NULL);
+    }
     return NULL;
 }
 

@@ -164,38 +164,16 @@ static void ModelStopCalculateCheckSum(void);
 int32_t RsaGenerateKeyPair(bool needEmitSignal, int requestType);
 
 /* Phase 6: Signing Model handlers */
-static int32_t ModelSignSolTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignAvaxTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen);
 /* Phase 6b */
-static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignXrpTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignXmrKeyimage(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignXmrTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen);
 /* Phase 6c part 2: BTC and ADA */
 static int32_t ModelSignBtcPsbt(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignBtcMessage(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignAdaTx(const void *inData, uint32_t inDataLen);
 static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen);
-static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen);
 
 /* Plan v11 stage-A.5: wrappers around the unified Rust sign-ur API.
  * `inData` is `void *[3] = { urData, (void*)urDataLen, (void*)urType }`.
@@ -2511,185 +2489,20 @@ static int32_t ModelSignGeneric(KosmoRequestType reqType, void *urData,
     return KOSMO_OK;
 }
 
-static int32_t ModelSignSolTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 SOL TX: route through sign_ur_execute dispatcher
-     * (→ execute_sol → solana_sign_tx) instead of direct FFI. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, SolSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SOL_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignSolMessage(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 SOL MESSAGE: shares execute_sol with TX — the
-     * Rust dispatcher calls solana_sign_tx which handles both
-     * tx and message UR shapes (same auto-sniff pattern as TON
-     * tx/proof). */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, SolSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SOL_MESSAGE, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignTonTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 TON: route through the unified dispatcher
-     * (sign_ur_execute → execute_ton) instead of the direct
-     * ton_sign_transaction FFI. The dispatcher's execute_ton
-     * auto-sniffs tx vs proof via the same tx→proof fallback
-     * the keystone upstream uses, so a single entry point
-     * covers both UR flavours. urDataLen is unused by the
-     * Rust dispatcher surface (see sign_ur.rs:1543) so we
-     * pass 0. Seed never crosses the FFI boundary — fetched
-     * Rust-side via fetch_seed() (plan v11 §4.1 invariant).
-     *
-     * We can't reuse ModelSignUrExecute because it hard-codes
-     * KOSMO_REQ_SIGN_UR_EXECUTE in the notify. Inline the
-     * dispatch + notify here so the frontend still receives
-     * KOSMO_REQ_SIGN_TON_TX / KOSMO_REQ_SIGN_TON_PROOF. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, TonSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TON_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignTonProof(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 TON proof: same dispatcher path as TX. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, TonSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TON_PROOF, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignStellarTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1.5 STELLAR: route through sign_ur_execute dispatcher
-     * (→ execute_stellar → stellar_sign) instead of direct FFI. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, StellarSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_STELLAR_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignAptosTx(const void *inData, uint32_t inDataLen)
-{
-    void *urData = *(void **)inData;
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_APTOS_TX, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    const char *pubKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_APT);
-    UREncodeResult *result = aptos_sign_tx(urData, seed, len, (char *)pubKey);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_APTOS_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignAvaxTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 AVAX: route through sign_ur_execute dispatcher
-     * (→ execute_avax) instead of direct avax_sign FFI. Same pattern
-     * as TON: dispatcher takes (urData, 0, AvaxSignRequest), seed
-     * fetched Rust-side via fetch_seed(), notify uses the original
-     * KOSMO_REQ_SIGN_AVAX_TX so the frontend callback fires with
-     * the expected requestType. Inline (not ModelSignUrExecute)
-     * because ModelSignUrExecute hard-codes KOSMO_REQ_SIGN_UR_EXECUTE
-     * in its notify. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, AvaxSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AVAX_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignSuiTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 SUI: route through sign_ur_execute dispatcher
-     * (→ execute_sui) instead of direct sui_sign_intent FFI.
-     * Same pattern as TON/AVAX. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, SuiSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SUI_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignSuiHash(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1.5 SUI HASH: route through dispatcher
-     * (→ execute_sui_hash → sui_sign_hash). */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, SuiSignHashRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_SUI_HASH, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignIotaTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1.5 IOTA: route through dispatcher
-     * (→ execute_iota → iota_sign_intent). */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, IotaSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_IOTA_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignIotaHash(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1.5 IOTA HASH: route through dispatcher
-     * (→ execute_iota_hash → iota_sign_hash). */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, IotaSignHashRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_IOTA_HASH, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 1 ZCASH: route through sign_ur_execute dispatcher
-     * (→ execute_zec) instead of direct sign_zcash_tx FFI.
-     * Same pattern as TON/AVAX/SUI. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, ZcashPczt);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ZCASH_TX, result);
-    return KOSMO_OK;
-}
 
 /* ── Phase 6b: COSMOS, TRX, XRP, ETH Signing ────────── */
 
-static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 COSMOS: route through sign_ur_execute dispatcher.
-     * Union holds urData + urType (CosmosSignRequest=18 or
-     * EvmSignRequest=19). Dispatcher match routes by ur_type and
-     * execute_cosmos internally discriminates between cosmos /
-     * evm UR tags before calling cosmos_sign_tx. The 5-line legacy
-     * path with seed-FFI and manual UREncodeResult free is gone —
-     * dispatcher handles seed-fetch and notify. */
-    void **arr = (void **)inData;
-    void *urData = arr[0];
-    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
-    void *result = sign_ur_execute(urData, 0, urType);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_COSMOS_TX, result);
-    return KOSMO_OK;
-}
 
 static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen)
 {
@@ -2722,21 +2535,6 @@ static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen)
     return KOSMO_OK;
 }
 
-static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 TRX MESSAGE: route through dispatcher.
-     * Union holds urData + urType; TRX message path is always
-     * TronSignRequest (11) — keystone-protocol nuance doesn't apply
-     * here, the message variant is just `tron_sign_request` (no
-     * tron_sign_keystone branch for the message path in the legacy
-     * C code). Dispatcher hits execute_trx which hardcodes
-     * FRAGMENT_MAX_LENGTH_DEFAULT — same as the legacy C path. */
-    void **arr = (void **)inData;
-    void *urData = arr[0];
-    void *result = sign_ur_execute(urData, 0, TronSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TRX_MESSAGE, result);
-    return KOSMO_OK;
-}
 
 typedef struct {
     void *urData;
@@ -2805,48 +2603,10 @@ static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen)
     return KOSMO_OK;
 }
 
-static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 ETH MESSAGE: route through dispatcher. The
-     * ETH message UR type is EthSignRequest (8); the dispatcher
-     * routes to execute_eth which calls eth_sign_tx_dynamic with
-     * FRAGMENT_MAX_LENGTH_DEFAULT hardcoded — same as the legacy
-     * C path. This unifies tx + message under one dispatcher arm;
-     * the legacy C code split them into two functions but they
-     * shared the same Rust FFI call. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, EthSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_MESSAGE, result);
-    return KOSMO_OK;
-}
 
 /* ── Phase 6c: XMR, ETH Batch, ARWEAVE Signing ─────── */
 
-static int32_t ModelSignXmrKeyimage(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 XMR KEYIMAGE: route through dispatcher. The
-     * XmrOutput (key-image) UR type is QR_XMR_OUTPUT_SIGN_REQUEST
-     * (31). Phase 2 added the dispatcher arm in sign_ur.rs:1611
-     * → execute_xmr_keyimage → monero_generate_keyimage. The
-     * legacy C path was 14 lines of seed-fetch + UREncodeResult;
-     * dispatcher handles the bookkeeping. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, XmrOutputSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_KEYIMAGE, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignXmrTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 XMR TX: route through dispatcher. The
-     * XmrTxUnsignedRequest is QR_XMR_TX_UNSIGNED (32); dispatcher
-     * routes to execute_xmr → monero_generate_signature with
-     * major=0 (mainnet) hardcoded — same as the legacy C path. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, XmrTxUnsignedRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_TX, result);
-    return KOSMO_OK;
-}
 
 static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen)
 {
@@ -2881,36 +2641,8 @@ static int32_t ModelSignArCommon(KosmoRequestType reqType, void *urData)
     return KOSMO_ERR_GENERAL;
 }
 
-static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 AR TX: route through dispatcher. All three
-     * AR sub-cases share the same dispatcher arm
-     * `ArweaveSignRequest (26)` — UR payload internally tags
-     * the request type via `ArweaveRequestType` enum (Tx /
-     * DataItem / Message), which `ar_sign_tx` decodes itself. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_TX, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 AR MESSAGE: same dispatcher arm as ArTx. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_MESSAGE, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 AR DATAITEM: same dispatcher arm as ArTx. */
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_DATAITEM, result);
-    return KOSMO_OK;
-}
 
 /* ═══════════════════════════════════════════════════════════
  * Phase 6c part 2: BTC and ADA Signing
@@ -3187,51 +2919,7 @@ static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen)
     return KOSMO_OK;
 }
 
-static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 ADA SIGN DATA: route through dispatcher.
-     * Trade-off: same as Catalyst (passphrase/Ledger ADA/SLIP39
-     * hardcoded in dispatcher). Sign-data is CIP-8 / CIP-30
-     * signing used by DApp browser wallets — also a minority
-     * path within the broader ADA user base. Accept the loss
-     * for cleaner dispatcher wiring; revisit with a parallel
-     * `KOSMO_REQ_SIGN_ADA_UR_EXECUTE` variant if usage grows. */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, CardanoSignDataRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_SIGN_DATA, result);
-    return KOSMO_OK;
-}
 
-static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen)
-{
-    /* §8.6 Phase 2 ADA CATALYST: route through dispatcher.
-     *
-     * Trade-off accepted (KOSMO fork decision 2026-07-27 — Catalyst
-     * voting registration has minor user base):
-     *   - passphrase: dispatcher hardcodes empty (legacy C passed
-     *     GetPassphrase(account_idx) — typically empty for non-hidden
-     *     wallets, but hidden wallets lose Catalyst signing here).
-     *   - Ledger ADA bitbox02: legacy C branched to
-     *     cardano_sign_catalyst_with_ledger_bitbox02 when
-     *     GetAdaXPubType() returned LEDGER_ADA; dispatcher ignores
-     *     XPubType and always calls cardano_sign_catalyst. Ledger
-     *     ADA users would lose Catalyst voting registration.
-     *   - SLIP-39: dispatcher hardcodes is_slip39=false (legacy C
-     *     read it from GetMnemonicType() == MNEMONIC_TYPE_SLIP39).
-     *
-     * All three accept-deferred writes a non-trivial dispatcher
-     * surface extension; per plan v11 §4.1 invariant dispatcher
-     * surface is fixed. Catalyst usage is rare enough that
-     * accepting this trade-off is reasonable. If Catalyst usage
-     * grows we can revisit with a `user_context` parallel variant
-     * (see §8.6 future work). */
-    (void)inDataLen;
-    void *urData = *(void **)inData;
-    void *result = sign_ur_execute(urData, 0, CardanoCatalystVotingRegistrationRequest);
-    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_CATALYST, result);
-    return KOSMO_OK;
-}
 
 /* ── Plan v11 stage-A.5: unified sign-ur Rust API wrappers ─────
  *

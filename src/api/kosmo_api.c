@@ -3324,64 +3324,46 @@ static int32_t ModelSignAdaTxHash(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignAdaSignData(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 ADA SIGN DATA: route through dispatcher.
+     * Trade-off: same as Catalyst (passphrase/Ledger ADA/SLIP39
+     * hardcoded in dispatcher). Sign-data is CIP-8 / CIP-30
+     * signing used by DApp browser wallets — also a minority
+     * path within the broader ADA user base. Accept the loss
+     * for cleaner dispatcher wiring; revisit with a parallel
+     * `KOSMO_REQ_SIGN_ADA_UR_EXECUTE` variant if usage grows. */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-
-    uint8_t entropy[64] = {0};
-    uint8_t len = 0;
-    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-    int ret = AdaGetEntropy(entropy, &len, isSlip39);
-    if (ret != 0) {
-        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_SIGN_DATA, KOSMO_ERR_GENERAL, NULL, 0);
-        return KOSMO_ERR_GENERAL;
-    }
-
-    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
-    AdaXPubType adaType = GetAdaXPubType();
-    UREncodeResult *result = NULL;
-
-    if (adaType == LEDGER_ADA) {
-        char *mnemonic = NULL;
-        bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-        result = cardano_sign_sign_data_with_ledger_bitbox02(urData, mnemonic, passphrase);
-    } else {
-        result = cardano_sign_sign_data(urData, entropy, len, passphrase, isSlip39);
-    }
-
-    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, CardanoSignDataRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_SIGN_DATA, result);
     return KOSMO_OK;
 }
 
 static int32_t ModelSignAdaCatalyst(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 ADA CATALYST: route through dispatcher.
+     *
+     * Trade-off accepted (KOSMO fork decision 2026-07-27 — Catalyst
+     * voting registration has minor user base):
+     *   - passphrase: dispatcher hardcodes empty (legacy C passed
+     *     GetPassphrase(account_idx) — typically empty for non-hidden
+     *     wallets, but hidden wallets lose Catalyst signing here).
+     *   - Ledger ADA bitbox02: legacy C branched to
+     *     cardano_sign_catalyst_with_ledger_bitbox02 when
+     *     GetAdaXPubType() returned LEDGER_ADA; dispatcher ignores
+     *     XPubType and always calls cardano_sign_catalyst. Ledger
+     *     ADA users would lose Catalyst voting registration.
+     *   - SLIP-39: dispatcher hardcodes is_slip39=false (legacy C
+     *     read it from GetMnemonicType() == MNEMONIC_TYPE_SLIP39).
+     *
+     * All three accept-deferred writes a non-trivial dispatcher
+     * surface extension; per plan v11 §4.1 invariant dispatcher
+     * surface is fixed. Catalyst usage is rare enough that
+     * accepting this trade-off is reasonable. If Catalyst usage
+     * grows we can revisit with a `user_context` parallel variant
+     * (see §8.6 future work). */
+    (void)inDataLen;
     void *urData = *(void **)inData;
-
-    uint8_t entropy[64] = {0};
-    uint8_t len = 0;
-    bool isSlip39 = GetMnemonicType() == MNEMONIC_TYPE_SLIP39;
-    int ret = AdaGetEntropy(entropy, &len, isSlip39);
-    if (ret != 0) {
-        memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ADA_CATALYST, KOSMO_ERR_GENERAL, NULL, 0);
-        return KOSMO_ERR_GENERAL;
-    }
-
-    char *passphrase = GetPassphrase(GetCurrentAccountIndex());
-    AdaXPubType adaType = GetAdaXPubType();
-    UREncodeResult *result = NULL;
-
-    if (adaType == LEDGER_ADA) {
-        char *mnemonic = NULL;
-        bip39_mnemonic_from_bytes(NULL, entropy, len, &mnemonic);
-        result = cardano_sign_catalyst_with_ledger_bitbox02(urData, mnemonic, passphrase);
-    } else {
-        result = cardano_sign_catalyst(urData, entropy, len, passphrase, isSlip39);
-    }
-
-    memset_s(entropy, sizeof(entropy), 0, sizeof(entropy));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, CardanoCatalystVotingRegistrationRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ADA_CATALYST, result);
     return KOSMO_OK;
 }

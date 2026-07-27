@@ -2811,20 +2811,17 @@ static int32_t ModelSignZcashTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignCosmosTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 COSMOS: route through sign_ur_execute dispatcher.
+     * Union holds urData + urType (CosmosSignRequest=18 or
+     * EvmSignRequest=19). Dispatcher match routes by ur_type and
+     * execute_cosmos internally discriminates between cosmos /
+     * evm UR tags before calling cosmos_sign_tx. The 5-line legacy
+     * path with seed-FFI and manual UREncodeResult free is gone —
+     * dispatcher handles seed-fetch and notify. */
     void **arr = (void **)inData;
     void *urData = arr[0];
     QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_COSMOS_TX, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    UREncodeResult *result = cosmos_sign_tx(urData, urType, seed, len);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, urType);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_COSMOS_TX, result);
     return KOSMO_OK;
 }
@@ -2862,22 +2859,16 @@ static int32_t ModelSignTrxTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignTrxMessage(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 TRX MESSAGE: route through dispatcher.
+     * Union holds urData + urType; TRX message path is always
+     * TronSignRequest (11) — keystone-protocol nuance doesn't apply
+     * here, the message variant is just `tron_sign_request` (no
+     * tron_sign_keystone branch for the message path in the legacy
+     * C code). Dispatcher hits execute_trx which hardcodes
+     * FRAGMENT_MAX_LENGTH_DEFAULT — same as the legacy C path. */
     void **arr = (void **)inData;
     void *urData = arr[0];
-    QRCodeType urType = (QRCodeType)(uintptr_t)arr[1];
-    uint8_t mfp[4];
-    GetMasterFingerPrint(mfp);
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_TRX_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : KosmoApi_GetEntropyLen();
-    UREncodeResult *result = tron_sign_request(urData, seed, len, FRAGMENT_MAX_LENGTH_DEFAULT);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, TronSignRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_TRX_MESSAGE, result);
     return KOSMO_OK;
 }
@@ -2951,18 +2942,15 @@ static int32_t ModelSignEthTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 ETH MESSAGE: route through dispatcher. The
+     * ETH message UR type is EthSignRequest (8); the dispatcher
+     * routes to execute_eth which calls eth_sign_tx_dynamic with
+     * FRAGMENT_MAX_LENGTH_DEFAULT hardcoded — same as the legacy
+     * C path. This unifies tx + message under one dispatcher arm;
+     * the legacy C code split them into two functions but they
+     * shared the same Rust FFI call. */
     void *urData = *(void **)inData;
-    uint8_t seed[64] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_ETH_MESSAGE, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    int len = KosmoApi_GetMnemonicType() == KOSMO_MNEMONIC_BIP39 ? sizeof(seed) : seedLen;
-    UREncodeResult *result = eth_sign_tx_dynamic(urData, seed, len, FRAGMENT_MAX_LENGTH_DEFAULT);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, EthSignRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_ETH_MESSAGE, result);
     return KOSMO_OK;
 }
@@ -2971,34 +2959,26 @@ static int32_t ModelSignEthMessage(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignXmrKeyimage(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 XMR KEYIMAGE: route through dispatcher. The
+     * XmrOutput (key-image) UR type is QR_XMR_OUTPUT_SIGN_REQUEST
+     * (31). Phase 2 added the dispatcher arm in sign_ur.rs:1611
+     * → execute_xmr_keyimage → monero_generate_keyimage. The
+     * legacy C path was 14 lines of seed-fetch + UREncodeResult;
+     * dispatcher handles the bookkeeping. */
     void *urData = *(void **)inData;
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_XMR_KEYIMAGE, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    UREncodeResult *result = monero_generate_keyimage(urData, seed, seedLen, 0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, XmrOutputSignRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_KEYIMAGE, result);
     return KOSMO_OK;
 }
 
 static int32_t ModelSignXmrTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 XMR TX: route through dispatcher. The
+     * XmrTxUnsignedRequest is QR_XMR_TX_UNSIGNED (32); dispatcher
+     * routes to execute_xmr → monero_generate_signature with
+     * major=0 (mainnet) hardcoded — same as the legacy C path. */
     void *urData = *(void **)inData;
-    uint8_t seed[SEED_LEN] = {0};
-    uint32_t seedLen = 0;
-    int32_t ret = KosmoApi_GetSeed(seed, &seedLen);
-    if (ret != KOSMO_OK) {
-        KosmoApi_NotifyResult(KOSMO_REQ_SIGN_XMR_TX, KOSMO_ERR_GENERAL, NULL, 0);
-        return ret;
-    }
-    UREncodeResult *result = monero_generate_signature(urData, seed, seedLen, 0);
-    memset_s(seed, sizeof(seed), 0, sizeof(seed));
-    ClearSecretCache();
+    void *result = sign_ur_execute(urData, 0, XmrTxUnsignedRequest);
     KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_XMR_TX, result);
     return KOSMO_OK;
 }
@@ -3023,38 +3003,48 @@ static int32_t ModelSignEthBatchTx(const void *inData, uint32_t inDataLen)
 
 static int32_t ModelSignArCommon(KosmoRequestType reqType, void *urData)
 {
-    Rsa_primes_t *primes = FlashReadRsaPrimes();
-    if (primes == NULL) {
-        KosmoApi_NotifyResult(reqType, KOSMO_ERR_GENERAL, NULL, 0);
-        return KOSMO_ERR_GENERAL;
-    }
-    UREncodeResult *result = ar_sign_tx(urData, primes->p, SPI_FLASH_RSA_PRIME_SIZE,
-                                         primes->q, SPI_FLASH_RSA_PRIME_SIZE);
-    memset_s(primes->p, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
-    memset_s(primes->q, SPI_FLASH_RSA_PRIME_SIZE, 0, SPI_FLASH_RSA_PRIME_SIZE);
-    memset_s(primes, sizeof(Rsa_primes_t), 0, sizeof(Rsa_primes_t));
-    SRAM_FREE(primes);
-    ClearSecretCache();
-    KosmoApi_NotifySignResult(reqType, result);
-    return KOSMO_OK;
+    /* §8.6 Phase 2: kept for historical reference but no longer
+     * called — ModelSignArTx/Message/Dataitem now route through
+     * sign_ur_execute dispatcher, and the dispatcher fetches the
+     * RSA primes Rust-side via `fetch_rsa_primes()`. The function
+     * body below would now dead-trigger a linker warning if any
+     * future caller re-adds it — at that point we'd revisit
+     * whether Rust-side fetching is correct semantics for the new
+     * surface, but no change is needed today. */
+    (void)reqType;
+    (void)urData;
+    return KOSMO_ERR_GENERAL;
 }
 
 static int32_t ModelSignArTx(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 AR TX: route through dispatcher. All three
+     * AR sub-cases share the same dispatcher arm
+     * `ArweaveSignRequest (26)` — UR payload internally tags
+     * the request type via `ArweaveRequestType` enum (Tx /
+     * DataItem / Message), which `ar_sign_tx` decodes itself. */
     void *urData = *(void **)inData;
-    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_TX, urData);
+    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_TX, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignArMessage(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 AR MESSAGE: same dispatcher arm as ArTx. */
     void *urData = *(void **)inData;
-    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_MESSAGE, urData);
+    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_MESSAGE, result);
+    return KOSMO_OK;
 }
 
 static int32_t ModelSignArDataitem(const void *inData, uint32_t inDataLen)
 {
+    /* §8.6 Phase 2 AR DATAITEM: same dispatcher arm as ArTx. */
     void *urData = *(void **)inData;
-    return ModelSignArCommon(KOSMO_REQ_SIGN_AR_DATAITEM, urData);
+    void *result = sign_ur_execute(urData, 0, ArweaveSignRequest);
+    KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_AR_DATAITEM, result);
+    return KOSMO_OK;
 }
 
 /* ═══════════════════════════════════════════════════════════

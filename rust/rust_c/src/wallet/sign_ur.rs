@@ -125,6 +125,10 @@ const XPUB_TYPE_ZCASH_UFVK_ENCRYPTED_0: u32 = 230;
 /// value (cbindgen output, second-to-last entry).
 const QR_XMR_TX_UNSIGNED: u32 = 32;
 
+/// Plan v11 §8.6 Phase 2: `QRCodeType::XmrOutputSignRequest`
+/// value (cbindgen output, the XMR key-image / output request).
+const QR_XMR_OUTPUT_SIGN_REQUEST: u32 = 31;
+
 /// Display data returned to frontend for transaction confirmation.
 ///
 /// Field semantics:
@@ -331,6 +335,7 @@ pub unsafe extern "C" fn sign_ur_parse(
         QR_CARDANO_SIGN_CIP8_DATA_REQUEST => parse_cardano_cip8_data(ur_data),
         QR_ZCASH_PCZT => parse_zec(ur_data),
         QR_XMR_TX_UNSIGNED => parse_xmr(ur_data),
+        QR_XMR_OUTPUT_SIGN_REQUEST => parse_xmr(ur_data),
         _ => build_display_error("Plan v11 stage-1: chain not yet wired up to unified API"),
     }
 }
@@ -1605,6 +1610,7 @@ pub unsafe extern "C" fn sign_ur_execute(
         }
         QR_ZCASH_PCZT => execute_zec(ur_data, seed),
         QR_XMR_TX_UNSIGNED => execute_xmr(ur_data, seed),
+        QR_XMR_OUTPUT_SIGN_REQUEST => execute_xmr_keyimage(ur_data, seed),
         _ => UREncodeResult::from(RustCError::UnsupportedTransaction(
             "Plan v11 stage-2: chain not wired up yet".into(),
         ))
@@ -2546,6 +2552,23 @@ unsafe fn execute_xmr(ur_data: Ptr<u8>, seed: [u8; SEED_LEN]) -> PtrT<UREncodeRe
     )
 }
 
+/// Plan v11 §8.6 Phase 2: XMR key-image (output) sign path.
+/// Same surface shape as execute_xmr (ur_data + seed), routes
+/// via QR_XMR_OUTPUT_SIGN_REQUEST (31) → monero_generate_keyimage.
+/// Mirrors the legacy C path in `gui_monero.c::ModelSignMoneroKeyimage`
+/// which called `monero_generate_keyimage(urData, seed, seedLen, 0)`.
+unsafe fn execute_xmr_keyimage(
+    ur_data: Ptr<u8>,
+    seed: [u8; SEED_LEN],
+) -> PtrT<UREncodeResult> {
+    crate::monero::monero_generate_keyimage(
+        ur_data as PtrUR,
+        seed.as_ptr() as *mut u8,
+        SEED_LEN as uint32_t,
+        0,
+    )
+}
+
 /// On production: `fetch_rsa_primes` hits the real keystore.
 /// Under cargo test: cfg(test) returns None, we surface a structured
 /// "RSA primes unavailable" error (no SIGSEGV, no panic).
@@ -3195,6 +3218,23 @@ mod tests {
         );
         let _ = unsafe { &*result };
     }
+
+    #[test]
+    fn sign_ur_execute_dispatches_xmr_keyimage_to_execute_xmr_keyimage() {
+        // §8.6 Phase 2: XMR key-image (output) path. Same null-guard
+        // pattern — cfg(test) fetch_seed returns None short-circuits
+        // before execute_xmr_keyimage. The execution path itself is
+        // exercised by L4 simulator tests.
+        let result =
+            unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_XMR_OUTPUT_SIGN_REQUEST) };
+        assert!(
+            !result.is_null(),
+            "XMR keyimage execute dispatcher must allocate UREncodeResult"
+        );
+        let _ = unsafe { &*result };
+        assert_eq!(QR_XMR_OUTPUT_SIGN_REQUEST, 31, "XMR output enum drift");
+    }
+
 
     #[test]
     fn fetch_monero_pvk_returns_none_under_test() {

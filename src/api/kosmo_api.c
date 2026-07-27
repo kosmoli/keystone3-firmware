@@ -1026,101 +1026,19 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         return KOSMO_OK;
     }
 
-    /* ── Phase 6: Transaction Signing ─────────────── */
-    case KOSMO_REQ_SIGN_SOL_TX: {
-        static void *s_urData;
-        s_urData = request->sign_sol_tx.urData;
-        AsyncExecute(ModelSignSolTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_SOL_MESSAGE: {
-        static void *s_urData;
-        s_urData = request->sign_sol_message.urData;
-        AsyncExecute(ModelSignSolMessage, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_TON_TX: {
-        static void *s_urData;
-        s_urData = request->sign_ton_tx.urData;
-        AsyncExecute(ModelSignTonTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_TON_PROOF: {
-        static void *s_urData;
-        s_urData = request->sign_ton_proof.urData;
-        AsyncExecute(ModelSignTonProof, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_STELLAR_TX:
-    case KOSMO_REQ_SIGN_STELLAR_HASH: {
-        static void *s_urData;
-        s_urData = request->sign_stellar_tx.urData;
-        AsyncExecute(ModelSignStellarTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_APTOS_TX: {
-        static void *s_urData;
-        s_urData = request->sign_aptos_tx.urData;
-        AsyncExecute(ModelSignAptosTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_AVAX_TX: {
-        static void *s_urData;
-        s_urData = request->sign_avax_tx.urData;
-        AsyncExecute(ModelSignAvaxTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_SUI_TX: {
-        static void *s_urData;
-        s_urData = request->sign_sui_tx.urData;
-        AsyncExecute(ModelSignSuiTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_SUI_HASH: {
-        static void *s_urData;
-        s_urData = request->sign_sui_hash.urData;
-        AsyncExecute(ModelSignSuiHash, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_IOTA_TX: {
-        static void *s_urData;
-        s_urData = request->sign_iota_tx.urData;
-        AsyncExecute(ModelSignIotaTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_IOTA_HASH: {
-        static void *s_urData;
-        s_urData = request->sign_iota_hash.urData;
-        AsyncExecute(ModelSignIotaHash, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_ZCASH_TX: {
-        static void *s_urData;
-        s_urData = request->sign_zcash_tx.urData;
-        AsyncExecute(ModelSignZcashTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    /* Phase 6b: COSMOS, TRX, XRP, ETH */
-    case KOSMO_REQ_SIGN_COSMOS_TX: {
-        static void *s_arr[2];
-        s_arr[0] = request->sign_cosmos_tx.urData;
-        s_arr[1] = (void *)(uintptr_t)request->sign_cosmos_tx.urType;
-        AsyncExecute(ModelSignCosmosTx, s_arr, sizeof(s_arr));
-        return KOSMO_OK;
-    }
+    /* ── Phase 6: Transaction Signing ───────────────
+     * §8.6 Phase 3 step 3: chain-specific cases for chains whose
+     * dispatcher is fully wired (TON, SOL, APTOS, AVAX, STELLAR,
+     * SUI, IOTA, ZCASH, COSMOS, XMR, AR) have been removed — the
+     * frontend now routes them through KOSMO_REQ_SIGN_UR_EXECUTE
+     * with the corresponding QRCodeType. ETH_MESSAGE + TRX_MESSAGE
+     * also removed (no frontend caller). */
     case KOSMO_REQ_SIGN_TRX_TX: {
         static void *s_arr[3];
         s_arr[0] = request->sign_trx_tx.urData;
         s_arr[1] = (void *)(uintptr_t)request->sign_trx_tx.urType;
         s_arr[2] = (void *)(uintptr_t)request->sign_trx_tx.isUnlimited;
         AsyncExecute(ModelSignTrxTx, s_arr, sizeof(s_arr));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_TRX_MESSAGE: {
-        static void *s_arr[2];
-        s_arr[0] = request->sign_trx_message.urData;
-        s_arr[1] = (void *)(uintptr_t)request->sign_trx_message.urType;
-        AsyncExecute(ModelSignTrxMessage, s_arr, sizeof(s_arr));
         return KOSMO_OK;
     }
     case KOSMO_REQ_SIGN_XRP_TX: {
@@ -1142,48 +1060,10 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         AsyncExecute(ModelSignEthTx, s_arr, sizeof(s_arr));
         return KOSMO_OK;
     }
-    case KOSMO_REQ_SIGN_ETH_MESSAGE: {
-        static void *s_urData;
-        s_urData = request->sign_eth_message.urData;
-        AsyncExecute(ModelSignEthMessage, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-
-    /* ── Phase 6c: XMR, ETH Batch, ARWEAVE ────────── */
-    case KOSMO_REQ_SIGN_XMR_KEYIMAGE: {
-        static void *s_urData;
-        s_urData = request->sign_xmr_keyimage.urData;
-        AsyncExecute(ModelSignXmrKeyimage, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_XMR_TX: {
-        static void *s_urData;
-        s_urData = request->sign_xmr_tx.urData;
-        AsyncExecute(ModelSignXmrTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
     case KOSMO_REQ_SIGN_ETH_BATCH_TX: {
         static void *s_urData;
         s_urData = request->sign_eth_batch_tx.urData;
         AsyncExecute(ModelSignEthBatchTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_AR_TX: {
-        static void *s_urData;
-        s_urData = request->sign_ar_tx.urData;
-        AsyncExecute(ModelSignArTx, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_AR_MESSAGE: {
-        static void *s_urData;
-        s_urData = request->sign_ar_message.urData;
-        AsyncExecute(ModelSignArMessage, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_AR_DATAITEM: {
-        static void *s_urData;
-        s_urData = request->sign_ar_dataitem.urData;
-        AsyncExecute(ModelSignArDataitem, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
 
@@ -1217,18 +1097,6 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
         AsyncExecute(ModelSignAdaTxHash, &s_urData, sizeof(s_urData));
         return KOSMO_OK;
     }
-    case KOSMO_REQ_SIGN_ADA_SIGN_DATA: {
-        static void *s_urData;
-        s_urData = request->sign_ada_sign_data.urData;
-        AsyncExecute(ModelSignAdaSignData, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
-    case KOSMO_REQ_SIGN_ADA_CATALYST: {
-        static void *s_urData;
-        s_urData = request->sign_ada_catalyst.urData;
-        AsyncExecute(ModelSignAdaCatalyst, &s_urData, sizeof(s_urData));
-        return KOSMO_OK;
-    }
 
     /* ── Plan v11 stage-A.5: unified sign-ur Rust API ─────────
      *
@@ -1238,10 +1106,7 @@ int32_t KosmoApi_Request(const KosmoRequest *request, KosmoCallback cb)
      * `SignDisplayData *` / `UREncodeResult *` respectively —
      * existing helpers (`KosmoApi_NotifyResult` /
      * `KosmoApi_NotifySignResult`) push them to the right frontend
-     * callbacks unchanged.
-     *
-     * The 31 chain-specific cases above stay in place; this new
-     * path is opt-in until validated end-to-end. */
+     * callbacks unchanged. */
     case KOSMO_REQ_SIGN_UR_PARSE: {
         static void *s_args[3];
         s_args[0] = request->sign_ur_parse.urData;

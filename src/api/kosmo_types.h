@@ -137,50 +137,26 @@ typedef enum {
     /* RSA */
     KOSMO_REQ_RSA_GENERATE_KEYPAIR,          /* 生成 RSA 密钥对 */
 
-    /* Phase 6: Transaction Signing */
-    KOSMO_REQ_SIGN_SOL_TX,
-    KOSMO_REQ_SIGN_SOL_MESSAGE,
-    KOSMO_REQ_SIGN_TON_TX,
-    KOSMO_REQ_SIGN_TON_PROOF,
-    KOSMO_REQ_SIGN_STELLAR_TX,
-    KOSMO_REQ_SIGN_STELLAR_HASH,
-    KOSMO_REQ_SIGN_APTOS_TX,
-    KOSMO_REQ_SIGN_AVAX_TX,
-    KOSMO_REQ_SIGN_SUI_TX,
-    KOSMO_REQ_SIGN_SUI_HASH,
-    KOSMO_REQ_SIGN_IOTA_TX,
-    KOSMO_REQ_SIGN_IOTA_HASH,
-    KOSMO_REQ_SIGN_ZCASH_TX,
-
-    /* Phase 6b: COSMOS, TRX, XRP, ETH Signing */
-    KOSMO_REQ_SIGN_COSMOS_TX,
+    /* Phase 6: Transaction Signing ─ kept cases (frontend still uses
+     * these). §8.6 Phase 3 step 5 removed the 23 chain-specific enum
+     * values whose ModelSign case was deleted in step 3; only the
+     * eight chain-specific KOSMO_REQ_SIGN_* below plus UR_PARSE /
+     * UR_EXECUTE survive. See plan_v11 §8.6 for the trade-off log
+     * on each kept chain (ADA TX drops Ledger/SLIP-39, ETH TX drops
+     * isBytes, etc. — they remain on the legacy path because the
+     * unified dispatcher would sign wrong or lose critical features). */
     KOSMO_REQ_SIGN_TRX_TX,
-    KOSMO_REQ_SIGN_TRX_MESSAGE,
     KOSMO_REQ_SIGN_XRP_TX,
     KOSMO_REQ_SIGN_ETH_TX,
-    KOSMO_REQ_SIGN_ETH_MESSAGE,
-
-    /* Phase 6c: XMR, ETH Batch, ARWEAVE Signing */
-    KOSMO_REQ_SIGN_XMR_KEYIMAGE,
-    KOSMO_REQ_SIGN_XMR_TX,
     KOSMO_REQ_SIGN_ETH_BATCH_TX,
-    KOSMO_REQ_SIGN_AR_TX,
-    KOSMO_REQ_SIGN_AR_MESSAGE,
-    KOSMO_REQ_SIGN_AR_DATAITEM,
-
-    /* Phase 6c part 2: BTC and ADA Signing */
     KOSMO_REQ_SIGN_BTC_PSBT,
     KOSMO_REQ_SIGN_BTC_MESSAGE,
     KOSMO_REQ_SIGN_ADA_TX,
     KOSMO_REQ_SIGN_ADA_TX_HASH,
-    KOSMO_REQ_SIGN_ADA_SIGN_DATA,
-    KOSMO_REQ_SIGN_ADA_CATALYST,
 
-    /* Plan v11 stage-A.5: unified sign-ur Rust API.
-     * New path used to validate the wrapper before swapping the
-     * 31 chain-specific cases over. Caller picks one of these
-     * explicitly so we can run the new path side-by-side with the
-     * existing dispatch until we trust it. */
+    /* Plan v11 stage-A.5: unified sign-ur Rust API. All other chains
+     * route through KOSMO_REQ_SIGN_UR_EXECUTE with the appropriate
+     * QRCodeType ur_type. */
     KOSMO_REQ_SIGN_UR_PARSE,
     KOSMO_REQ_SIGN_UR_EXECUTE,
 
@@ -219,46 +195,23 @@ typedef struct {
         struct { uint8_t viewType; } view_type;
         struct { void *ptr; } raw_ptr;
 
-        /* Phase 6: Transaction Signing */
-        struct { void *urData; } sign_sol_tx;
-        struct { void *urData; } sign_sol_message;
-        struct { void *urData; } sign_ton_tx;
-        struct { void *urData; } sign_ton_proof;
-        struct { void *urData; } sign_stellar_tx;
-        struct { void *urData; } sign_stellar_hash;
-        struct { void *urData; } sign_aptos_tx;
-        struct { void *urData; } sign_avax_tx;
-        struct { void *urData; } sign_sui_tx;
-        struct { void *urData; } sign_sui_hash;
-        struct { void *urData; } sign_iota_tx;
-        struct { void *urData; } sign_iota_hash;
-        struct { void *urData; } sign_zcash_tx;
-        /* Phase 6b */
-        struct { void *urData; uint32_t urType; } sign_cosmos_tx;
+        /* Phase 6: Transaction Signing ─ kept variants. §8.6 Phase 3
+         * step 5 removed the 23 chain-specific variants whose enum
+         * value was deleted; only the 8 chain-specific + 2 UR survive.
+         * See plan_v11 §8.6 for the trade-off log on each kept chain. */
         struct { void *urData; uint32_t urType; bool isUnlimited; } sign_trx_tx;
-        struct { void *urData; uint32_t urType; } sign_trx_message;
         struct { void *urData; bool isBytes; char hdPath[32]; } sign_xrp_tx;
         struct { void *urData; uint32_t urType; bool isUnlimited; bool isBytes; uint8_t viewType; } sign_eth_tx;
-        struct { void *urData; } sign_eth_message;
-        /* Phase 6c */
-        struct { void *urData; } sign_xmr_keyimage;
-        struct { void *urData; } sign_xmr_tx;
         struct { void *urData; } sign_eth_batch_tx;
-        struct { void *urData; } sign_ar_tx;
-        struct { void *urData; } sign_ar_message;
-        struct { void *urData; } sign_ar_dataitem;
-        /* Phase 6c part 2: BTC and ADA */
         struct { void *urData; uint32_t urType; bool isUnlimited; uint8_t viewType; } sign_btc_psbt;
         struct { void *urData; uint32_t urType; } sign_btc_message;
         struct { void *urData; bool isUnlimited; } sign_ada_tx;
         struct { void *urData; } sign_ada_tx_hash;
-        struct { void *urData; } sign_ada_sign_data;
-        struct { void *urData; } sign_ada_catalyst;
         /* Plan v11 stage-A.5: unified sign-ur Rust API.
          * Caller passes the UR bytes + ur_type (QRCodeType enum from
          * librust_c.h). The Rust side does parse/sign and returns
-         * SignDisplayData / UREncodeResult. The 31 chain-specific
-         * cases above remain in place; the frontend picks one of
+         * SignDisplayData / UREncodeResult. The 8 chain-specific
+         * variants above remain in place; the frontend picks one of
          * the two paths explicitly so we can validate the wrapper
          * before swapping the dispatch default. */
         struct { void *urData; uint32_t urDataLen; uint32_t urType; } sign_ur_parse;

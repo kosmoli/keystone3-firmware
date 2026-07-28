@@ -3605,6 +3605,102 @@ mod tests {
         clear_test_seed_override();
     }
 
+    #[test]
+    fn sign_ur_execute_sui_tx_real_value_matches_reference_signature() {
+        // Plan v11 §8.6 follow-up: fifth L4 real-value case (Sui).
+        //
+        // Like COSMOS, `apps/sui/src/lib.rs::sign_intent` has no
+        // built-in unit test that pins a reference signature. So
+        // we use the dispatcher self-consistent approach: capture
+        // dispatcher UR output (sign_intent over intent_message
+        // bytes), pin as REFERENCE_SIG_HEX. Catches any wiring
+        // drift on the dispatcher↔FFI↔app_slip10 path.
+        //
+        // Dispatcher path under test:
+        //   sign_ur_execute → execute_sui
+        //     → sui_sign_intent(ptr, seed, seed_len)
+        //       → app_sui::sign_intent(seed, path, intent_message)
+        //         → blake2b256(intent_message)
+        //         → ed25519 sign via SLIP-10
+        //       → build_sui_signature_result (wraps SuiSignature CBOR)
+        //       → UREncodeResult
+        //
+        // SuiSignRequest field shape (5 fields, impl_template_struct):
+        //   request_id (tagged UUID bytes), intent_message (bytes,
+        //   must NOT be empty), derivation_paths (Vec<CryptoKeyPath>,
+        //   must NOT be empty), addresses (optional), origin
+        //   (optional).
+        set_test_seed_override(&[
+            0x96, 0x06, 0x3c, 0x45, 0x13, 0x2c, 0x84, 0x0f, 0x7e, 0x16, 0x65, 0xa3, 0xb9, 0x78,
+            0x14, 0xd8, 0xeb, 0x25, 0x86, 0xf3, 0x4b, 0xd9, 0x45, 0xf0, 0x6f, 0xa1, 0x5b, 0x93, 0x27,
+            0xee, 0xbe, 0x35, 0x5f, 0x65, 0x4e, 0x81, 0xc6, 0x23, 0x3a, 0x52, 0x14, 0x9d, 0x7a, 0x95,
+            0xea, 0x74, 0x86, 0xeb, 0x8d, 0x69, 0x91, 0x66, 0xf5, 0x67, 0x7e, 0x50, 0x75, 0x29, 0x48,
+            0x25, 0x99, 0x62, 0x4c, 0xdc,
+        ]);
+
+        // Hand-picked intent_message: 32 bytes of Sui intent-prefixed
+        // personal message. Sui's intent_message is what gets blake2b'd
+        // before ed25519 sign. Arbitrary but deterministic payload.
+        let intent_message_hex = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+        let intent_message = hex_decode(intent_message_hex).expect("intent_message hex decode");
+
+        // HD path "m/44'/784'/0'/0'/0'" (Sui SLIP-10 standard).
+        use ur_registry::crypto_key_path::{CryptoKeyPath, PathComponent};
+        use ur_registry::sui::sui_sign_request::SuiSignRequest;
+        let derivation_path = CryptoKeyPath::new(
+            vec![
+                PathComponent::new(Some(44), true).expect("44h"),
+                PathComponent::new(Some(784), true).expect("784h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+            ],
+            None,
+            None,
+        );
+        let mut ssr = SuiSignRequest::default();
+        ssr.set_request_id(Some(vec![
+            0x9b, 0x1d, 0xeb, 0x4d, 0x3b, 0x7d, 0x4b, 0xad, 0x9b, 0xdd, 0x2b, 0x0d, 0x7b, 0x3d,
+            0xcb, 0x6d,
+        ]));
+        ssr.set_intent_message(intent_message);
+        ssr.set_derivation_paths(vec![derivation_path]);
+        let ssr_ptr: *mut SuiSignRequest = Box::into_raw(Box::new(ssr));
+
+        let result = unsafe { sign_ur_execute(ssr_ptr as *mut u8, 0, QR_SUI_SIGN_REQUEST) };
+        unsafe {
+            let _ = Box::from_raw(ssr_ptr);
+        }
+
+        let data_ptr = unsafe { (*result).data };
+        if data_ptr.is_null() {
+            panic!("Sui TX dispatch returned null data");
+        }
+        let cstr = unsafe { core::ffi::CStr::from_ptr(data_ptr as *const core::ffi::c_char) };
+        let sig = cstr.to_bytes();
+        // Surface raw bytes for first-run capture.
+        let path = "/tmp/l4_sui_signature.txt";
+        let _ = std::fs::write(path, sig);
+        eprintln!("[L4 sui] signature UR ({} bytes) written to {}", sig.len(), path);
+
+        // Pragmatic: pin dispatcher UR text against captured
+        // reference. Same approach as COSMOS — apps/sui has no
+        // fixture, so the reference is the dispatcher's own
+        // self-consistent output. Future plan v12 improvement:
+        // decode UR text → SuiSignature struct → compare inner
+        // 64-byte signature with `app_sui::sign_intent` direct call.
+        const REFERENCE_SIG_HEX: &str = "55523A5355492D5349474E41545552452F4F5441445450444147444E444341574D475446524B494752504D4E445554444E42544B47465353424A4E414F4844465A52595354494D5A534245465849485746444549484C504C47414F42444C4E454D484753475341594B41484A534644544947454A5A57444E5347414E424D534D4B494F4359544E4D485453475352594959434546454341454349454C524C4B53574449544B434155454C475245444B5442425956595A4F594C454E4D454A5442544158484443585745524E43574E4446524141425359414D5952534F585346544E4A4C48454C47465A474556445A4D564C48454E444350425457504159494F4E544848454F4A4C5445535450444941";
+        let reference = hex_decode(REFERENCE_SIG_HEX).expect("reference hex decode");
+        assert_eq!(
+            sig,
+            &reference[..],
+            "Sui TX dispatcher signature UR drifted from reference ({} vs {} bytes)",
+            sig.len(),
+            reference.len()
+        );
+        clear_test_seed_override();
+    }
+
     fn hex_decode(s: &str) -> Option<Vec<u8>> {
         let s = s.as_bytes();
         if s.len() % 2 != 0 {

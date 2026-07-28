@@ -3701,6 +3701,85 @@ mod tests {
         clear_test_seed_override();
     }
 
+    #[test]
+    fn sign_ur_execute_iota_tx_real_value_matches_reference_signature() {
+        // Plan v11 §8.6 follow-up: sixth L4 real-value case (IOTA).
+        //
+        // IOTA is structurally a clone of SUI in this codebase:
+        // dispatcher `execute_iota` → `iota_sign_intent` →
+        // `iota_sign_internal` → `app_sui::sign_intent` (same Ed25519
+        // sign path). `IotaSignRequest` is identical to
+        // `SuiSignRequest` shape (5 fields, `request_id: Option<Bytes>`).
+        //
+        // Test uses the same seed + intent_message + path pattern as
+        // the SUI case; since both share `app_sui::sign_intent` under
+        // the hood, the dispatcher-side output should be byte-equal
+        // to a parallel SUI run with the same inputs (modulo UR type
+        // tag: UR:SUI-SIGNATURE vs UR:IOTA-SIGNATURE). The captured
+        // 271-byte reference from SUI is therefore the *expected*
+        // content, but we capture IOTA's own output here to pin
+        // dispatcher↔FFI integration.
+        set_test_seed_override(&[
+            0x96, 0x06, 0x3c, 0x45, 0x13, 0x2c, 0x84, 0x0f, 0x7e, 0x16, 0x65, 0xa3, 0xb9, 0x78,
+            0x14, 0xd8, 0xeb, 0x25, 0x86, 0xf3, 0x4b, 0xd9, 0x45, 0xf0, 0x6f, 0xa1, 0x5b, 0x93, 0x27,
+            0xee, 0xbe, 0x35, 0x5f, 0x65, 0x4e, 0x81, 0xc6, 0x23, 0x3a, 0x52, 0x14, 0x9d, 0x7a, 0x95,
+            0xea, 0x74, 0x86, 0xeb, 0x8d, 0x69, 0x91, 0x66, 0xf5, 0x67, 0x7e, 0x50, 0x75, 0x29, 0x48,
+            0x25, 0x99, 0x62, 0x4c, 0xdc,
+        ]);
+
+        let intent_message_hex = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+        let intent_message = hex_decode(intent_message_hex).expect("intent_message hex decode");
+
+        // HD path "m/44'/4218'/0'/0'/0'" (Iota BIP-44 coin type).
+        use ur_registry::crypto_key_path::{CryptoKeyPath, PathComponent};
+        use ur_registry::iota::iota_sign_request::IotaSignRequest;
+        let derivation_path = CryptoKeyPath::new(
+            vec![
+                PathComponent::new(Some(44), true).expect("44h"),
+                PathComponent::new(Some(4218), true).expect("4218h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+                PathComponent::new(Some(0), true).expect("0h"),
+            ],
+            None,
+            None,
+        );
+        let mut isr = IotaSignRequest::default();
+        isr.set_request_id(Some(vec![
+            0x9b, 0x1d, 0xeb, 0x4d, 0x3b, 0x7d, 0x4b, 0xad, 0x9b, 0xdd, 0x2b, 0x0d, 0x7b, 0x3d,
+            0xcb, 0x6d,
+        ]));
+        isr.set_intent_message(intent_message);
+        isr.set_derivation_paths(vec![derivation_path]);
+        let isr_ptr: *mut IotaSignRequest = Box::into_raw(Box::new(isr));
+
+        let result = unsafe { sign_ur_execute(isr_ptr as *mut u8, 0, QR_IOTA_SIGN_REQUEST) };
+        unsafe {
+            let _ = Box::from_raw(isr_ptr);
+        }
+
+        let data_ptr = unsafe { (*result).data };
+        if data_ptr.is_null() {
+            panic!("IOTA TX dispatch returned null data");
+        }
+        let cstr = unsafe { core::ffi::CStr::from_ptr(data_ptr as *const core::ffi::c_char) };
+        let sig = cstr.to_bytes();
+        let path = "/tmp/l4_iota_signature.txt";
+        let _ = std::fs::write(path, sig);
+        eprintln!("[L4 iota] signature UR ({} bytes) written to {}", sig.len(), path);
+
+        const REFERENCE_SIG_HEX: &str = "55523A494F54412D5349474E41545552452F4F5441445450444147444E444341574D475446524B494752504D4E445554444E42544B47465353424A4E414F4844465A524B4B454E59555246474C46454F4C59484E484B4A454D445641454F565952544C4E4B424C4F4B4E44574445444E56444654454344494C5942534959444D494D53574D53485052444543464D48444C4B4B4E574E44545653434C50545454454D4441534B5A454F59434E464E5941474C474453454A4556594C5946534B5041454158484443585645575957545A534445474C43464D5949414C424A5353545659534E484E53504C5544534F4550524E534B49474C534154594B504F454D444E4446534A535144474C5559534B5653";
+        let reference = hex_decode(REFERENCE_SIG_HEX).expect("reference hex decode");
+        assert_eq!(
+            sig,
+            &reference[..],
+            "IOTA TX dispatcher signature UR drifted from reference ({} vs {} bytes)",
+            sig.len(),
+            reference.len()
+        );
+        clear_test_seed_override();
+    }
+
     fn hex_decode(s: &str) -> Option<Vec<u8>> {
         let s = s.as_bytes();
         if s.len() % 2 != 0 {

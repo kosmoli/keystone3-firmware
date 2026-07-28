@@ -248,9 +248,45 @@ unsafe fn fetch_seed() -> Option<[u8; SEED_LEN]> {
 /// Test stub for fetch_seed: in cargo test there is no C keystore
 /// layer, so seed-acquisition is unwired. sign_ur_execute will
 /// hit None and return a structured error.
+///
+/// Plan v11 §8.6 follow-up: real-value L4 tests for the TON
+/// dispatcher route need to inject a known master seed so the
+/// full `execute_ton` path runs and the produced signature can
+/// be compared against a fixture reference. We override via a
+/// thread-local that real-value tests can set.
 #[cfg(test)]
 fn fetch_seed() -> Option<[u8; SEED_LEN]> {
-    None
+    let seed_opt = TEST_SEED_OVERRIDE.with(|cell| cell.borrow().clone());
+    seed_opt.map(|seed| {
+        let mut out = [0u8; SEED_LEN];
+        let n = seed.len().min(SEED_LEN);
+        out[..n].copy_from_slice(&seed[..n]);
+        out
+    })
+}
+
+/// L4 real-value test hook: tests that need to drive the full
+/// dispatcher path (execute_* → ton_sign_transaction → app_ton)
+/// can stash a master seed here via `set_test_seed_override`.
+/// Production code never calls this — `#[cfg(test)]` only.
+#[cfg(test)]
+thread_local! {
+    static TEST_SEED_OVERRIDE: core::cell::RefCell<Option<Vec<u8>>> =
+        const { core::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn set_test_seed_override(seed: &[u8]) {
+    TEST_SEED_OVERRIDE.with(|cell| {
+        *cell.borrow_mut() = Some(seed.to_vec());
+    });
+}
+
+#[cfg(test)]
+fn clear_test_seed_override() {
+    TEST_SEED_OVERRIDE.with(|cell| {
+        *cell.borrow_mut() = None;
+    });
 }
 
 // QRCodeType values from librust_c.h enum (zero-indexed):
@@ -3144,6 +3180,150 @@ mod tests {
             "execute dispatcher must allocate UREncodeResult"
         );
         let _ = unsafe { &*result };
+    }
+
+    #[test]
+    fn sign_ur_execute_ton_tx_real_value_matches_reference_signature() {
+        // Plan v11 §8.6 follow-up: first L4 real-value case.
+        //
+        // The TonSignRequest fixture below is taken verbatim from
+        // `ur-registry-1.0.5/src/ton/ton_sign_request.rs::test_encode`
+        // (the upstream library's own self-test). The master seed
+        // below matches `apps/ton/src/transaction.rs::test_sign_ton_transaction`
+        // exactly, which exercises the same Ed25519-on-BOC code
+        // path that the dispatcher uses. Without a hard-coded
+        // reference signature this test would be circular; we
+        // capture the actual signature bytes on first run via
+        // `assert_eq!` (it will fail and reveal the actual hex)
+        // and pin them as the fixture reference.
+        //
+        // Once captured, this test proves the full dispatcher
+        // path:
+        //   sign_ur_execute
+        //     → execute_ton (tx flavour sniff)
+        //       → ton_sign_transaction
+        //         → app_ton::transaction::sign_transaction
+        //           → ed25519 sign over BOC payload
+        //         → TonSignature CBOR encode
+        //       → UREncodeResult
+        //
+        // is byte-for-byte stable across refactors.
+        set_test_seed_override(&[
+            0xb4, 0x93, 0x3a, 0x59, 0x2c, 0x18, 0x29, 0x18, 0x55, 0xb3, 0x0e, 0xa5, 0xcc, 0x8d,
+            0xa7, 0xcb, 0x20, 0xda, 0x17, 0x93, 0x6d, 0xf8, 0x75, 0xf0, 0x18, 0xc6, 0x02, 0x7f,
+            0x21, 0x03, 0xf6, 0xad, 0x8f, 0xf4, 0x09, 0x40, 0x0b, 0xe6, 0xe9, 0x13, 0xe4, 0x3a,
+            0x3b, 0xf9, 0xdd, 0x23, 0x27, 0x4f, 0x91, 0x8e, 0x3b, 0xd7, 0xca, 0x67, 0x9b, 0x06,
+            0xe7, 0xfe, 0xe0, 0x4b, 0xc0, 0xd4, 0x1f, 0x95,
+        ]);
+
+        // TonSignRequest CBOR fixture (from ur-registry test_encode).
+        // No derivation_path → dispatcher uses seed[0..32] as SK directly.
+        //
+        // Production flow: C-side keystone first decodes CBOR into a
+        // heap-allocated TonSignRequest Rust struct via ur_registry
+        // (URParseResult.data points to it), THEN passes that pointer
+        // down to the FFI execute call. Raw CBOR bytes are NOT a valid
+        // TonSignRequest* — the struct's get_sign_data() etc. deref
+        // into CBOR offsets and trigger UB. So we decode here too.
+        let fixture_hex = "a501d825509b1deb4d3b7d4bad9bdd2b0d7b3dcb6d025856b5ee9c7241010201004700011c29a9a317663b3ea500000008000301006842002b16732f1c05fdb4e8d3a78fd10dddef3f6067f311be539313b8a44a504d4da2a1dcd65000000000000000000000000000007072e06f0301057830555143314979777951776978534f553870657a4f5a4443397276327843563443474a7a4f574836525838425473474a780669546f6e4b6565706572";
+        let fixture_bytes = hex_decode(fixture_hex).expect("fixture hex decode");
+        let ton_tx: ur_registry::ton::ton_sign_request::TonSignRequest =
+            minicbor::decode(fixture_bytes.as_slice()).expect("CBOR decode TonSignRequest");
+        // Pin the heap allocation for the lifetime of the call.
+        let ton_tx_ptr: *mut ur_registry::ton::ton_sign_request::TonSignRequest =
+            Box::into_raw(Box::new(ton_tx));
+
+        let result = unsafe {
+            sign_ur_execute(
+                ton_tx_ptr as *mut u8,
+                0,
+                QR_TON_SIGN_REQUEST,
+            )
+        };
+        // Reclaim the heap allocation now that the call returned.
+        unsafe {
+            let _ = Box::from_raw(ton_tx_ptr);
+        }
+
+        // UREncodeResult.error_code/error_message are private fields;
+        // sniff via the public `data` field instead — on parse failure
+        // ton_sign_transaction leaves `data` null (UREncodeResult is
+        // still allocated but the UR encode step is skipped).
+        let data_ptr = unsafe { (*result).data };
+        if data_ptr.is_null() {
+            panic!("TON TX dispatch returned null data (seed mismatch or dispatcher miss?)");
+        }
+        // UREncodeResult.data is `*mut c_char` (C string); recover the
+        // underlying bytes to log them on first-run capture.
+        let cstr = unsafe { core::ffi::CStr::from_ptr(data_ptr as *const core::ffi::c_char) };
+        let sig = cstr.to_bytes();
+        // Reference signature UR (uppercase ASCII hex, 221 bytes) —
+        // captured from a clean run of this test on 2026-07-28 with
+        // the fixture below. Dispatcher produced this exact byte
+        // sequence from:
+        //   master_seed  =
+        //     b4933a59...d41f95  (64 bytes, no derivation path → SK is
+        //                           seed[0..32] per dispatcher branch)
+        //   fixture CBOR =
+        //     a501d82550...6565706572  (TonSignRequest from
+        //                                ur-registry self-test)
+        //
+        // The same Ed25519 signing path is exercised by
+        // apps/ton::transaction::test_sign_ton_transaction (which
+        // uses an already-derived 32-byte SK); the equivalence is
+        // intrinsic to the algorithm, not the API. So this byte-
+        // for-byte pin locks the dispatcher↔FFI↔app integration.
+        const REFERENCE_SIGNATURE_HEX: &str = "55523A544F4E2D5349474E41545552452F4F5441445450444147444E444341574D475446524B494752504D4E445554444E42544B47465353424A4E414F4844465A424245535657424B444D5559464848445053444946454748414D444D465A4B424B494459544C574549415346524C574D504D454D5759415944504D4F414F5357415353535746475948464D45524F504B415357594C594D54425747414A4C504C52454247534F434547555357474C5248474842424144504D435048484244415841584953475249484B4B4A4B4A594A4C4A5449484359524C524F4D53";
+        let reference = hex_decode(REFERENCE_SIGNATURE_HEX).expect("reference hex decode");
+        assert_eq!(
+            sig, &reference[..],
+            "TON TX dispatcher signature drifted from reference ({} vs {} bytes)",
+            sig.len(),
+            reference.len()
+        );
+
+        // Once the signature bytes above match what
+        // `app_ton::transaction::sign_transaction` produces for
+        // the same seed + body, this hard-coded reference pins
+        // dispatcher↔FFI↔app integration.
+        //
+        // (Pin reference on next run after capturing above.)
+        clear_test_seed_override();
+    }
+
+    fn hex_decode(s: &str) -> Option<Vec<u8>> {
+        let s = s.as_bytes();
+        if s.len() % 2 != 0 {
+            return None;
+        }
+        let mut out = Vec::with_capacity(s.len() / 2);
+        let mut i = 0;
+        while i < s.len() {
+            let hi = hex_byte(s[i])?;
+            let lo = hex_byte(s[i + 1])?;
+            out.push((hi << 4) | lo);
+            i += 2;
+        }
+        Some(out)
+    }
+
+    fn hex_lower(b: &[u8]) -> String {
+        const HEX: &[u8; 16] = b"0123456789abcdef";
+        let mut s = String::with_capacity(b.len() * 2);
+        for &x in b {
+            s.push(HEX[(x >> 4) as usize] as char);
+            s.push(HEX[(x & 0xf) as usize] as char);
+        }
+        s
+    }
+
+    fn hex_byte(b: u8) -> Option<u8> {
+        match b {
+            b'0'..=b'9' => Some(b - b'0'),
+            b'a'..=b'f' => Some(b - b'a' + 10),
+            b'A'..=b'F' => Some(b - b'A' + 10),
+            _ => None,
+        }
     }
 
     #[test]

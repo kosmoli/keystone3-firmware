@@ -1,0 +1,27 @@
+[package]
+name = "xmr_test_fixture"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "gen_xmr_unsigned_tx"
+path = "src/main.rs"
+
+[dependencies]
+bitcoin = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+rand_core = { workspace = true }
+zeroize = { workspace = true }
+monero-oxide = { workspace = true }
+monero-wallet = { workspace = true }
+# Workspace alias trick: two crate instances of the same path are not
+# directly allowed (Cargo would dedup them), so we just keep one
+# keystore dep with the right feature set for our use and call it
+# directly from this binary. The other (prod) tree in app_monero
+# uses a separate Cargo invocation pattern that the workspace build
+# pulls in via cfg. This binary does not depend on app_monero; it
+# only uses app_monero's module paths via Rust path imports — see
+# src/main.rs note.
+keystore = { path = "../../keystore", default-features = false, features = ["cypherpunk", "std"] }
+app_monero = { path = "../../apps/monero", default-features = false }

@@ -5340,6 +5340,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "xmr_test_fixture"
+version = "0.1.0"
+dependencies = [
+ "app_monero",
+ "bitcoin",
+ "hex",
+ "keystore",
+ "monero-oxide",
+ "monero-wallet",
+ "rand_core 0.6.4",
+ "sha2 0.10.9",
+ "zeroize",
+]
+
+[[package]]
 name = "zcash_address"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

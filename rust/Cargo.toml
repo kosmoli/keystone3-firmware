@@ -29,6 +29,7 @@ members = [
     "keystore",
     "sim_qr_reader",
     "tools",
+    "tools/monero-test-fixture",
     "zcash_vendor",
 ]
 
@@ -51,6 +52,14 @@ app_wallets = { path = "apps/wallets" }
 app_xrp = { path = "apps/xrp" }
 app_zcash = { path = "apps/zcash", default-features = false}
 app_monero = { path = "apps/monero" }
+# monero-oxide is the monero-wallet custom fork (kosmoli/monero-oxide).
+# Pinned to local path (not git) because monero-oxide is a Cargo workspace,
+# and git-subdirectory only fetches the wallet crate, breaking sibling
+# crate path resolution. Fields like OutputData + OutputWithDecoys are
+# exposed via the keystone fork at HEAD (commit-suffixed) for off-line
+# test fixture construction; see keystone fork upstream PR.
+monero-oxide = { path = "../../monero-oxide/monero-oxide", default-features = false }
+monero-wallet = { path = "../../monero-oxide/monero-oxide/wallet", default-features = false }
 app_iota = { path = "apps/iota" }
 app_babylon = { path = "apps/babylon" }
 keystore = { path = "keystore", default-features = false }

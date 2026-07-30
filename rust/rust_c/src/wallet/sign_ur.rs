@@ -345,7 +345,6 @@ const QR_AVAX_SIGN_REQUEST: u32 = 29;
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_parse(
     ur_data: Ptr<u8>,
-    _ur_data_len: uint32_t,
     ur_type: uint32_t,
 ) -> PtrT<SignDisplayData> {
     match ur_type {
@@ -1586,7 +1585,6 @@ unsafe fn parse_xmr(ur_data: Ptr<u8>) -> PtrT<SignDisplayData> {
 #[no_mangle]
 pub unsafe extern "C" fn sign_ur_execute(
     ur_data: Ptr<u8>,
-    ur_data_len: uint32_t,
     ur_type: uint32_t,
 ) -> PtrT<UREncodeResult> {
     // QRCodeType enum values from librust_c.h (zero-indexed):
@@ -2790,7 +2788,7 @@ mod tests {
         // should fire, but it must NOT panic and must NOT null-deref the
         // ur_data pointer (which is intentionally null here).
         const UNUSED_UR_TYPE: u32 = 99;
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, UNUSED_UR_TYPE) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), UNUSED_UR_TYPE) };
         let d = unsafe { &*display };
         assert_eq!(d.error_code, 1);
         assert!(read_c_str(d.error_message)
@@ -2911,7 +2909,7 @@ mod tests {
         // Stage A.4-E: parse_eth is now real. Under cargo test
         // fetch_eth_xpub_for_parse returns None → structured error.
         // chain_name is null because the error path doesn't fill it.
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ETH_SIGN_REQUEST) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_ETH_SIGN_REQUEST) };
         let d = unsafe { &*display };
         assert_eq!(d.error_code, 1, "missing xpub must surface error");
         let msg = read_c_str(d.error_message).unwrap_or_default();
@@ -2936,7 +2934,7 @@ mod tests {
         // and will be integration-tested via simulator in plan_v11
         // §8.7. The placeholder contract is preserved by
         // parse_xrp_network_is_mainnet_hardcoded_in_placeholder below.
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XRP_TX) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_XRP_TX) };
         let d = unsafe { &*display };
         // Either: real path errored out (error_code=1) — acceptable
         // for cargo test without fixture UR.
@@ -2982,7 +2980,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_sol_to_execute_sol() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SOL_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_SOL_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -2993,7 +2991,7 @@ mod tests {
     #[test]
     fn sign_ur_execute_dispatches_cosmos_and_evm_to_execute_cosmos() {
         for &ur in &[QR_COSMOS_SIGN_REQUEST, QR_EVM_SIGN_REQUEST] {
-            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, ur) };
+            let result = unsafe { sign_ur_execute(core::ptr::null_mut(), ur) };
             assert!(
                 !result.is_null(),
                 "execute dispatcher must allocate (ur_type={ur})"
@@ -3003,7 +3001,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_avax_to_execute_avax() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_AVAX_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_AVAX_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3017,7 +3015,7 @@ mod tests {
         // fetch_aptos_pub_key returns None → "APT pub_key
         // unavailable" structured error. That's the expected
         // path, not a SIGSEGV.
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_APTOS_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_APTOS_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3054,7 +3052,7 @@ mod tests {
         // would SIGSEGV otherwise). Test reaches the dispatcher null-guard
         // error path; the FFI itself is exercised by L4 simulator
         // integration tests with real NearSignRequest payloads.
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_NEAR_SIGN_REQUEST) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_NEAR_SIGN_REQUEST) };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
         assert_ne!(d.error_code, 0, "NEAR parse must reject null UR");
@@ -3073,7 +3071,7 @@ mod tests {
         // — SIGSEGV on null. Test asserts the UREncodeResult is
         // non-null (dispatcher routed to FFI which returned an error
         // result). The seed path is exercised by L4 simulator tests.
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_NEAR_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_NEAR_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3091,7 +3089,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_sui_hash_to_execute_sui_hash() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_HASH) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_SUI_SIGN_HASH) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3102,7 +3100,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_iota_to_execute_iota() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_IOTA_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_IOTA_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3113,7 +3111,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_iota_hash_to_execute_iota_hash() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_IOTA_SIGN_HASH) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_IOTA_SIGN_HASH) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3124,7 +3122,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_stellar_to_execute_stellar() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_STELLAR_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_STELLAR_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3165,7 +3163,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_trx_to_execute_trx() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TRX_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_TRX_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3175,7 +3173,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_ton_to_execute_ton() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_TON_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_TON_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3237,7 +3235,6 @@ mod tests {
         let result = unsafe {
             sign_ur_execute(
                 ton_tx_ptr as *mut u8,
-                0,
                 QR_TON_SIGN_REQUEST,
             )
         };
@@ -3350,7 +3347,7 @@ mod tests {
         sol_tx.set_derivation_path(derivation_path);
         let sol_tx_ptr: *mut SolSignRequest = Box::into_raw(Box::new(sol_tx));
 
-        let result = unsafe { sign_ur_execute(sol_tx_ptr as *mut u8, 0, QR_SOL_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(sol_tx_ptr as *mut u8, QR_SOL_SIGN_REQUEST) };
         // Reclaim the heap allocation now that the call returned.
         unsafe {
             let _ = Box::from_raw(sol_tx_ptr);
@@ -3454,7 +3451,7 @@ mod tests {
         csr.set_derivation_paths(vec![derivation_path]);
         let csr_ptr: *mut CosmosSignRequest = Box::into_raw(Box::new(csr));
 
-        let result = unsafe { sign_ur_execute(csr_ptr as *mut u8, 0, QR_COSMOS_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(csr_ptr as *mut u8, QR_COSMOS_SIGN_REQUEST) };
         unsafe {
             let _ = Box::from_raw(csr_ptr);
         }
@@ -3570,7 +3567,7 @@ mod tests {
         ssr.set_sign_type(SignType::Transaction);
         let ssr_ptr: *mut StellarSignRequest = Box::into_raw(Box::new(ssr));
 
-        let result = unsafe { sign_ur_execute(ssr_ptr as *mut u8, 0, QR_STELLAR_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(ssr_ptr as *mut u8, QR_STELLAR_SIGN_REQUEST) };
         unsafe {
             let _ = Box::from_raw(ssr_ptr);
         }
@@ -3667,7 +3664,7 @@ mod tests {
         ssr.set_derivation_paths(vec![derivation_path]);
         let ssr_ptr: *mut SuiSignRequest = Box::into_raw(Box::new(ssr));
 
-        let result = unsafe { sign_ur_execute(ssr_ptr as *mut u8, 0, QR_SUI_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(ssr_ptr as *mut u8, QR_SUI_SIGN_REQUEST) };
         unsafe {
             let _ = Box::from_raw(ssr_ptr);
         }
@@ -3753,7 +3750,7 @@ mod tests {
         isr.set_derivation_paths(vec![derivation_path]);
         let isr_ptr: *mut IotaSignRequest = Box::into_raw(Box::new(isr));
 
-        let result = unsafe { sign_ur_execute(isr_ptr as *mut u8, 0, QR_IOTA_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(isr_ptr as *mut u8, QR_IOTA_SIGN_REQUEST) };
         unsafe {
             let _ = Box::from_raw(isr_ptr);
         }
@@ -3817,7 +3814,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_sui_to_execute_sui() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_SUI_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_SUI_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3827,7 +3824,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_arweave_to_execute_arweave() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ARWEAVE_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_ARWEAVE_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -3984,7 +3981,7 @@ mod tests {
         // → parse_xmr surfaces a structured "XMR pvk unavailable"
         // error (error_code=1, no SIGSEGV). This is the same shape as
         // parse_eth under cargo test.
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_XMR_TX_UNSIGNED) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_XMR_TX_UNSIGNED) };
         assert!(
             !display.is_null(),
             "parse dispatcher must allocate SignDisplayData"
@@ -4008,7 +4005,7 @@ mod tests {
         // because monero_generate_signature's first action is
         // extract_ptr_with_type! on a null PtrUR). We only assert
         // non-null allocation.
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_XMR_TX_UNSIGNED) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_XMR_TX_UNSIGNED) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -4023,7 +4020,7 @@ mod tests {
         // before execute_xmr_keyimage. The execution path itself is
         // exercised by L4 simulator tests.
         let result =
-            unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_XMR_OUTPUT_SIGN_REQUEST) };
+            unsafe { sign_ur_execute(core::ptr::null_mut(), QR_XMR_OUTPUT_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "XMR keyimage execute dispatcher must allocate UREncodeResult"
@@ -4112,7 +4109,7 @@ mod tests {
         // must not panic — if the dispatcher arm is broken, this
         // either returns null or panics (in which case the test
         // fails for the right reason).
-        let result = unsafe { sign_ur_execute(fixture_ptr, fixture_len as u32, QR_XMR_TX_UNSIGNED) };
+        let result = unsafe { sign_ur_execute(fixture_ptr, QR_XMR_TX_UNSIGNED) };
         assert!(
             !result.is_null(),
             "execute_xmr dispatcher must allocate a UREncodeResult"
@@ -4141,7 +4138,7 @@ mod tests {
 
     #[test]
     fn sign_ur_parse_dispatches_btc_to_parse_btc() {
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_BTC_SIGN_REQUEST) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_BTC_SIGN_REQUEST) };
         assert!(
             !display.is_null(),
             "parse dispatcher must allocate SignDisplayData"
@@ -4161,7 +4158,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_btc_to_execute_btc() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_BTC_SIGN_REQUEST) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_BTC_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -4200,7 +4197,7 @@ mod tests {
     #[test]
     fn sign_ur_parse_dispatches_cardano_to_parse_cardano() {
         let display =
-            unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_REQUEST) };
+            unsafe { sign_ur_parse(core::ptr::null_mut(), QR_CARDANO_SIGN_REQUEST) };
         assert!(
             !display.is_null(),
             "parse dispatcher must allocate SignDisplayData"
@@ -4221,7 +4218,7 @@ mod tests {
     #[test]
     fn sign_ur_execute_dispatches_cardano_to_execute_cardano() {
         let result =
-            unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_REQUEST) };
+            unsafe { sign_ur_execute(core::ptr::null_mut(), QR_CARDANO_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -4255,7 +4252,7 @@ mod tests {
         //   - the error code path originated in `cardano_parse_sign_tx_hash`,
         //     NOT the stub branch (proof the new wiring reached FFI)
         let display = unsafe {
-            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_TX_HASH_REQUEST)
+            sign_ur_parse(core::ptr::null_mut(), QR_CARDANO_SIGN_TX_HASH_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
@@ -4271,7 +4268,7 @@ mod tests {
     #[test]
     fn sign_ur_execute_dispatches_cardano_tx_hash_to_error() {
         let result = unsafe {
-            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_TX_HASH_REQUEST)
+            sign_ur_execute(core::ptr::null_mut(), QR_CARDANO_SIGN_TX_HASH_REQUEST)
         };
         assert!(
             !result.is_null(),
@@ -4285,7 +4282,7 @@ mod tests {
         // real-wired (single-arg FFI). FFI returns error_code != 0
         // for null UR; assert the FFI error path was reached.
         let display = unsafe {
-            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_DATA_REQUEST)
+            sign_ur_parse(core::ptr::null_mut(), QR_CARDANO_SIGN_DATA_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
@@ -4301,7 +4298,7 @@ mod tests {
     #[test]
     fn sign_ur_execute_dispatches_cardano_sign_data() {
         let result = unsafe {
-            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_DATA_REQUEST)
+            sign_ur_execute(core::ptr::null_mut(), QR_CARDANO_SIGN_DATA_REQUEST)
         };
         assert!(
             !result.is_null(),
@@ -4317,7 +4314,6 @@ mod tests {
         let display = unsafe {
             sign_ur_parse(
                 core::ptr::null_mut(),
-                0,
                 QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST,
             )
         };
@@ -4337,7 +4333,6 @@ mod tests {
         let result = unsafe {
             sign_ur_execute(
                 core::ptr::null_mut(),
-                0,
                 QR_CARDANO_CATALYST_VOTING_REGISTRATION_REQUEST,
             )
         };
@@ -4353,7 +4348,7 @@ mod tests {
         // real-wired (single-arg FFI). FFI returns error_code != 0
         // for null UR; assert the FFI error path was reached.
         let display = unsafe {
-            sign_ur_parse(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
+            sign_ur_parse(core::ptr::null_mut(), QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
         };
         assert!(!display.is_null(), "parse dispatcher must allocate");
         let d = unsafe { &*display };
@@ -4369,7 +4364,7 @@ mod tests {
     #[test]
     fn sign_ur_execute_dispatches_cardano_cip8_data() {
         let result = unsafe {
-            sign_ur_execute(core::ptr::null_mut(), 0, QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
+            sign_ur_execute(core::ptr::null_mut(), QR_CARDANO_SIGN_CIP8_DATA_REQUEST)
         };
         assert!(
             !result.is_null(),
@@ -4405,7 +4400,7 @@ mod tests {
 
     #[test]
     fn sign_ur_parse_dispatches_zec_to_parse_zec() {
-        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), 0, QR_ZCASH_PCZT) };
+        let display = unsafe { sign_ur_parse(core::ptr::null_mut(), QR_ZCASH_PCZT) };
         assert!(
             !display.is_null(),
             "parse dispatcher must allocate SignDisplayData"
@@ -4425,7 +4420,7 @@ mod tests {
 
     #[test]
     fn sign_ur_execute_dispatches_zec_to_execute_zec() {
-        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_ZCASH_PCZT) };
+        let result = unsafe { sign_ur_execute(core::ptr::null_mut(), QR_ZCASH_PCZT) };
         assert!(
             !result.is_null(),
             "execute dispatcher must allocate UREncodeResult"
@@ -4491,7 +4486,7 @@ mod tests {
         // UREncodeResult (with the right error), proving the
         // dispatcher reached the signing code.
         let result =
-            unsafe { sign_ur_execute(core::ptr::null_mut(), 0, QR_BTC_SIGN_REQUEST) };
+            unsafe { sign_ur_execute(core::ptr::null_mut(), QR_BTC_SIGN_REQUEST) };
         assert!(
             !result.is_null(),
             "BTC execute dispatcher must allocate UREncodeResult"

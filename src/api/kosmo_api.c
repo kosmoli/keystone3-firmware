@@ -2943,7 +2943,7 @@ static int32_t ModelSignUrParse(const void *inData, uint32_t inDataLen)
      * the frontend callback receives the raw struct; the frontend
      * (or the L4 simulator probe) is responsible for unpacking the
      * fields it cares about. */
-    void *display = sign_ur_parse(urData, urDataLen, urType);
+    void *display = sign_ur_parse(urData, urType);
     if (display == NULL) {
         KosmoApi_NotifyResult(KOSMO_REQ_SIGN_UR_PARSE, KOSMO_ERR_GENERAL, NULL, 0);
         return KOSMO_ERR_GENERAL;
@@ -2962,7 +2962,7 @@ static int32_t ModelSignUrExecute(const void *inData, uint32_t inDataLen)
     /* sign_ur_execute returns UREncodeResult *; reuse the existing
      * sign-result helper which knows how to push the UR string to
      * the QR-generate callback. */
-    void *result = sign_ur_execute(urData, urDataLen, urType);
+    void *result = sign_ur_execute(urData, urType);
     if (result == NULL) {
         KosmoApi_NotifySignResult(KOSMO_REQ_SIGN_UR_EXECUTE, NULL);
         return KOSMO_ERR_GENERAL;

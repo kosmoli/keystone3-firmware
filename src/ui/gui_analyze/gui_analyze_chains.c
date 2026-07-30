@@ -822,3 +822,132 @@ static GetContSizeFunc GetAdaContainerSize(char *type)
     }
     return NULL;
 }
+
+// =====================================================================
+// Plan v11 §8.7a: generalized layout infrastructure
+// ---------------------------------------------------------------------
+//
+// Goal: enable any chain's display to read structured fields out of
+// the unified `SignDisplayData.fields` buffer (a `key=value\n...` text
+// blob already formatted by `sign_ur::build_display` on the Rust side)
+// rather than wiring per-chain getter functions like `GetXrpFee`,
+// `GetAdaFee`, etc.
+//
+// The standard chain getter signature is:
+//
+//   void GetXxxField(void *indata, void *param, uint32_t maxLen);
+//
+// - `indata`: caller-provided buffer where the function writes the
+//   field value as a NUL-terminated string
+// - `param`: the chain-specific data source (display data struct)
+// - `maxLen`: max bytes available in `indata`
+//
+// For the generalized case, `param` is the `fields` text blob. The
+// helper `ParseFieldsKeyValue()` searches for `"KeyName=...\n"` in
+// the blob and copies the value (until next `\n` or NUL terminator
+// or `maxLen`) into `indata`. Two wrapper functions adapt the
+// standard signature to this case, and two dispatch tables
+// (`GuiGeneralizedFieldFuncGet` / `GuiGeneralizedFieldLenFuncGet`)
+// make them accessible to the JSON-template `text_func` lookup
+// path used by `gui_analyze.c::GuiWidgetBaseInit`.
+//
+// No chain is migrated in this commit — the placeholders below let
+// future commits opt in to the generalized layout by setting
+// `g_analyzeArray[*].typeFunc = GuiGeneralizedFieldFuncGet` and
+// pointing `param` at the `fields` text blob. The full migration
+// of all chain JSON layouts is plan_v12 §3.2 work (~2-3 weeks,
+// see `KOSMO固件重构-plan_v11.md` §11 / §8.8).
+//
+// =====================================================================
+
+#define PARSE_FIELDS_MAX 4096
+static char s_parse_fields_value[PARSE_FIELDS_MAX];
+
+// Parse a `fields` blob (`key=value\n...`) and copy the value
+// associated with `key` into `s_parse_fields_value`. Returns the
+// length of the value (0 if not found). The returned pointer is
+// stable until the next call to this function on the same thread
+// (matching the keystone fork's `FieldsBlock` cache convention).
+//
+// We deliberately do not allocate: callers always pass through
+// `GetGeneralizedFieldText` which copies into their indata buffer
+// under `maxLen`, so the worker buffer here is just the staging
+// area for the substring extraction.
+static uint32_t ParseFieldsKeyValue(const char *fields, const char *key)
+{
+    if (fields == NULL || key == NULL) {
+        s_parse_fields_value[0] = '\0';
+        return 0;
+    }
+    size_t key_len = strlen(key);
+    const char *p = fields;
+    while (*p != '\0') {
+        // Match `key` at line start.
+        if ((strncmp(p, key, key_len) == 0) && (p[key_len] == '=')) {
+            const char *val = p + key_len + 1;
+            // Copy until newline or NUL or buffer cap.
+            uint32_t i = 0;
+            while (val[i] != '\0' && val[i] != '\n' && i < PARSE_FIELDS_MAX - 1) {
+                s_parse_fields_value[i] = val[i];
+                i++;
+            }
+            s_parse_fields_value[i] = '\0';
+            return i;
+        }
+        // Advance to next line.
+        while (*p != '\0' && *p != '\n') {
+            p++;
+        }
+        if (*p == '\n') {
+            p++;
+        }
+    }
+    s_parse_fields_value[0] = '\0';
+    return 0;
+}
+
+// text_func signature glue: caller knows the `key` label name (e.g.
+// "Network") by convention; we read it from `param` which is the
+// `fields` text blob. The JSON layout at large does not have a
+// way to thread the field name through at the C side without
+// widening the `text_func` signature; for now this is invoked only
+// via direct calls from chain code that opts in. The companion
+// `GuiGeneralizedFieldLenFuncGet` handles the length variant.
+void GetGeneralizedFieldText(char *label, void *indata, void *param, uint32_t maxLen)
+{
+    if (label == NULL || indata == NULL || param == NULL || maxLen == 0) {
+        if (indata != NULL && maxLen > 0) {
+            *(char *)indata = '\0';
+        }
+        return;
+    }
+    uint32_t val_len = ParseFieldsKeyValue((const char *)param, label);
+    strncpy((char *)indata, s_parse_fields_value, maxLen - 1);
+    if (val_len >= maxLen) {
+        ((char *)indata)[maxLen - 1] = '\0';
+    }
+}
+
+uint32_t GetGeneralizedFieldLen(char *label, void *param)
+{
+    if (label == NULL || param == NULL) {
+        return 0;
+    }
+    return ParseFieldsKeyValue((const char *)param, label);
+}
+
+GetLabelDataFunc GuiGeneralizedFieldFuncGet(char *type)
+{
+    if (!strcmp(type, "GetGeneralizedField")) {
+        return GetGeneralizedFieldText;
+    }
+    return NULL;
+}
+
+GetLabelDataLenFunc GuiGeneralizedFieldLenFuncGet(char *type)
+{
+    if (!strcmp(type, "GetGeneralizedFieldLen")) {
+        return GetGeneralizedFieldLen;
+    }
+    return NULL;
+}

@@ -1,6 +1,16 @@
 #ifndef _GUI_GENERAL_ANALYZE_WIDGETS_H
 #define _GUI_GENERAL_ANALYZE_WIDGETS_H
 
+// Plan v11 §8.7a: generalized layout infrastructure entry points.
+// These read structured fields (e.g. "Network", "From", "Amount", "Fee")
+// out of the unified `SignDisplayData.fields` buffer rather than
+// wiring per-chain getter functions like `GetXrpFee`, `GetAdaFee`.
+// No chain is migrated in this commit; full migration of chain JSON
+// layouts to this scheme is plan_v12 §3.2 work. See
+// `KOSMO固件重构-plan_v11.md` §11 / §8.8 for the cut-over plan.
+GetLabelDataFunc GuiGeneralizedFieldFuncGet(char *type);
+GetLabelDataLenFunc GuiGeneralizedFieldLenFuncGet(char *type);
+
 #define GUI_ANALYZE_OBJ_SURPLUS \
     {\
         REMAPVIEW_ETH,\

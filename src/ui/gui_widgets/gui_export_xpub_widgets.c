@@ -270,6 +270,14 @@ static void OnQrGenerateSuccess(char *data, uint16_t len)
     GuiPendingHintBoxRemove();
     KOSMO_EXPORT_LOG("OnQrGenerateSuccess: len=%u", len);
     printf("[ExportViewKeys] UR generated, len=%u\n", len);
+    /* Boot the QR display: render the first frame and start the
+     * animating-timer that drives multi-frame UR animation. Without
+     * this call, the GUI shows a stale / empty QR frame for every
+     * chain export (the symptom Kosmo observed: "all chains show
+     * the same fixed QR"). This was wired up in the keystone upstream
+     * SIG_BACKGROUND_UR_GENERATE_SUCCESS handler; the KOSMO plan_v10/v11
+     * callback-based refactor dropped the wire-up. */
+    GuiAnimantingQRCodeFirstUpdate(data, len);
 }
 
 static void OnQrGenerateFail(char *message)
@@ -281,7 +289,9 @@ static void OnQrGenerateFail(char *message)
 
 static void OnQrUpdate(char *data, uint16_t len)
 {
-    /* Timer-driven update — GuiAnimatingQRCodeUpdate handles lv_qrcode_update */
+    /* Timer-driven update — re-render the QR for each animation frame
+     * so multi-part URs cycle through their fragments. */
+    GuiAnimatingQRCodeUpdate(data, len);
 }
 
 /* ─── Navigation ─────────────────────────────────── */

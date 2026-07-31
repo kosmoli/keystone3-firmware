@@ -343,7 +343,17 @@ static SimpleResponse_c_char *ProcessKeyType(uint8_t *seed, int len, int cryptoK
 {
     switch (cryptoKey) {
     case SECP256K1:
-        return get_extended_pubkey_by_seed(seed, len, (char *)path);
+        // Plan v11 fix: was `get_extended_pubkey_by_seed` which returns base58
+        // (e.g. "xpub6CU..."). The Rust view-key export path
+        // (generate_ur_crypto_hd_key) parses `key_hex` as hex via
+        // hex::decode(), so base58 characters are rejected with
+        // "Odd number of digits" / "invalid char" for ETH/AVAX/TRX export.
+        // Switch to `_bytes_by_seed` which returns hex-encoded raw bytes
+        // (78 bytes → 156 hex chars), matching the Rust ur_generators.
+        // Affects all SECP256K1 chains: BTC, LTC, DOGE, DASH, BCH,
+        // ETH (BIP44_STANDARD + Ledger-Live + Ledger-Legacy), TRX,
+        // COSMOS, XRP, AVAX (BIP44 + X/P).
+        return get_extended_pubkey_bytes_by_seed(seed, len, (char *)path);
     case ED25519:
         return get_ed25519_pubkey_by_seed(seed, len, (char *)path);
     case BIP32_ED25519:

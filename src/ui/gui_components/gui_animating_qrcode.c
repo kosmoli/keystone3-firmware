@@ -114,6 +114,11 @@ void GuiAnimatingQRCodeInitWithCustomSize(lv_obj_t* parent, GenerateUR dataFunc,
 
 void GuiAnimantingQRCodeFirstUpdate(char* data, uint16_t len)
 {
+    /* Plan v11 fix: destroy the previous timer before creating a new one. */
+    if (g_timer) {
+        lv_timer_del(g_timer);
+        g_timer = NULL;
+    }
     GuiAnimatingQRCodeUpdate(data, len);
     g_timer = lv_timer_create(TimerHandler, TIMER_UPDATE_INTERVAL, NULL);
     if (g_showPending) {

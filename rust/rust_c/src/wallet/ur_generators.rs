@@ -22,6 +22,20 @@ use crate::common::ur::{UREncodeResult, FRAGMENT_MAX_LENGTH_DEFAULT};
 use crate::common::utils::recover_c_char;
 use crate::extract_array;
 
+// KOSMO plan_v11 §11 #6: direct stderr write helper. Used to
+// emit trace messages from FFI code without going through
+// buffered I/O (so traces survive panic/abort).
+extern "C" {
+    fn write(fd: i32, buf: *const u8, count: usize) -> isize;
+}
+#[inline(never)]
+fn kosmo_write_str(s: &str) {
+    unsafe {
+        write(2, s.as_ptr(), s.len());
+    }
+}
+
+// ─── 辅助：密钥类型检测 + CryptoHDKey 构造 ─────────────────────
 // ─── 辅助：密钥类型检测 + CryptoHDKey 构造 ─────────────────────
 
 /// 根据密钥字节自动检测类型（ed25519 / secp256k1 xpub / bip32-ed25519）
@@ -113,9 +127,18 @@ pub unsafe extern "C" fn generate_ur_crypto_hd_key(
     let key_name = recover_c_char(key_name);
     let name = if key_name.is_empty() { None } else { Some(key_name.as_str()) };
 
+    kosmo_write_str(&alloc::format!("[ur_generators] generate_ur_crypto_hd_key: path='{}', key_hex.len()={}, name={:?}\n", path, key_hex.len(), name));
+
+    eprintln!("[ur_generators] generate_ur_crypto_hd_key: path='{}', key_hex.len()={}, name={:?}", path, key_hex.len(), name);
     let hd_key = match try_construct_crypto_hd_key(mfp, &path, &key_hex, name) {
-        Ok(key) => key,
-        Err(e) => return UREncodeResult::from(e).c_ptr(),
+        Ok(key) => {
+            kosmo_write_str("[ur_generators] try_construct_crypto_hd_key OK, encoding UR\n");
+            key
+        },
+        Err(e) => {
+            kosmo_write_str(&alloc::format!("[ur_generators] try_construct_crypto_hd_key FAILED: {:?}\n", e));
+            return UREncodeResult::from(e).c_ptr();
+        }
     };
 
     match hd_key.try_into() {

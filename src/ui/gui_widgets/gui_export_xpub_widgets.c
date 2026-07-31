@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdint.h>
+#include <signal.h>
 #include "gui_obj.h"
 #include "gui_views.h"
 #include "gui_export_xpub_widgets.h"
@@ -12,6 +14,34 @@
 #include "account_public_info.h"
 #include "kosmo_api.h"
 #include "librust_c.h"
+
+/* KOSMO plan_v11 §11 #6 follow-up debug log.
+ * Mirrors printf to /tmp/kosmo_export_debug.log so Kleo can
+ * diagnose GUI-flow bugs (view-key export + ADA crash) without
+ * needing access to the GUI host's stdout. Disable by undefining
+ * KOSMO_EXPORT_DEBUG_LOG. */
+#define KOSMO_EXPORT_DEBUG_LOG 1
+#ifdef KOSMO_EXPORT_DEBUG_LOG
+static FILE *kosmo_export_log_fp = NULL;
+static void kosmo_export_log_init(void)
+{
+    if (kosmo_export_log_fp == NULL) {
+        kosmo_export_log_fp = fopen("/tmp/kosmo_export_debug.log", "a");
+        if (kosmo_export_log_fp != NULL) {
+            fprintf(kosmo_export_log_fp, "\n--- gui_export_xpub_widgets log opened ---\n");
+            fflush(kosmo_export_log_fp);
+        }
+    }
+}
+#define KOSMO_EXPORT_LOG(fmt, ...) do { \
+    kosmo_export_log_init(); \
+    if (kosmo_export_log_fp != NULL) { \
+        fprintf(kosmo_export_log_fp, "[%s:%d] " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
+        fflush(kosmo_export_log_fp); \
+    } \
+    printf("[ExportViewKeys] " fmt "\n", ##__VA_ARGS__); \
+} while (0)
+#endif
 
 typedef enum {
     TILE_CHAIN_LIST = 0,
@@ -137,23 +167,33 @@ static UREncodeResult *GenerateExportViewKeys(void)
     uint8_t mfp[4] = {0};
     GetMasterFingerPrint(mfp);
 
+    KOSMO_EXPORT_LOG("GenerateExportViewKeys: chain=%d (g_selectedChain=%d, g_selectedPath=%d)",
+                     (int)chain, g_selectedChain, g_selectedPath);
+    KOSMO_EXPORT_LOG("  mfp=[%02x %02x %02x %02x]", mfp[0], mfp[1], mfp[2], mfp[3]);
+
     switch (chain) {
     case KOSMO_CHAIN_BTC_NATIVE_SEGWIT: {
         /* BTC: ur:crypto-account with 4 standard paths */
         ExtendedPublicKey key;
         key.path = (char *)g_curPaths[g_selectedPath].desc;
         key.xpub = (char *)KosmoApi_GetPublicKeyRaw(XPUB_TYPE_BTC_NATIVE_SEGWIT);
+        KOSMO_EXPORT_LOG("  BTC: path=%s xpub=%s",
+                         key.path ? key.path : "(null)",
+                         key.xpub ? "OK" : "NULL");
         if (key.xpub == NULL) return NULL;
         CSliceFFI_ExtendedPublicKey keys;
         keys.data = &key;
         keys.size = 1;
-        return generate_btc_crypto_account_ur(mfp, 1, &keys);
+        return generate_btc_crypto_account_ur(mfp, 4, &keys);
     }
 
     case KOSMO_CHAIN_XMR: {
         /* XMR: JSON text (Feather Wallet format) */
         const char *spendKey = KosmoApi_GetPublicKey(KOSMO_CHAIN_XMR);
         const char *viewKey = KosmoApi_GetPublicKeyRaw(XPUB_TYPE_MONERO_PVK_0);
+        KOSMO_EXPORT_LOG("  XMR: spendKey=%s viewKey=%s",
+                         spendKey ? "OK" : "NULL",
+                         viewKey ? "OK" : "NULL");
         if (spendKey == NULL || viewKey == NULL) return NULL;
         return generate_ur_xmr_json((char *)spendKey, (char *)viewKey);
     }
@@ -162,6 +202,9 @@ static UREncodeResult *GenerateExportViewKeys(void)
         /* ETH: ur:crypto-hd-key */
         const char *xpub = KosmoApi_GetPublicKey(chain);
         const char *path = KosmoApi_GetPath(chain);
+        KOSMO_EXPORT_LOG("  ETH: xpub=%s path=%s",
+                         xpub ? "OK" : "NULL",
+                         path ? path : "(null)");
         if (xpub == NULL || path == NULL) return NULL;
         return generate_ur_crypto_hd_key(mfp, 4, (char *)xpub, (char *)path, (char *)"Keystone");
     }
@@ -170,21 +213,32 @@ static UREncodeResult *GenerateExportViewKeys(void)
         /* ADA: ur:crypto-hd-key */
         const char *xpub = KosmoApi_GetPublicKey(chain);
         const char *path = KosmoApi_GetPath(chain);
-        if (xpub == NULL || path == NULL) return NULL;
-        return generate_ur_crypto_hd_key(mfp, 4, (char *)xpub, (char *)path, (char *)NULL);
+        KOSMO_EXPORT_LOG("  ADA: xpub=%s path=%s (g_selectedPath=%d)",
+                         xpub ? "OK" : "NULL",
+                         path ? path : "(null)",
+                         g_selectedPath);
+        if (xpub == NULL || path == NULL) {
+            KOSMO_EXPORT_LOG("  ADA: EARLY NULL return (xpub or path NULL)");
+            return NULL;
+        }
+        return generate_ur_crypto_hd_key(mfp, 4, (char *)xpub, (char *)path, (char *)"");
     }
 
     case KOSMO_CHAIN_TON: {
         /* TON: ur:crypto-hd-key */
         const char *xpub = KosmoApi_GetPublicKey(chain);
         const char *path = KosmoApi_GetPath(chain);
+        KOSMO_EXPORT_LOG("  TON: xpub=%s path=%s",
+                         xpub ? "OK" : "NULL",
+                         path ? path : "(null)");
         if (xpub == NULL || path == NULL) return NULL;
-        return generate_ur_crypto_hd_key(mfp, 4, (char *)xpub, (char *)path, (char *)NULL);
+        return generate_ur_crypto_hd_key(mfp, 4, (char *)xpub, (char *)path, (char *)"");
     }
 
     case KOSMO_CHAIN_ARWEAVE: {
         /* AR: ur:arweave-crypto-account */
         const char *xpub = KosmoApi_GetPublicKey(chain);
+        KOSMO_EXPORT_LOG("  AR: xpub=%s", xpub ? "OK" : "NULL");
         if (xpub == NULL) return NULL;
         return generate_ur_arweave_account(mfp, 4, (char *)xpub);
     }
@@ -192,11 +246,13 @@ static UREncodeResult *GenerateExportViewKeys(void)
     default: {
         /* Generic: ur:crypto-multi-accounts */
         const char *xpub = KosmoApi_GetPublicKey(chain);
+        KOSMO_EXPORT_LOG("  default-chain=%d: xpub=%s", (int)chain, xpub ? "OK" : "NULL");
         if (xpub == NULL) return NULL;
 
         ExtendedPublicKey key;
         key.path = (char *)KosmoApi_GetPath(chain);
         key.xpub = (char *)xpub;
+        KOSMO_EXPORT_LOG("  default-chain=%d: path=%s", (int)chain, key.path ? key.path : "(null)");
         if (key.path == NULL) return NULL;
 
         CSliceFFI_ExtendedPublicKey keys;
@@ -212,12 +268,14 @@ static UREncodeResult *GenerateExportViewKeys(void)
 static void OnQrGenerateSuccess(char *data, uint16_t len)
 {
     GuiPendingHintBoxRemove();
+    KOSMO_EXPORT_LOG("OnQrGenerateSuccess: len=%u", len);
     printf("[ExportViewKeys] UR generated, len=%u\n", len);
 }
 
 static void OnQrGenerateFail(char *message)
 {
     GuiPendingHintBoxRemove();
+    KOSMO_EXPORT_LOG("OnQrGenerateFail: %s", message);
     printf("[ExportViewKeys] UR generate failed: %s\n", message);
 }
 
@@ -362,6 +420,9 @@ static void StartQrGeneration(lv_obj_t *qrParent)
     GuiAnimatingQRCodeDestroyTimer();
     {KosmoRequest r = {.type = KOSMO_REQ_UR_CLEAR}; KosmoApi_Request(&r, NULL);}
 
+    KOSMO_EXPORT_LOG("StartQrGeneration: chain=%d path=%d (gen=%p)",
+                     g_selectedChain, g_selectedPath, (void *)GenerateExportViewKeys);
+
     /* Kick off UR generation via persistent KosmoApi_Request */
     GuiAnimatingQRCodeInit(qrParent, GenerateExportViewKeys, true,
                            OnQrGenerateSuccess, OnQrGenerateFail, OnQrUpdate);
@@ -374,13 +435,19 @@ static void ChainClickHandler(lv_event_t *e)
     g_selectedChain = (int)(intptr_t)lv_event_get_user_data(e);
     g_selectedPath = 0;
 
+    KOSMO_EXPORT_LOG("ChainClickHandler: chain=%d (%s) hasMultiPath=%d",
+                     g_selectedChain,
+                     g_chainList[g_selectedChain].name,
+                     g_chainList[g_selectedChain].hasMultiPath);
+
     if (g_chainList[g_selectedChain].hasMultiPath) {
         g_curPaths = GetPathsForChain(g_selectedChain, &g_curPathLen);
+        KOSMO_EXPORT_LOG("  goto path-select (g_curPathLen=%u)", g_curPathLen);
         RefreshPathList();
         GotoTile(TILE_PATH_SELECT);
     } else {
         g_curPaths = GetPathsForChain(g_selectedChain, &g_curPathLen);
-        /* Go to QR tile and start generation */
+        KOSMO_EXPORT_LOG("  single-path: jump straight to QR");
         GotoTile(TILE_QR_DISPLAY);
         StartQrGeneration(g_tileQrDisplay);
     }
@@ -389,6 +456,7 @@ static void ChainClickHandler(lv_event_t *e)
 static void PathClickHandler(lv_event_t *e)
 {
     g_selectedPath = (int)(intptr_t)lv_event_get_user_data(e);
+    KOSMO_EXPORT_LOG("PathClickHandler: path=%d", g_selectedPath);
     GotoTile(TILE_QR_DISPLAY);
     StartQrGeneration(g_tileQrDisplay);
 }
